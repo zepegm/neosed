@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AVG - NeoSED</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">    
+    <link href="{{ url_for('static', filename='datatable/datatables.min.css') }}" rel="stylesheet">    
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+        .icon {
+            text-align: center;
+            margin-top: -90px;
+            margin-bottom: -100px;
+        }
+
+        img {
+            pointer-events: none;
+        }   
+
+        .red {
+            color:red;
+        }   
+
+        
+
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+               <i class="fa-solid fa-home"></i>
+                Home
+            </a>           
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../listaAlunos">Lista de Alunos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../notas">Notas</a>
+                    </li>                                      
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Modal -->
+    <div class="modal fade" id="nova_turma_modal" tabindex="-1" aria-labelledby="nova_turma_modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="nova_turma_modalLabel">Nova Turma</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('index') }}" method="post">
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label for="txtnumeroclasse">Número da Classe:</label>
+                        <input type="number" class="form-control" id="txtnumeroclasse" name="txtnumeroclasse" required>               
+                    </div>            
+                    <div class="col-sm-6">
+                        <label for="txtnometurma">Nome da turma:</label>
+                        <input type="text" class="form-control" id="txtnometurma" name="txtnometurma" required>               
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbtipoensino">Tipo de Ensino:</label>
+                        <select id="cbtipoensino" name="cbtipoensino" class="form-select" aria-label="Default select example">
+                            {% for item in tipo_ensino %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbperiodo">Período:</label>
+                        <select id="cbperiodo" name="cbperiodo" class="form-select" aria-label="Default select example">
+                            {% for item in periodo %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div> 
+
+                    <div class="col-sm-4">
+                        <label for="cbduracao">Duração:</label>
+                        <select id="cbduracao" name="cbduracao" class="form-select" aria-label="Default select example">
+                            {% for item in duracao %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-4 align-self-end">
+                        <div><span class="fw-bold">Início: </span><span id="infoinicio">{{calendario['1sem_inicio']}}</span></div>
+                        <div><span class="fw-bold">Fim: </span><span id="infofim">{{calendario['2sem_fim']}}</span></div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <input type="submit" class="btn btn-primary" value="Cadastrar Nova Turma" />
+                <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+            </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="novo_itinerario_modal" tabindex="-1" aria-labelledby="novo_itinerario_modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="novo_itinerario_modalLabel">Nova Turma de Itinerário Formativo</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('index') }}" method="post" id="form_cadastrar_itinerario">
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label for="txtnumeroclasse_if">Número da Classe:</label>
+                        <input type="number" class="form-control" id="txtnumeroclasse_if" name="txtnumeroclasse_if" required>               
+                    </div>            
+                    <div class="col-sm-6">
+                        <label for="txtnometurma_if">Nome da turma:</label>
+                        <input type="text" class="form-control" id="txtnometurma_if" name="txtnometurma_if" required>               
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbperiodo_if">Período:</label>
+                        <select id="cbperiodo_if" name="cbperiodo_if" class="form-select" aria-label="Default select example">
+                            {% for item in periodo %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>                   
+
+                    <div class="col-sm-4">
+                        <label for="cbduracao_if">Duração:</label>
+                        <select id="cbduracao_if" name="cbduracao_if" class="form-select" aria-label="Default select example">
+                            {% for item in duracao %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-12">
+                        <label for="cbcategoria_if">Categoria:</label>
+                        <select id="cbcategoria_if" name="cbcategoria_if" class="form-select" aria-label="Default select example">
+                            {% for item in cat_itinerario %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbtipoensino_if">Tipo de Ensino:</label>
+                        <select id="cbtipoensino_if" name="cbtipoensino_if" class="form-select" aria-label="Default select example">
+                            {% for item in tipo_ensino_itinerario %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>                  
+                    
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">&nbsp;</div>
+                    <div class="col-sm-12" id="alert_error_if"></div>
+                    <div class="col-sm-6">
+                        <div class="fw-bold">Ensino Médio Regular</div>
+                        <div id="lista_geral" class="list-group">
+                            {% for ensino in listaTurmas %}
+                                {% if ensino['tipo_ensino']['id'] == 1 %}
+                                    {% for turma in ensino['lista'] %}
+                                        <li class="list-group-item"><label class="bold"><input class="form-check-input me-1" name="turmas_vinculo_if" type="checkbox" value='{{turma["num_classe"]}}'>{{turma['nome_turma']}}</label></li>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="fw-bold">Ensino Médio EJA</div>
+                       <div id="lista_geral" class="list-group">
+                            {% for ensino in listaTurmas %}
+                                {% if ensino['tipo_ensino']['id'] == 4 %}
+                                    {% for turma in ensino['lista'] %}
+                                        <li class="list-group-item"><label class="bold"><input class="form-check-input me-1" name="turmas_vinculo_if" type="checkbox" value='{{turma["num_classe"]}}'>{{turma['nome_turma']}}</label></li>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                        </div>                        
+                    </div>                      
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <input type="submit" class="btn btn-success" value="Cadastrar Novo Itinerário Formativo" />
+                <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+            </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="editar_itinerario_modal" tabindex="-1" aria-labelledby="editar_itinerario_modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="editar_itinerario_modalLabel">Editar Turma de Itinerário Formativo</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('index') }}" method="post" id="form_editar_itinerario">
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label for="txtnumeroclasse_if_edit">Número da Classe:</label>
+                        <input type="number" class="form-control" id="txtnumeroclasse_if_edit" name="txtnumeroclasse_if_edit" required>               
+                    </div>            
+                    <div class="col-sm-6">
+                        <label for="txtnometurma_if_edit">Nome da turma:</label>
+                        <input type="text" class="form-control" id="txtnometurma_if_edit" name="txtnometurma_if_edit" required>               
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbperiodo_if_edit">Período:</label>
+                        <select id="cbperiodo_if_edit" name="cbperiodo_if_edit" class="form-select" aria-label="Default select example">
+                            {% for item in periodo %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>                   
+
+                    <div class="col-sm-4">
+                        <label for="cbduracao_if_edit">Duração:</label>
+                        <select id="cbduracao_if_edit" name="cbduracao_if_edit" class="form-select" aria-label="Default select example">
+                            {% for item in duracao %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-12">
+                        <label for="cbcategoria_if_edit">Categoria:</label>
+                        <select id="cbcategoria_if_edit" name="cbcategoria_if_edit" class="form-select" aria-label="Default select example">
+                            {% for item in cat_itinerario %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbtipoensino_if_edit">Tipo de Ensino:</label>
+                        <select id="cbtipoensino_if_edit" name="cbtipoensino_if_edit" class="form-select" aria-label="Default select example">
+                            {% for item in tipo_ensino_itinerario %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>                  
+                    
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">&nbsp;</div>
+                    <div class="col-sm-12" id="alert_error_if_edit"></div>
+                    <div class="col-sm-6">
+                        <div class="fw-bold">Ensino Médio Regular</div>
+                        <div id="lista_geral" class="list-group">
+                            {% for ensino in listaTurmas %}
+                                {% if ensino['tipo_ensino']['id'] == 1 %}
+                                    {% for turma in ensino['lista'] %}
+                                        <li class="list-group-item"><label class="bold"><input class="form-check-input me-1" name="turmas_vinculo_if_edit" type="checkbox" value='{{turma["num_classe"]}}'>{{turma['nome_turma']}}</label></li>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="fw-bold">Ensino Médio EJA</div>
+                       <div id="lista_geral" class="list-group">
+                            {% for ensino in listaTurmas %}
+                                {% if ensino['tipo_ensino']['id'] == 4 %}
+                                    {% for turma in ensino['lista'] %}
+                                        <li class="list-group-item"><label class="bold"><input class="form-check-input me-1" name="turmas_vinculo_if_edit" type="checkbox" value='{{turma["num_classe"]}}'>{{turma['nome_turma']}}</label></li>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                        </div>                        
+                    </div>                      
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <input type="submit" class="btn btn-success" value="Cadastrar Novo Itinerário Formativo" />
+                <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+            </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editar_turma_modal" tabindex="-1" aria-labelledby="editar_turma_modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="editar_turma_modalLabel">Editar Turma</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('index') }}" method="post">
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label for="txtnumeroclasse_edit">Numéro da Classe:</label>
+                        <input type="number" class="form-control" id="txtnumeroclasse_edit" name="txtnumeroclasse_edit" required>               
+                    </div>            
+                    <div class="col-sm-6">
+                        <label for="txtnometurma_edit">Nome da turma:</label>
+                        <input type="text" class="form-control" id="txtnometurma_edit" name="txtnometurma_edit" required>               
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbtipoensino_edit">Tipo de Ensino:</label>
+                        <select id="cbtipoensino_edit" name="cbtipoensino_edit" class="form-select" aria-label="Default select example">
+                            {% for item in tipo_ensino %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label for="cbperiodo_edit">Período:</label>
+                        <select id="cbperiodo_edit" name="cbperiodo_edit" class="form-select" aria-label="Default select example">
+                            {% for item in periodo %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>                   
+
+                    <div class="col-sm-4">
+                        <label for="cbduracao_edit">Duração:</label>
+                        <select id="cbduracao_edit" name="cbduracao_edit" class="form-select" aria-label="Default select example">
+                            {% for item in duracao %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                            {% endfor %}
+                        </select>                    
+                    </div>
+
+                    <div class="col-sm-4 align-self-end">
+                        <div><span class="fw-bold">Início: </span><span id="infoinicio">{{calendario['1sem_inicio']}}</span></div>
+                        <div><span class="fw-bold">Fim: </span><span id="infofim">{{calendario['2sem_fim']}}</span></div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <input type="submit" class="btn btn-success" value="Alterar Dados da Turma" />
+                <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+            </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal_lista_turma_if" tabindex="-1" aria-labelledby="modal_lista_turma_ifLabel" aria-hidden="true">
+        <div class="modal-dialog" style="max-width: 90%;" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_lista_turma_ifLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarIf" class="btn btn-danger">Exportar PDF</button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <span class="fw-bold" id="desc_tipo_ensino_if"></span> - <span id="desc_tipo_ensino_nome_if"></span>
+                        </div>                     
+                        <div class="col-sm-12">
+                            <span class="fw-bold">Turma: </span><span id="descTurma_if"></span>
+                        </div>                       
+                        <div class="col-sm-2">
+                            <span class="fw-bold">Nº da Classe: </span><span id="numClasse_if"></span>
+                        </div>  
+                        <div class="col-sm-10">
+                            <span class="fw-bold">Período: </span><span id="descPeriodo_if"></span>
+                        </div>                          
+                        <div class="col-sm-2">
+                            <span class="fw-bold">Duração: </span><span id="descDuracao_if"></span>
+                        </div>                        
+                        <div class="col-sm-2">
+                            <span class="fw-bold">Início da Turma: </span><span id="inicioTurma_if"></span>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="fw-bold">Fim da Turma: </span><span id="fimTurma_if"></span>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="fw-bold">Total: </span><span id="descTotal_if"></span>
+                        </div>                                                                                                                
+                        <div class="col-sm-12">&nbsp;</div>
+                        <div id="tabelaAlunos_if" class="col-sm-12">
+                            <table id="tabela_alunos_if" class="table table-hover"> 
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center">Nº</th>
+                                    <th class="text-center">RM</th>
+                                    <th>RA</th>
+                                    <th>Nome</th>
+                                    <th>Turma</th>
+                                    <th class="text-center">Matrícula</th>
+                                    <th class="text-center">Fim Matr.</th>
+                                    <th class="text-center">Situação</th>
+                                </tr>
+                            </thead> 
+                            <tbody id="listaAlunos_if"></tbody>                                                       
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button id="btn-importar_if" class="btn btn-warning">Importar Alunos</button>
+                </div>
+            </div>
+        </div>
+    </div>   
+
+    <div class="modal fade" id="modal_lista_turmas" tabindex="-1" aria-labelledby="modal_lista_turmasLabel" aria-hidden="true">
+        <div class="modal-dialog" style="max-width: 90%;" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <span class="fw-bold" id="desc_tipo_ensino"></span>
+                        </div>                     
+                        <div class="col-sm-2">
+                            <span class="fw-bold">Turma: </span><span id="descTurma"></span>
+                        </div>
+                        <div class="col-sm-2">
+                            <span class="fw-bold">Nº da Classe: </span><span id="numClasse"></span>
+                        </div>  
+                        <div class="col-sm-8">
+                            <span class="fw-bold">Período: </span><span id="descPeriodo"></span>
+                        </div>                          
+                        <div class="col-sm-2">
+                            <span class="fw-bold">Duração: </span><span id="descDuracao"></span>
+                        </div>                        
+                        <div class="col-sm-2">
+                            <span class="fw-bold">Início da Turma: </span><span id="inicioTurma"></span>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="fw-bold">Fim da Turma: </span><span id="fimTurma"></span>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="fw-bold">Total: </span><span id="descTotal"></span>
+                        </div>                                                                                                                
+                        <div class="col-sm-12">&nbsp;</div>
+                        <div id="tabelaAlunos" class="col-sm-12">
+                            <table id="tabela_alunos" class="table table-hover"> 
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center">Nº</th>
+                                    <th class="text-center">RM</th>
+                                    <th>RA</th>
+                                    <th>S</th>
+                                    <th>Nome</th>
+                                    <th class="text-center">Nascimento</th>
+                                    <th class="text-center">Idade</th>
+                                    <th class="text-center">Sexo</th>
+                                    <th>RG</th>
+                                    <th>CPF</th>
+                                    <th class="text-center">Matrícula</th>
+                                    <th class="text-center">Fim Matr.</th>
+                                    <th class="text-center">Situação</th>
+                                </tr>
+                            </thead> 
+                            <tbody id="listaAlunos"></tbody>                                                       
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button id="btn-importar" class="btn btn-warning">Importar Alunos</button>
+                </div>
+            </div>
+        </div>
+    </div>     
+
+    <main class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="icon"><img src="{{ url_for('static', filename='images/Logo Neo Sed.png') }}" class="d-inline-block align-top" alt=""></div>
+            </div>
+            <div class="col-sm-12">{{msg|safe}}</div>
+            <div class="col-sm-12">
+                <button id="btnNovaTurma" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nova_turma_modal">Cadastrar Nova Turma</button>
+                <button id="btnNovoItinerario" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#novo_itinerario_modal">Cadastrar Itinerário Formativo</button>
+            </div>            
+        </div>
+        <div class="row">&nbsp;</div>
+        <div class="row">
+            <div class="col-sm-12">
+                   
+                {% for item in listaTurmas %}                                     
+                <table class="table table-hover table-striped">   
+                    <thead class="{{item['color']}}">
+                    <!-- <thead class="table-dark"> -->
+                        <tr>
+                            <th colspan="4">{{item['tipo_ensino']['tipo_ensino']}}</th>
+                            <th colspan="2">Total de turmas: {{item['tipo_ensino']['total']}}</th>
+                        </tr>
+                    </thead>
+                    <thead class="table-warning">
+                        <tr>
+                            <th>Nome da Turma</th>
+                            <th class="text-center">Número da Classe</th>
+                            <th class="text-center">Período</th>
+                            <th class="text-center">Duração</th>
+                            <th class="text-center">Visualizar</th>
+                            <th class="text-center">Editar</th>
+                        </tr>
+                    </thead>                     
+                    <tbody class="table-light">
+                        {% for turma in item['lista'] %}
+                            <tr>
+                                <td>{{turma['nome_turma']}}</td>
+                                <td class="text-center">{{turma['num_classe']}}</td>
+                                <td class="text-center">{{turma['periodo']}}</td>
+                                <td class="text-center">{{turma['duracao']}}</td>
+                                {% if item['tipo_ensino']['id'] != 2 and item['tipo_ensino']['id'] != 5 %}
+                                <td class="text-center"><a href="javascript:consultar({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
+                                <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}})"><i class="fa-solid fa-edit"></i></a></td>
+                                {% else %}
+                                <td class="text-center"><a href="javascript:consultarIf({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
+                                <td class="text-center"><a href="javascript:editarIf({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}}, {{turma['categoria']}})"><i class="fa-solid fa-edit"></i></a></td>                            
+                                
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody></table>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> 
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='datatable/datatables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='jspdf/jspdf.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='font-custom/BebasKai-normal.js') }}"></script>
+    <script src="{{ url_for('static', filename='font-custom/GreatVibes-Regular-normal.js') }}"></script>  
+    <script src="{{ url_for('static', filename='js/gerador-pdf.js') }}"></script>  
+    <script>
+
+
+        $("#form_cadastrar_itinerario").on('submit', function(e) {
+            if ($("[name='turmas_vinculo_if']:checked").length < 1) {
+                e.preventDefault();
+                $("#alert_error_if").append('<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Atenção!</strong> Favor selecionar as turmas que terão vínculo com a classe do Itinerário.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+            }
+        });
+
+        $("#form_editar_itinerario").on('submit', function(e) {
+            if ($("[name='turmas_vinculo_if_edit']:checked").length < 1) {
+                e.preventDefault();
+                $("#alert_error_if_edit").append('<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Atenção!</strong> Favor selecionar as turmas que terão vínculo com a classe do Itinerário.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+            }
+        });        
+
+        $("#btnExportarTurma").on('click', function(e) {
+
+            var table = $('#tabela_alunos').DataTable().rows().data();
+
+            gerarListaPilotoPadrao("{{url_for('static', filename='images/Logo Neo Sed White.png')}}", $("#descTurma").text(), $("#desc_tipo_ensino").text(), $("#descDuracao").text(), $("#numClasse").text(), $("#descPeriodo").text(), $("#inicioTurma").text(), $("#fimTurma").text(), $("#descTotal").text(), table);
+            
+        });
+
+        $("#btnExportarIf").on('click', function(e) {
+
+            num_classe = $("#numClasse_if").text();
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('getPDFListIf') }}",
+                contentType: "application/json",
+                data: JSON.stringify(num_classe),
+                dataType: "json",
+                success: function(response) {                  
+                    gerarListaIF(response);
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });            
+            
+        });        
+
+        function consultarIf(id, nome, duracao, periodo, tipo_ensino) {
+
+            $("#descTurma_if").text(nome);
+            $("#numClasse_if").text(id);
+            $("#descDuracao_if").text(duracao);
+            $("#descPeriodo_if").text(periodo);
+            $("#desc_tipo_ensino_if").text(tipo_ensino);
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('getAlunosTurmaIF') }}",
+                contentType: "application/json",
+                data: JSON.stringify(id),
+                dataType: "json",
+                success: function(response) {
+                    //console.log(response);
+                    $("#desc_tipo_ensino_nome_if").text(response['info']['categoria']);
+                    $("#inicioTurma_if").text(response['info']['inicio']);
+                    $("#fimTurma_if").text(response['info']['fim']);
+                    $("#descTotal_if").html('<span class="fw-bold text-secondary">' + response['total']['ativos'] + '</span> ativos (<span class="fw-bold text-secondary">' + response['total']['total'] + ' </span>no total).');
+
+                    $("#tabelaAlunos_if").empty();
+                    $("#tabelaAlunos_if").append('<table id="tabela_alunos_if" class="table table-hover"><thead class="table-dark"><tr><th class="text-center">Nº</th><th class="text-center">RM</th><th>RA</th><th>Nome</th><th>Turma</th><th class="text-center">Matrícula</th><th class="text-center">Fim Matr.</th><th class="text-center">Situação</th></tr></thead><tbody id="listaAlunos_if"></tbody></table>');
+
+                    $("#listaAlunos_if").empty();
+                    for (var item in response['turma']) {
+
+                        var linha = "";
+
+                        console.log(response['turma'][item]['sit']);
+
+                        if (response['turma'][item]['sit'] != "ATIVO" && response['turma'][item]['sit'] != "APROV") {
+                            linha += '<tr class="red">'
+                        } else {
+                            linha += "<tr>"
+                        }
+
+                        linha += '<td class="text-center">' + response['turma'][item]['num_chamada'] + '</td><td class="text-center">' + response['turma'][item]['rm'] + "</td><td>" + response['turma'][item]['ra'] + "</td><td>" + response['turma'][item]['nome'] + "</td>" + "<td>" + response['turma'][item]['turma'] + "</td>";
+                        
+
+                        linha += '<td class="text-center" data-order="' + response['turma'][item]['matricula_original'] + '">' + response['turma'][item]['matricula'] + "</td>";
+                        linha += '<td class="text-center" data-order="' + response['turma'][item]['fim_mat_original'] + '">' + response['turma'][item]['fim_mat'] + "</td>";
+                        linha += '<td class="text-center fw-bold">' + response['turma'][item]['sit'] + "</td>";
+
+                        linha += "</tr>";
+                        $("#listaAlunos_if").append(linha);
+                    }
+
+                    let dataTable = new DataTable("#tabela_alunos_if", {
+                            lengthMenu: [
+                                [15, 30, 50, 100],
+                                [15, 30, 50, 100],
+                            ], 
+                            "autoWidth": false,
+                            "oLanguage": {
+                                "sSearch": "Pesquisar:",
+                            },
+                            "language": {
+                                "lengthMenu": "Exibir _MENU_ itens por página",
+                                "zeroRecords": "Nada encontrado - Desculpe",
+                                "info": "Exibindo _START_ até _END_ de um total de _TOTAL_ registro(s)",
+                                "infoEmpty": "Sem registros",
+                                "infoFiltered": "(filtrado de um total de _MAX_ registro(s))",
+                                "paginate": {
+                                    "previous": "Anterior",
+                                    "next": "Próximo"
+                                }
+                            }                    
+                    }); 
+
+
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });
+
+
+            $("#modal_lista_turma_if").modal('show');
+        }
+
+        function consultar(id, nome, duracao, periodo, tipo_ensino) {
+            $("#descTurma").text(nome);
+            $("#numClasse").text(id);
+            $("#descDuracao").text(duracao);
+            $("#descPeriodo").text(periodo);
+            $("#desc_tipo_ensino").text(tipo_ensino);
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('getAlunosTurma') }}",
+                contentType: "application/json",
+                data: JSON.stringify(id),
+                dataType: "json",
+                success: function(response) {
+                    $("#inicioTurma").text(response['duracao'][0]['inicio']);
+                    $("#fimTurma").text(response['duracao'][0]['fim']);
+                    $("#descTotal").html('<span class="fw-bold text-secondary">' + response['total']['ativos'] + '</span> ativos (<span class="fw-bold text-secondary">' + response['total']['total'] + ' </span>no total).');
+                    
+                    $("#tabelaAlunos").empty();
+                    $("#tabelaAlunos").append('<table id="tabela_alunos" class="table table-hover"><thead class="table-dark"><tr><th class="text-center">Nº</th><th class="text-center">RM</th><th>RA</th><th>S</th><th>Nome</th><th class="text-center">Nascimento</th><th class="text-center">Idade</th><th class="text-center">Sexo</th><th>RG</th><th>CPF</th><th class="text-center">Matrícula</th><th class="text-center">Fim Matr.</th><th class="text-center">Situação</th></tr></thead><tbody id="listaAlunos"></tbody></table>');
+                    
+                    $("#listaAlunos").empty();
+                    for (var item in response['turma']) {
+
+                        var linha = "";
+
+                        if (response['turma'][item]['sit'] != "ATIVO"  && response['turma'][item]['sit'] != "APROV") {
+                            linha += '<tr class="red">'
+                        } else {
+                            linha += "<tr>"
+                        }
+
+                        linha += '<td class="text-center">' + response['turma'][item]['num_chamada'] + '</td><td class="text-center">' + response['turma'][item]['rm'] + "</td><td>" + response['turma'][item]['ra'] + "</td><td>" + response['turma'][item]['serie'] + "</td><td>" + response['turma'][item]['nome'] + '</td><td class="text-center" data-order="' + response['turma'][item]['nascimento_original']  + '">' + response['turma'][item]['nascimento'] + '</td><td class="text-center">' + response['turma'][item]['idade'] + '</td><td class="text-center">' + response['turma'][item]['sexo'] + "</td><td>" + response['turma'][item]['rg'] + "</td>";
+                        
+                        if (response['turma'][item]['cpf'] != "-") {
+                            linha += "<td>" + response['turma'][item]['cpf'].replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") + "</td>";
+                        } else {
+                            linha += "<td>" + response['turma'][item]['cpf'] + "</td>";
+                        }
+
+                        linha += '<td class="text-center" data-order="' + response['turma'][item]['matricula_original'] + '">' + response['turma'][item]['matricula'] + "</td>";
+                        linha += '<td class="text-center" data-order="' + response['turma'][item]['fim_mat_original'] + '">' + response['turma'][item]['fim_mat'] + "</td>";
+                        linha += '<td class="text-center fw-bold">' + response['turma'][item]['sit'] + "</td>";
+
+                        linha += "</tr>";
+                        $("#listaAlunos").append(linha);
+                    }
+
+                    let dataTable = new DataTable("#tabela_alunos", {
+                            lengthMenu: [
+                                [15, 30, 50, 100],
+                                [15, 30, 50, 100],
+                            ], 
+                            "autoWidth": false,
+                            "oLanguage": {
+                                "sSearch": "Pesquisar:",
+                            },
+                            "language": {
+                                "lengthMenu": "Exibir _MENU_ itens por página",
+                                "zeroRecords": "Nada encontrado - Desculpe",
+                                "info": "Exibindo _START_ até _END_ de um total de _TOTAL_ registro(s)",
+                                "infoEmpty": "Sem registros",
+                                "infoFiltered": "(filtrado de um total de _MAX_ registro(s))",
+                                "paginate": {
+                                    "previous": "Anterior",
+                                    "next": "Próximo"
+                                }
+                            }                    
+                        });                    
+
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });
+
+            $("#modal_lista_turmas").modal('show');
+        }
+
+        function editar(id, nome, ensino, periodo, duracao) {
+            $("#txtnumeroclasse_edit").val(id);
+            $("#txtnometurma_edit").val(nome);
+            $("#cbtipoensino_edit").val(ensino);
+            $("#cbperiodo_edit").val(periodo);
+            $("#cbduracao_edit").val(duracao);
+            $("#editar_turma_modal").modal('show');
+        }
+
+        function editarIf(id, nome, ensino, periodo, duracao, categoria) {
+            $("#txtnumeroclasse_if_edit").val(id);
+            $("#txtnometurma_if_edit").val(nome);
+            $("#cbtipoensino_if_edit").val(ensino);
+            $("#cbperiodo_if_edit").val(periodo);
+            $("#cbduracao_if_edit").val(duracao);
+            $("#cbcategoria_if_edit").val(categoria);
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('getVinculoIf') }}",
+                contentType: "application/json",
+                data: JSON.stringify(id),
+                dataType: "json",
+                success: function(response) {                  
+                    
+                    for (val in response) {
+                        console.log(response[val]['num_classe_em']);
+                        $('.form-check-input[value="' + response[val]['num_classe_em'] + '"]').prop("checked", true);
+                    }
+
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });            
+            
+
+            $("#editar_itinerario_modal").modal('show');            
+        }
+
+        calendar = {{calendario}};
+        //console.log(calendar);
+
+        $("#cbduracao").on('change', function(e) {
+            switch ($(this).val()) {
+                case "1":
+                    $("#infoinicio").text(calendar['1sem_inicio']);
+                    $("#infofim").text(calendar['2sem_fim']);
+                    break;
+                case "2":
+                    $("#infoinicio").text(calendar['1sem_inicio']);
+                    $("#infofim").text(calendar['1sem_fim']);
+                    break;
+                case "3":
+                    $("#infoinicio").text(calendar['2sem_inicio']);
+                    $("#infofim").text(calendar['2sem_fim']);
+                    break;                    
+            }
+        });
+
+        $("#btn-importar").click(function(e) {
+            window.open("https://sed.educacao.sp.gov.br/NCA/RelacaoAlunosClasse/Index", 'one');
+            window.location.href = "/upload_turma?classe=" + $("#numClasse").text();
+        });
+
+        $("#btn-importar_if").click(function(e) {
+            window.open("https://sed.educacao.sp.gov.br/NCA/RelacaoAlunosClasse/Index", 'one');
+            window.location.href = "/upload_turma?classe=" + $("#numClasse_if").text();
+        });
+
+    </script>
+  </body>
+</html>

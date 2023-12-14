@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lista de Alunos</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='datatable/datatables.min.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+        #loading-mask {
+            background-color: white;
+            height: 100%;
+            left: 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 9999;
+        }  
+
+        .center {
+            margin: auto;
+            text-align: center;
+            position: fixed;
+            top: 30%;
+            left: 45%;
+        }
+
+        .TRAN {
+            color:red;
+            font-weight: bold;
+        }
+
+        .BXTR {
+            color:red;
+            font-weight: bold;
+        }
+
+        .REMA {
+            color:red;
+            font-weight: bold;
+        }
+
+        .NCOM {
+            color:red;
+            font-weight: bold;
+        }
+
+        .ATIVO {
+            color:rgba(0, 89, 161);
+            font-weight: bold;
+        }
+
+        .CONCL {
+            color:rgb(0, 89, 161);
+            font-weight: bold;
+        }              
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+               <i class="fa-solid fa-home"></i>
+                Home
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Lista de Alunos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../notas">Notas</a>
+                    </li>                     
+                </ul>                  
+            </div>            
+        </div>
+    </nav>  
+
+    <div class="modal fade" id="modal_detalhe_aluno" tabindex="-1" aria-labelledby="modal_lista_turma_ifLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_lista_turma_ifLabel">Histórico de Matrícula</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <span class="fw-bold">Nome: </span><span id="txtnome"></span>
+                        </div>                    
+                        <div class="col-sm-4">
+                            <span class="fw-bold">RA: </span><span id="txtra"></span>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="fw-bold">RG: </span><span id="txtrg"></span>
+                        </div>      
+                        <div class="col-sm-4">
+                            <span class="fw-bold">CPF: </span><span id="txtcpf"></span>
+                        </div> 
+                        <div class="col-sm-4">
+                            <span class="fw-bold">Nascimento: </span><span id="txtnasc"></span>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="fw-bold">Idade: </span><span id="txtidade"></span>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="fw-bold">Sexo: </span><span id="txtsexo"></span>
+                        </div>                                                                          
+                    </div>
+                    <div class="row"><div class="col-sm-12">&nbsp;</div></div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="text-center">Ano</th>
+                                        <th class="text-center">Série</th>
+                                        <th class="text-center">Turma</th>
+                                        <th class="text-center">Ensino</th>
+                                        <th class="text-center">Matrícula</th>
+                                        <th class="text-center">Fim Mat.</th>
+                                        <th class="text-center">Situação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alunos_dados_dinamicos"></tbody>
+                            </table>
+                        </div>
+                        <div class="col-sm-12">
+                            <button id="btn_declaracao_matricula" class="btn btn-primary" hidden>Declaração de Matrícula</button>
+                            <button id="btn_declaracao_transferencia" class="btn btn-danger" hidden>Declaração de Transferência</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <!-- <button id="btn-importar_if" class="btn btn-warning">Importar Alunos</button> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="container-xxl">
+        <div id="loading-mask">
+            <h1 class="center">AGUARDE...</h1>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="fs-2">Lista de Alunos</p>
+            </div>
+            <div class="col-sm-12">
+                <table id="tabelaPrincipal" class="table table-hover table-striped">   
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center">RM</th>
+                            <th>Nome</th>
+                            <th>RA</th>
+                            <th class="text-center">Nascimento</th>
+                            <th class="text-center">Idade</th>
+                            <th class="text-center">Sexo</th>
+                            <th>RG</th>
+                            <th>CPF</th>
+                            <th class="text-center">Detalhes</th>
+                        </tr>
+                    </thead>                     
+                    <tbody class="table-light">
+                        {% set ns = namespace(cont=1) %}
+                        {% for item in lista %}
+                            <tr>
+                                <td class="text-center">{{item['rm']}}</td>
+                                <td data-order="{{ns.cont}}">{{item['nome']}}</td>
+                                <td>{{item['ra']}}</td>
+                                <td class="text-center" data-order="{{item['nascimento_val']}}">{{item['nascimento_show']}}</td>
+                                <td class="text-center">{{item['idade']}}</td>
+                                <td class="text-center">{{item['sexo']}}</td>
+                                <td>{{item['rg']}}</td>
+                                <td>{{item['cpf']}}</td>
+                                <td class="text-center"><a href="javascript:consultarAluno('{{item['ra_val']}}', '{{item['ra']}}', '{{item['nome']}}', '{{item['rg']}}', '{{item['cpf']}}', '{{item['nascimento_show']}}', '{{item['sexo']}}', '{{item['idade']}}')"><i class="fa-solid fa-search"></i></a></td>
+                            </tr>
+                            {% set ns.cont = ns.cont + 1 %}
+                        {% endfor %}
+                    </tbody>
+                </table>            
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='datatable/datatables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='jspdf/jspdf.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='font-custom/BebasKai-normal.js') }}"></script>
+    <script src="{{ url_for('static', filename='font-custom/GreatVibes-Regular-normal.js') }}"></script>  
+    <script src="{{ url_for('static', filename='js/gerador-pdf.js') }}"></script>      
+    <script>
+
+        window.onload=function() {
+            document.getElementById('loading-mask').style.display='none';
+        }
+
+        $( document ).ready(function() {
+            let dataTable = new DataTable("#tabelaPrincipal", {
+                    order: [[1, 'asc']],
+                    lengthMenu: [
+                        [15, 100, 500, 1000],
+                        [15, 100, 500, 1000],
+                    ], 
+                    "autoWidth": false,
+                    "oLanguage": {
+                        "sSearch": "Pesquisar:",
+                    },
+                    "language": {
+                        "lengthMenu": "Exibir _MENU_ itens por página",
+                        "zeroRecords": "Nada encontrado - Desculpe",
+                        "info": "Exibindo _START_ até _END_ de um total de _TOTAL_ registro(s)",
+                        "infoEmpty": "Sem registros",
+                        "infoFiltered": "(filtrado de um total de _MAX_ registro(s))",
+                        "paginate": {
+                            "previous": "Anterior",
+                            "next": "Próximo"
+                        }
+                    }                    
+            }); 
+        });
+
+        function consultarAluno(ra, desc_ra, nome, rg, cpf, nasc, sexo, idade) {
+            
+            $("#txtnome").text(nome);
+            $("#txtra").text(desc_ra);
+            $("#txtrg").text(rg);
+            $("#txtcpf").text(cpf);
+            $("#txtnasc").text(nasc);
+            $("#txtsexo").text(sexo);
+            $("#txtidade").text(idade);
+
+            $("#alunos_dados_dinamicos").empty();
+
+            $("#modal_detalhe_aluno").modal('show');
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('listaAlunos') }}",
+                contentType: "application/json",
+                data: JSON.stringify(ra),
+                dataType: "json",
+                success: function(response) {     
+                    for (val in response) {
+                        $("#alunos_dados_dinamicos").append("<tr><td class='text-center'>" + response[val]['ano'] + "</td><td class='text-center'>" + response[val]['serie'] + "</td><td class='text-center'>" + response[val]['nome_turma'] + "</td><td class='text-center'>" + response[val]['ensino'] + "</td><td class='text-center'>" +  response[val]['mat'] + "</td><td class='text-center'>" + response[val]['fim_mat'] + "</td><td class='text-center " + response[val]['abv'] + "'>" + response[val]['situacao'] + "</td></tr>");
+                    }
+
+                    if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
+                        $("#btn_declaracao_matricula").removeAttr('hidden');
+                        $("#btn_declaracao_transferencia").removeAttr('hidden');
+                    } else {
+                        $("#btn_declaracao_matricula").attr('hidden', '');
+
+                        if ($("#alunos_dados_dinamicos tr .TRAN").length > 0) {
+                            $("#btn_declaracao_transferencia").removeAttr('hidden');
+                        } else {
+                            $("#btn_declaracao_transferencia").attr('hidden', '');
+                        }
+                    }
+
+                /*console.log($("#alunos_dados_dinamicos tr .ATIVO").length);
+                console.log($("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text());*/
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            }); 
+
+        }
+
+
+        $("#btn_declaracao_matricula").on('click', function(e) {
+            declaracaoMatricula("{{url_for('static', filename='images/brasao.png')}}", $("#txtnome").text(), $("#txtrg").text(), $("#txtcpf").text(), $("#txtra").text(), $("#txtnasc").text(), $("#txtsexo").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text());
+        });
+
+        $("#btn_declaracao_transferencia").on('click', function(e) {
+            nome = $("#txtnome").text();
+            rg = $("#txtrg").text();
+            cpf = $("#txtcpf").text();
+            ra = $("#txtra").text();
+            nasc = $("#txtnasc").text()
+
+            if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
+                serie = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text();
+                ensino = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
+            } else {
+                serie = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(2)").text();
+                ensino = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
+            }
+
+            declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino);
+        });
+
+    </script>
+  </body>
+</html>
