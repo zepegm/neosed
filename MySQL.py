@@ -149,6 +149,25 @@ class db:
             print("An exception occurred:", error) # An exception occurred: division by zero
             return False        
 
+    def salvarMedias(self, info):
+        try:
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()
+
+
+            cur.execute('DELETE FROM conceito_final WHERE num_classe = %s' % info['num_classe'])
+            database.commit()            
+
+            for item in info['notas']:
+                sql = "INSERT INTO conceito_final VALUES(%s, %s, %s, '%s')" % (info['num_classe'], item['ra'], item['disc'], item['M'])
+                cur.execute(sql)
+
+            database.commit()
+            database.close()
+            return True
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
+            return False          
 
     def salvarNotas(self, info):
         try:

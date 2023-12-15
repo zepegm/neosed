@@ -144,6 +144,74 @@ def save_dificuldades():
             if len(lista) > 0:
                 return jsonify(banco.salvarDificuldades(lista))
 
+@app.route('/getPDFConselhoFinal', methods=['GET', 'POST'])
+def getPDFConselhoFinal():
+    if request.method == "POST":
+        if request.is_json:    
+            info = request.json
+            #print(info)
+
+            sql = 'SELECT ' + \
+                  "num_chamada as num, ifnull(aluno.rm, '-') as rm, serie, aluno.nome, " + \
+                  'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                  "if(sexo='M', situacao.descricao, situacao.desc_fem) as situacao, situacao.abv1 " + \
+                  "from vinculo_alunos_turmas " + \
+                  'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
+                  'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
+                  "where num_classe = " + info['num_classe']  + " order by num_chamada"
+
+            alunos = banco.executarConsulta(sql)
+
+            sql = 'SELECT ' + \
+	              'num_classe, nome_turma, duracao.descricao as desc_duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, turma.ano, ' + \
+                  r"CASE WHEN turma.duracao < 3 THEN DATE_FORMAT(1bim_inicio,'%d/%m/%Y')" + \
+                  r"ELSE DATE_FORMAT(3bim_inicio,'%d/%m/%Y') END as inicio, " + \
+	              r"CASE WHEN turma.duracao = 1 OR turma.duracao = 3 THEN DATE_FORMAT(4bim_fim,'%d/%m/%Y')" + \
+                  r"ELSE DATE_FORMAT(2bim_fim,'%d/%m/%Y') END as fim " + \
+                  "from turma " + \
+                  "inner join periodo on periodo.id = turma.periodo " + \
+                  "inner join calendario on turma.ano = calendario.ano " + \
+                  "inner join duracao on turma.duracao = duracao.id " + \
+                  "inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino " + \
+                  "where num_classe = " + info['num_classe']
+            
+            turma = banco.executarConsulta(sql)[0]
+
+            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
+
+            # parei aqui
+            for item in disciplinas:
+                sql = 'select ' + \
+	                  "vinculo_alunos_turmas.ra_aluno, vinculo_alunos_turmas.num_chamada as num, nota, falta, if(ac!=0, ac, '-') as ac " + \
+                      'from notas ' + \
+                      'inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.num_classe = notas.num_classe ' + \
+                      "where disciplina = %s and notas.num_classe = %s and bimestre = %s order by num_chamada" % (item['disciplina'], info['num_classe'], info['bimestre'])
+                
+                lista = {}
+                notas = banco.executarConsulta(sql)
+                for aluno in notas:
+                    lista[aluno['ra_aluno']] = aluno
+
+                item['notas'] = lista
+
+                sql = 'select ' + \
+	                  'ra_aluno, sum(falta) as total_faltas, ' + \
+                      'sum(ac) as ac, ' + \
+                      'round(100 - (sum(falta) / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = %s and num_classe = %s) * 100)) as freq ' % (info['bimestre'], info['num_classe']) + \
+                      'from notas where num_classe = %s and bimestre = %s group by ra_aluno' % (info['num_classe'], info['bimestre'])
+
+
+
+
+            lista_freq = {}
+            freq = banco.executarConsulta(sql)
+            for aluno in freq:
+                lista_freq[aluno['ra_aluno']] = aluno
+
+            #print(disciplinas)
+            return jsonify({'alunos':alunos, 'turma':turma, 'disciplinas':disciplinas, 'freq':lista_freq})
+
+
 @app.route('/getPDFListConselho', methods=['GET', 'POST'])
 def getPDFListConselho():
     if request.method == "POST":
@@ -607,7 +675,7 @@ def notas():
             # significa que é pra carregar a lista de alunos e as notas atuais
             if info['action'] == 0:
                 # consulta para pegar somente os alunos elegíveis a receber nota no bimestre
-                sql = "SELECT num_chamada, ra, nome FROM vinculo_alunos_turmas INNER JOIN aluno ON vinculo_alunos_turmas.ra_aluno = aluno.ra WHERE num_classe = %s AND '%s' <= fim_mat AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim'])
+                sql = "SELECT num_chamada, ra, nome FROM vinculo_alunos_turmas INNER JOIN aluno ON vinculo_alunos_turmas.ra_aluno = aluno.ra WHERE num_classe = %s AND fim_mat >= '%s' AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim'])
                 #print(sql)
                 alunos = banco.executarConsulta(sql)
 
@@ -638,7 +706,7 @@ def notas():
 
                     item['notas'] = notas
 
-                return jsonify({'alunos':alunos, 'notas':disciplinas, 'professores':profs})
+                return jsonify({'alunos':alunos, 'notas':disciplinas, 'professores':profs, 'medias':[]})
             
             # significa que é pra importar o mapão da SED
             elif info['action'] == 1:
@@ -652,39 +720,68 @@ def notas():
                 #coluna = 1
                 total = (len(data[0].axes[1]) - 1) / 5
                 total_r = (len(data[0].axes[0])) - 2
-                print(len(data[0].axes[1]))
-                print(total)
+                #print(len(data[0].axes[1]))
+                #print(total)
                 
                 coluna = 1
+                bimestre_final = 0
+
+                if info['duracao'] == '1º Semestre':
+                    bimestre_final = 2
+                else:
+                    bimestre_final = 4
 
                 lista = []
 
                 for i in range(0, int(total)):
                     item = {'disc':data[0][coluna][12]}
+                    #print(item)
                     
                     if str(item['disc']).isnumeric():
-                        ad = int(data[0][coluna][total_r].replace('Aulas Dadas: ', ''))
 
-                        if ad > 0:
-                            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                        if data[0][31][6] == "Tipo de Fechamento: CONSELHO FINAL (QUINTO CONCEITO)":
 
-                            notas = {}
+                            professor = item['professor'] = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (info['num_classe'], bimestre_final, item['disc']))
 
-                            for j in range(15, total_r):
-                                notas[data[0][coluna][j]] = {'N':data[0][coluna + 1][j], 'F':data[0][coluna + 2][j], 'AC':data[0][coluna + 3][j]}
+                            if len(professor) > 0:
+                                item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                            
+                                medias = {}
+                                
+                                for j in range(15, total_r):
+                                    medias[data[0][coluna][j]] = {'M':data[0][coluna + 1][j]}
 
-                            #print(total_r + 1)
+                                item['medias'] = medias
+                                item['professor'] = professor[0]['nome']
 
-                            item['AD'] = data[0][coluna][total_r].replace('Aulas Dadas: ', '')
+                                lista.append(item)
+
+                            coluna += 3
+                        else:
+                            ad = int(data[0][coluna][total_r].replace('Aulas Dadas: ', ''))
+
+                            if ad > 0:
+                                item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+
+                                notas = {}
+
+                                for j in range(15, total_r):
+                                    notas[data[0][coluna][j]] = {'N':data[0][coluna + 1][j], 'F':data[0][coluna + 2][j], 'AC':data[0][coluna + 3][j]}
+
+                                #print(total_r + 1)
+
+                                item['AD'] = data[0][coluna][total_r].replace('Aulas Dadas: ', '')
 
 
-                            item['notas'] = notas
-                            lista.append(item)  
+                                item['notas'] = notas
+                                lista.append(item)  
 
-                        coluna += 5
+                            coluna += 5
         
 
                 professores = banco.executarConsulta('select rg, nome_ata from vinculo_turma_prof INNER JOIN professor ON professor.rg = vinculo_turma_prof.rg_prof where id_turma = %s order by nome_ata' % info['num_classe'])
+                #print(lista)
+
 
                 return jsonify({'lista':lista, 'professores':professores})
             
@@ -696,7 +793,50 @@ def notas():
                 return jsonify(lista)
             
             elif info['action'] == 4:
-                return jsonify(banco.salvarNotas(info))
+
+                if info['bim'] == '5':
+                    return jsonify(banco.salvarMedias(info))
+                else:
+                    return jsonify(banco.salvarNotas(info))
+                
+            elif info['action'] == 5:
+                # consulta para pegar somente os alunos elegíveis a receber nota no bimestre
+                sql = "SELECT num_chamada, ra, nome, if(sexo='M', situacao.descricao, situacao.desc_fem) as situacao, situacao.abv1 FROM vinculo_alunos_turmas INNER JOIN aluno ON vinculo_alunos_turmas.ra_aluno = aluno.ra INNER JOIN situacao ON situacao.id = vinculo_alunos_turmas.situacao WHERE num_classe = %s AND fim_mat >= '%s' AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim'])
+                #print(sql)
+                alunos = banco.executarConsulta(sql)
+
+                # carregar as médias caso elas existam
+                disciplinas = banco.executarConsulta('select disciplina, abv from conceito_final inner join disciplinas on disciplinas.codigo_disciplina = conceito_final.disciplina where num_classe = %s group by disciplina' % (info['num_classe']))
+
+                duracao = banco.executarConsulta('select duracao from turma where num_classe = %s' % info['num_classe'])[0]['duracao']
+                
+                bimestre = 4
+                if duracao == 2:
+                    bimestre = 2
+
+                sql = 'select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, info['num_classe'])
+                professores = banco.executarConsulta(sql)
+                #print(sql)
+
+                profs = {}
+
+                for item in professores:
+                    profs[item['disciplina']] = {'prof':item['nome_ata']}
+
+                for item in disciplinas:
+                    # agora é a parte mais chata, vou consultar lista de disciplina por disciplina
+                    lista = banco.executarConsulta('select ra_aluno, media from conceito_final where num_classe = %s and disciplina = %s' % (info['num_classe'], item['disciplina']))
+
+                    notas = []
+
+                    for aluno in lista:
+                        #print(aluno)
+                        dict = {'ra_aluno':aluno['ra_aluno'], 'M':aluno['media']}
+                        notas.append(dict)
+
+                    item['medias'] = notas
+
+                return jsonify({'alunos':alunos, 'medias':disciplinas, 'professores':profs, 'notas':[]})
 
         if 'txt_coddisciplina' in request.form:
             codigo = request.form.get('txt_coddisciplina')

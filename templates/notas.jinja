@@ -444,10 +444,10 @@
                 type: "POST",
                 url: "{{ url_for('notas') }}",
                 contentType: "application/json",
-                data: JSON.stringify({'action':1, 'file':document.getElementById("file").files[0].name, 'num_classe':$("#lista_geral .active").attr("data-id")}),
+                data: JSON.stringify({'action':1, 'file':document.getElementById("file").files[0].name, 'num_classe':$("#lista_geral .active").attr("data-id"), 'duracao':$("#lista_geral .active").attr("data-duracao")}),
                 dataType: "json",
                 success: function(response) {     
-                    //console.log(response);
+                    console.log(response);
                     $("#tb-mapao").empty();
                     $("#tb-mapao").append("<thead class='table-secondary'></thead>")
                     $("#tb-mapao thead").append("<tr><th style='border-left-width:4px;border-right-width:4px;border-top-width:4px' rowspan='2'>Nº</th></tr>");                  
@@ -457,10 +457,18 @@
                     //disciplinas = [];
 
                     for (var item in response['lista']) {
-                        $("#tb-mapao thead tr:first").append("<th style='border-right-width:4px;border-top-width:4px' colspan='3'>" + response['lista'][item]['abv'] + "</th>");
-                        $("#tb-mapao thead .subcab").append("<td>N</td><td>F</td><td style='border-right-width:4px'>AC</td>");
-                        
-                        array_disc.push({'disc':response['lista'][item]['disc'], 'AD':response['lista'][item]['AD']});
+                        if ($("#cbBimestre").val() == 5) {
+                            $("#tb-mapao thead tr:first").append("<th style='border-right-width:4px;border-top-width:4px'>" + response['lista'][item]['abv'] + "</th>");
+                            $("#tb-mapao thead .subcab").append("<td style='border-right-width:4px;'>Média</td>");
+                            
+                            //array_disc.push({'disc':response['lista'][item]['disc']});
+                        } else {
+                            $("#tb-mapao thead tr:first").append("<th style='border-right-width:4px;border-top-width:4px' colspan='3'>" + response['lista'][item]['abv'] + "</th>");
+                            $("#tb-mapao thead .subcab").append("<td>N</td><td>F</td><td style='border-right-width:4px'>AC</td>");
+                            
+                            array_disc.push({'disc':response['lista'][item]['disc'], 'AD':response['lista'][item]['AD']});
+
+                        }
                     }
 
                     
@@ -483,38 +491,61 @@
 
                         for (var item in response['lista']) {
 
-                            array_nota.push({'ra':$(this).attr('data-ra'), 'disc':response['lista'][item]['disc'], 'N':response['lista'][item]['notas'][id]['N'], 'F':parseInt(response['lista'][item]['notas'][id]['F'].replace('-', '0')), 'AC':parseInt(response['lista'][item]['notas'][id]['AC'].replace('-', '0'))});
+                            if ($("#cbBimestre").val() == 5) {
+                                array_nota.push({'ra':$(this).attr('data-ra'), 'disc':response['lista'][item]['disc'], 'M':response['lista'][item]['medias'][id]['M']});
 
-                            var excessao = "";
 
-                            if (parseInt(response['lista'][item]['notas'][id]['N']) < 5) {
-                                excessao = "table-danger";
-                            } else if(response['lista'][item]['notas'][id]['N'] == "EP") {
-                                excessao = "table-warning";
+                                if (parseInt(response['lista'][item]['medias'][id]['M']) < 5) {
+                                    excessao = "table-danger";
+                                } else if(response['lista'][item]['medias'][id]['M'] == "EP") {
+                                    excessao = "table-warning";
+                                }     
+
+                                $("#tb-mapao tbody .aluno" + index).append("<td style='border-right-width:4px;' class='" + excessao + "''>" + response['lista'][item]['medias'][id]['M'] + "</td>");
+                            } else {
+                                array_nota.push({'ra':$(this).attr('data-ra'), 'disc':response['lista'][item]['disc'], 'N':response['lista'][item]['notas'][id]['N'], 'F':parseInt(response['lista'][item]['notas'][id]['F'].replace('-', '0')), 'AC':parseInt(response['lista'][item]['notas'][id]['AC'].replace('-', '0'))});
+
+                                var excessao = "";
+
+                                if (parseInt(response['lista'][item]['notas'][id]['N']) < 5) {
+                                    excessao = "table-danger";
+                                } else if(response['lista'][item]['notas'][id]['N'] == "EP") {
+                                    excessao = "table-warning";
+                                }
+
+
+                                $("#tb-mapao tbody .aluno" + index).append("<td class='" + excessao + "''>" + response['lista'][item]['notas'][id]['N'] + "</td><td>" + parseInt(response['lista'][item]['notas'][id]['F'].replace('-', '0')) + "</td><td style='border-right-width:4px'>" + response['lista'][item]['notas'][id]['AC'] + "</td>");
                             }
-
-
-                            $("#tb-mapao tbody .aluno" + index).append("<td class='" + excessao + "''>" + response['lista'][item]['notas'][id]['N'] + "</td><td>" + parseInt(response['lista'][item]['notas'][id]['F'].replace('-', '0')) + "</td><td style='border-right-width:4px'>" + response['lista'][item]['notas'][id]['AC'] + "</td>");
                         }
 
                     });
 
                     $("#tb-mapao tbody").append("<tr class='profResp table-primary'></tr>");
-                    $("#tb-mapao tbody .profResp").append("<th style='border-left-width:4px;border-right-width:4px'>Prof</th>");
-                    $("#tb-mapao tbody").append("<tr style='border-bottom-width:4px;' class='aulas_dadas table-primary'></tr>");
-                    $("#tb-mapao tbody .aulas_dadas").append("<th style='border-left-width:4px;border-right-width:4px'>AD</th>");
-
                     
-                    for (i = 0; i < response['lista'].length; i++) {
-                        $("#tb-mapao tbody .profResp").append("<td style='border-right-width:4px;' colspan='3'><select id='prof" + response['lista'][i]['disc'] +"' class='form-select' aria-label='Default select example'></td>");
-                        $("#tb-mapao tbody .aulas_dadas").append("<th style='border-right-width:4px;' colspan='3'>" + response['lista'][i]['AD'] + "</th>")
-
-                        for (var prof in response['professores']) {
-                            $("#prof" + response['lista'][i]['disc']).append("<option value='" + response['professores'][prof]['rg'] + "'>" + response['professores'][prof]['nome_ata'] + "</option>")
-                        }
+                    
+                    if ($("#cbBimestre").val() != 5) {
+                        $("#tb-mapao tbody .profResp").append("<th style='border-left-width:4px;border-right-width:4px'>Prof</th>");
+                        $("#tb-mapao tbody").append("<tr style='border-bottom-width:4px;' class='aulas_dadas table-primary'></tr>");
+                        $("#tb-mapao tbody .aulas_dadas").append("<th style='border-left-width:4px;border-right-width:4px'>AD</th>");
+                    } else {
+                        $("#tb-mapao tbody .profResp").append("<th style='border-bottom-width:4px;border-top-width:4px;border-left-width:4px;border-right-width:4px'>Prof</th>");
                     }
 
                     
+                    for (i = 0; i < response['lista'].length; i++) {
+
+                        if ($("#cbBimestre").val() == 5) {
+                            $("#tb-mapao tbody .profResp").append("<td style='border-bottom-width:4px;border-top-width:4px;border-right-width:4px;'>" + response['lista'][i]['professor'] + "</td>");
+                            console.log(i);
+                        } else {
+                            $("#tb-mapao tbody .profResp").append("<td style='border-right-width:4px;' colspan='3'><select id='prof" + response['lista'][i]['disc'] +"' class='form-select' aria-label='Default select example'></td>");
+                            $("#tb-mapao tbody .aulas_dadas").append("<th style='border-right-width:4px;' colspan='3'>" + response['lista'][i]['AD'] + "</th>")
+
+                            for (var prof in response['professores']) {
+                                $("#prof" + response['lista'][i]['disc']).append("<option value='" + response['professores'][prof]['rg'] + "'>" + response['professores'][prof]['nome_ata'] + "</option>")
+                            }
+                        }
+                    }
 
                     $("#modal_mapao").modal('show');
                     //console.log(array_nota);
@@ -548,7 +579,7 @@
                     if (response) {
                         window.location.href = "notas?status=1";
                     } else {
-                        window.location.href = "notas?status=1";
+                        window.location.href = "notas?status=0";
                     }
                 },
                 error: function(err) {
@@ -664,20 +695,37 @@
             const anoAtual = dataAtual.getFullYear();
             const turma = $('#lista_geral .active').text().trim().replace(' - Anual', '').replace(' - 1º Semestre', '').replace(' - 2º Semestre', '');
 
-            $.ajax({
-                type: "POST",
-                url: "{{ url_for('getPDFListConselho') }}",
-                contentType: "application/json",
-                data: JSON.stringify({'inicio':bimestres[$("#cbBimestre").val() + 'bim']['inicio'], 'fim_bim':bimestres[$("#cbBimestre").val() + 'bim']['fim'], 'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':$("#cbBimestre").val()}),
-                dataType: "json",
-                success: function(response) {    
-                    console.log(response);
-                    gerarAtaConselho($("#cbBimestre").val(), anoAtual, turma, bimestres[$("#cbBimestre").val() + 'bim']['fim'], response, dificuldades);
-                },
-                error: function(err) {
-                    console.log(err);
-                }
-            });             
+            if ($("#cbBimestre").val() == 5) {
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('getPDFConselhoFinal') }}",
+                    contentType: "application/json",
+                    data: JSON.stringify({'num_classe':$('#lista_geral .active').attr("data-id")}),
+                    dataType: "json",
+                    success: function(response) {    
+                        console.log(response);
+                        //gerarAtaConselho($("#cbBimestre").val(), anoAtual, turma, bimestres[$("#cbBimestre").val() + 'bim']['fim'], response, dificuldades);
+                    },
+                    error: function(err) {
+                        console.log(err);
+                    }
+                }); 
+            } else {
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url_for('getPDFListConselho') }}",
+                    contentType: "application/json",
+                    data: JSON.stringify({'inicio':bimestres[$("#cbBimestre").val() + 'bim']['inicio'], 'fim_bim':bimestres[$("#cbBimestre").val() + 'bim']['fim'], 'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':$("#cbBimestre").val()}),
+                    dataType: "json",
+                    success: function(response) {    
+                        console.log(response);
+                        gerarAtaConselho($("#cbBimestre").val(), anoAtual, turma, bimestres[$("#cbBimestre").val() + 'bim']['fim'], response, dificuldades);
+                    },
+                    error: function(err) {
+                        console.log(err);
+                    }
+                }); 
+            }            
 
             //gerarAtaConselho($("#cbBimestre").val(), anoAtual, turma);
         });
@@ -688,8 +736,21 @@
             var fim = "";
             var num_classe = $('#lista_geral .active').attr("data-id");
 
-            inicio = bimestres[$("#cbBimestre").val() + 'bim']['inicio'];
-            fim = bimestres[$("#cbBimestre").val() + 'bim']['fim'];
+            if ($("#cbBimestre").val() == 5) {
+
+                duracao = $("#lista_geral .active").attr("data-duracao");
+                
+                if (duracao == '1º Semestre') {
+                    inicio = bimestres['2bim']['inicio'];
+                    fim = bimestres['2bim']['fim'];                    
+                } else {
+                    inicio = bimestres['4bim']['inicio'];
+                    fim = bimestres['4bim']['fim'];
+                }
+            } else {
+                inicio = bimestres[$("#cbBimestre").val() + 'bim']['inicio'];
+                fim = bimestres[$("#cbBimestre").val() + 'bim']['fim'];
+            }
 
             carregarAlunos(inicio, fim, num_classe);
 
@@ -712,6 +773,7 @@
                 $("#cbBimestre").append('<option value="2">2º Bimestre</option>');
                 $("#cbBimestre").append('<option value="3">3º Bimestre</option>');
                 $("#cbBimestre").append('<option value="4">4º Bimestre</option>');
+                $("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                 // consulta primeiro bimestre
                 inicio = bimestres['1bim']['inicio'];
@@ -721,12 +783,14 @@
                  if ($(this).attr("data-duracao") == "1º Semestre") {  
                     $("#cbBimestre").append('<option value="1">1º Bimestre</option>');
                     $("#cbBimestre").append('<option value="2">2º Bimestre</option>');
+                    $("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                     inicio = bimestres['1bim']['inicio'];
                     fim = bimestres['1bim']['fim'];
                  } else {
                     $("#cbBimestre").append('<option value="3">1º Bimestre</option>');
                     $("#cbBimestre").append('<option value="4">2º Bimestre</option>');
+                    $("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                     inicio = bimestres['3bim']['inicio'];
                     fim = bimestres['3bim']['fim'];                    
@@ -743,15 +807,21 @@
             dificuldades = {{dificuldades}};
             //console.log(dificuldades);
 
+            var acao = 0;
+
+            if ($("#cbBimestre").val() == 5) {
+                acao = 5;
+            }
+
             $.ajax({
                 type: "POST",
                 url: "{{ url_for('notas') }}",
                 contentType: "application/json",
-                data: JSON.stringify({'action':0, 'inicio':inicio, 'fim':fim, 'num_classe':num_classe, 'bimestre':$("#cbBimestre").val()}),
+                data: JSON.stringify({'action':acao, 'inicio':inicio, 'fim':fim, 'num_classe':num_classe, 'bimestre':$("#cbBimestre").val()}),
                 dataType: "json",
                 success: function(response) {   
 
-                    //console.log(response);
+                    console.log(response);
 
                     $("#listaGeral").empty();
 
@@ -759,7 +829,12 @@
 
                     $("#tb-mapao-show").empty();
 
-                    $("#tb-geral").append("<thead class='table-dark'><tr><th>Nº</th><th>Nome</th><th>Dificuldades</th></tr></thead>");
+                    if ($("#cbBimestre").val() == 5) {
+                        $("#tb-geral").append("<thead class='table-dark'><tr><th>Nº</th><th>Nome</th><th>Status Final</th></tr></thead>");
+                    } else {
+                        $("#tb-geral").append("<thead class='table-dark'><tr><th>Nº</th><th>Nome</th><th>Dificuldades</th></tr></thead>");
+                    }
+                    
 
                     if (response['notas'].length > 0) {
                         $("#btnshowmapao").removeAttr('disabled');
@@ -775,6 +850,19 @@
                         }
 
 
+                    } else if (response['medias'].length > 0) {
+                        $("#btnshowmapao").removeAttr('disabled');
+                        $("#btn_gerar_conselho").removeAttr('disabled');    
+                        $("#btn_dificuldades").attr('disabled', '');
+                        $("#btn_import_dificuldades").attr('disabled', '');
+
+                        $("#tb-mapao-show").append("<thead class='table-secondary'><tr style='border-left-width:4px;border-top-width:4px' class='cab'><th rowspan='2'>Nº</th><th style='border-right-width:4px' rowspan='2'>Nome</th></tr></thead>");
+                        $("#tb-mapao-show thead").append("<tr style='border-left-width:4px' class='subcab'></tr>")
+
+                        for (var item in response['medias']) {
+                            $("#tb-mapao-show thead .cab").append("<th style='border-right-width:4px' class='text-center'>" + response['medias'][item]['abv'] + "</th>");
+                            $("#tb-mapao-show thead .subcab").append("<th style='border-right-width:4px' class='text-center'>Média</th>");
+                        }                        
                     } else {
                         $("#btnshowmapao").attr('disabled', '');
                         $("#btn_gerar_conselho").attr('disabled', '');
@@ -797,28 +885,38 @@
 
                         //console.log(response['alunos']);
 
-                        lista_dificuldades = '<div id="CampaignSelector' + response['alunos'][item]['ra'] + '" class="nav-item dropdown" data-bs-boundary="body">'
-                                           +    '<button id="btnCampaignSelector' + response['alunos'][item]['ra'] + '" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Escolher Dificuldades</button>'
-                                           +    '<div id="ddCampaignSelector' + response['alunos'][item]['ra'] + '" class="dropdown-menu" aria-labelledby="ddCampaignSelector' + response['alunos'][item]['ra'] + '">';
+                        if ($("#cbBimestre").val() != 5) {
+                            lista_dificuldades = '<div id="CampaignSelector' + response['alunos'][item]['ra'] + '" class="nav-item dropdown" data-bs-boundary="body">'
+                                            +    '<button id="btnCampaignSelector' + response['alunos'][item]['ra'] + '" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Escolher Dificuldades</button>'
+                                            +    '<div id="ddCampaignSelector' + response['alunos'][item]['ra'] + '" class="dropdown-menu" aria-labelledby="ddCampaignSelector' + response['alunos'][item]['ra'] + '">';
 
-                        for (var dif in dificuldades) {
+                            for (var dif in dificuldades) {
 
-                            if (response['alunos'][item]['dificuldade'].includes(dificuldades[dif]['id'])) {
-                                texto_dificuldades += dificuldades[dif]['id'] + ";";
-                                lista_dificuldades += '<div class="dropdown-item d-flex justify-content-between _campaign" data-campaign-id="' + dificuldades[dif]['id'] + '"><label><input class="form-check-input me-1" type="checkbox" name="check' + response['alunos'][item]['ra'] + '" value="' + dificuldades[dif]['id'] + '" checked>' + dificuldades[dif]['id'] + ' - ' + dificuldades[dif]['title'] + '</label></div>'
-                            } else {
-                                lista_dificuldades += '<div class="dropdown-item d-flex justify-content-between _campaign" data-campaign-id="' + dificuldades[dif]['id'] + '"><label><input class="form-check-input me-1" type="checkbox" name="check' + response['alunos'][item]['ra'] + '" value="' + dificuldades[dif]['id'] + '">' + dificuldades[dif]['id'] + ' - ' + dificuldades[dif]['title'] + '</label></div>'
+                                if (response['alunos'][item]['dificuldade'].includes(dificuldades[dif]['id'])) {
+                                    texto_dificuldades += dificuldades[dif]['id'] + ";";
+                                    lista_dificuldades += '<div class="dropdown-item d-flex justify-content-between _campaign" data-campaign-id="' + dificuldades[dif]['id'] + '"><label><input class="form-check-input me-1" type="checkbox" name="check' + response['alunos'][item]['ra'] + '" value="' + dificuldades[dif]['id'] + '" checked>' + dificuldades[dif]['id'] + ' - ' + dificuldades[dif]['title'] + '</label></div>'
+                                } else {
+                                    lista_dificuldades += '<div class="dropdown-item d-flex justify-content-between _campaign" data-campaign-id="' + dificuldades[dif]['id'] + '"><label><input class="form-check-input me-1" type="checkbox" name="check' + response['alunos'][item]['ra'] + '" value="' + dificuldades[dif]['id'] + '">' + dificuldades[dif]['id'] + ' - ' + dificuldades[dif]['title'] + '</label></div>'
+                                }
                             }
 
-                            
-                        }
+                            lista_dificuldades += '</div></div>';
 
-                        lista_dificuldades += '</div></div>';
-
-                        if (texto_dificuldades != "") {
-                            $("#tb-geral tbody").append("<tr data-ra='" + response['alunos'][item]['ra'] + "' data-dif='" + texto_dificuldades.slice(0, -1) + "'><td>" + response['alunos'][item]['num_chamada'] + "</td><td>" + response['alunos'][item]['nome'] + "</td><td>" + lista_dificuldades  + "</td></tr>");
+                            if (texto_dificuldades != "") {
+                                $("#tb-geral tbody").append("<tr data-ra='" + response['alunos'][item]['ra'] + "' data-dif='" + texto_dificuldades.slice(0, -1) + "'><td>" + response['alunos'][item]['num_chamada'] + "</td><td>" + response['alunos'][item]['nome'] + "</td><td>" + lista_dificuldades  + "</td></tr>");
+                            } else {
+                                $("#tb-geral tbody").append("<tr data-ra='" + response['alunos'][item]['ra'] + "'><td>" + response['alunos'][item]['num_chamada'] + "</td><td>" + response['alunos'][item]['nome'] + "</td><td>" + lista_dificuldades  + "</td></tr>");
+                            }
                         } else {
-                            $("#tb-geral tbody").append("<tr data-ra='" + response['alunos'][item]['ra'] + "'><td>" + response['alunos'][item]['num_chamada'] + "</td><td>" + response['alunos'][item]['nome'] + "</td><td>" + lista_dificuldades  + "</td></tr>");
+                            if (response['alunos'][item]['abv1'] == "RETD") {
+                                text_class = 'class="text-danger"';
+                            } else if (response['alunos'][item]['abv1'] == "APROV") {
+                                text_class = 'class="text-primary"';
+                            } else {
+                                text_class = '';
+                            }
+
+                            $("#tb-geral tbody").append("<tr data-ra='" + response['alunos'][item]['ra'] + "'><td>" + response['alunos'][item]['num_chamada'] + "</td><td>" + response['alunos'][item]['nome'] + "</td><td " + text_class + ">" + response['alunos'][item]['situacao'] + "</td></tr>");
                         }
 
                         $("#tb-mapao-show tbody").append("<tr style='border-left-width:4px' data-ra='" + response['alunos'][item]['ra'] + "'><td>" + response['alunos'][item]['num_chamada'] + "</td><td style='border-right-width:4px'>" + response['alunos'][item]['nome'] + "</td></tr>");
@@ -833,9 +931,12 @@
                         }
                     }
 
-                    $("#tb-mapao-show tbody").append("<tr style='border-left-width:4px;border-bottom-width:4px;border-top-width:4px;' class='table-info' data-id='prof'><th style='border-right-width:4px;' colspan='2'>Professor</th></tr>")
-                    $("#tb-mapao-show tbody").append("<tr style='border-left-width:4px;border-bottom-width:4px;' class='table-info' data-id='ad'><th style='border-right-width:4px;' colspan='2'>Aulas Dadas</th></tr>")
-
+                    if ($("#cbBimestre").val() != 5) {
+                        $("#tb-mapao-show tbody").append("<tr style='border-left-width:4px;border-bottom-width:4px;border-top-width:4px;' class='table-info' data-id='prof'><th style='border-right-width:4px;' colspan='2'>Professor</th></tr>")
+                        $("#tb-mapao-show tbody").append("<tr style='border-left-width:4px;border-bottom-width:4px;' class='table-info' data-id='ad'><th style='border-right-width:4px;' colspan='2'>Aulas Dadas</th></tr>")
+                    } else {
+                        $("#tb-mapao-show tbody").append("<tr style='border-left-width:4px;border-bottom-width:4px;border-top-width:4px;' class='table-info' data-id='prof'><th style='border-right-width:4px;' colspan='2'>Professor</th></tr>")
+                    }
 
                     for (var item in response['notas']) {
                         for (var aluno in response['notas'][item]['notas']) {
@@ -849,14 +950,34 @@
                             }
                         }
 
-                        $("#tb-mapao-show tbody tr[data-id='prof'").append('<td style="border-right-width:4px;" class="text-center" colspan="3">' + response['professores'][response['notas'][item]['disciplina']]['prof'] + '</td>')
-                        $("#tb-mapao-show tbody tr[data-id='ad'").append('<td style="border-right-width:4px;" class="text-center" colspan="3">' + response['professores'][response['notas'][item]['disciplina']]['ad'] + '</td>')
 
+                        $("#tb-mapao-show tbody tr[data-id='prof'").append('<td style="border-right-width:4px;" class="text-center" colspan="3">' + response['professores'][response['notas'][item]['disciplina']]['prof'] + '</td>')
+                        $("#tb-mapao-show tbody tr[data-id='ad'").append('<td style="border-right-width:4px;" class="text-center" colspan="3">' + response['professores'][response['notas'][item]['disciplina']]['ad'] + '</td>')                    
 
                     }
 
+                    for (var item in response['medias']) {
+                        for (var aluno in response['medias'][item]['medias']) {
 
-                    $("#modal_mapaoshowLabel").html("Mapão Salvo - " + $('#lista_geral .active').text() + " - <span class='text-danger'>" + $("#cbBimestre").val() + "º Bimestre</span>");
+                            if (parseInt(response['medias'][item]['medias'][aluno]['M']) < 5) {
+                                $("#tb-mapao-show tbody tr[data-ra='" + response['medias'][item]['medias'][aluno]['ra_aluno'] + "']").append("<td style='border-right-width:4px' class='table-danger text-center'>" + response['medias'][item]['medias'][aluno]['M'] + "</td>");
+                            } else if (response['medias'][item]['medias'][aluno]['M'] == "EP") {
+                                $("#tb-mapao-show tbody tr[data-ra='" + response['medias'][item]['medias'][aluno]['ra_aluno'] + "']").append("<td style='border-right-width:4px' class='table-wanger text-center'>" + response['medias'][item]['medias'][aluno]['M'] + "</td>");    
+                            } else {
+                                $("#tb-mapao-show tbody tr[data-ra='" + response['medias'][item]['medias'][aluno]['ra_aluno'] + "']").append("<td style='border-right-width:4px' class='text-center'>" + response['medias'][item]['medias'][aluno]['M'] + "</td>");
+                            }
+                        }  
+
+                        $("#tb-mapao-show tbody tr[data-id='prof'").append('<td style="border-right-width:4px;" class="text-center">' + response['professores'][response['medias'][item]['disciplina']]['prof'] + '</td>')                                              
+
+                    }
+
+                    if ($("#cbBimestre").val() != 5) {
+                        $("#modal_mapaoshowLabel").html("Mapão Salvo - " + $('#lista_geral .active').text() + " - <span class='text-danger'>" + $("#cbBimestre").val() + "º Bimestre</span>");
+                    } else {
+                        $("#modal_mapaoshowLabel").html("Mapão Salvo - " + $('#lista_geral .active').text() + " - <span class='text-danger'>Conceito Final</span>");
+                    }
+                    
                     //console.log(response);
                 },
                 error: function(err) {

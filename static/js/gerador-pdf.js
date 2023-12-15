@@ -549,7 +549,7 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
 
     doc.setFont('helvetica', 'normal');
     
-    x = 1.4;
+    x = 1.3;
     dif = (10 - x) / total;
 
     lin_inicial = y;
