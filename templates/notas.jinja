@@ -696,15 +696,23 @@
             const turma = $('#lista_geral .active').text().trim().replace(' - Anual', '').replace(' - 1º Semestre', '').replace(' - 2º Semestre', '');
 
             if ($("#cbBimestre").val() == 5) {
+
+                duracao = $("#lista_geral .active").attr("data-duracao");
+                var bimestre = 4;
+                
+                if (duracao == "1º Semestre") {
+                    bimestre = 2;
+                }
+
                 $.ajax({
                     type: "POST",
                     url: "{{ url_for('getPDFConselhoFinal') }}",
                     contentType: "application/json",
-                    data: JSON.stringify({'num_classe':$('#lista_geral .active').attr("data-id")}),
+                    data: JSON.stringify({'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':bimestre}),
                     dataType: "json",
                     success: function(response) {    
                         console.log(response);
-                        //gerarAtaConselho($("#cbBimestre").val(), anoAtual, turma, bimestres[$("#cbBimestre").val() + 'bim']['fim'], response, dificuldades);
+                        gerarAtaConselhoFinal(response);
                     },
                     error: function(err) {
                         console.log(err);

@@ -19,8 +19,7 @@ function PriMaiuscula(palavra) {
     return palavra.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, letra => letra.toUpperCase()).replace(/Da /g, "da ").replace(/Do /g, "do ").replace(/De /g, "de ").replace(/Dos /g, "dos ");
 }
 
-function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
-    
+function gerarAtaConselhoFinal(lista) {
     // primeiro gerará a capa (opcional)
     var doc = new jsPDF({
         orientation: 'portrait',
@@ -28,24 +27,13 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
         format: 'a4'
     });
 
-    //console.log(lista);
-    
     doc.setFont('BebasKai', 'normal');
-    doc.setFontSize(50);
-    y = 3;
     x = 10.5;
-    doc.text(x, y, 'EE PROFª ALICE VILELA GALVÃO', 'center');
-
-    y = 27;
+    
+    y = 14.7;
     doc.setTextColor(255, 0, 0);
     doc.setFontSize(75);
-    doc.text(x, y, bimestre + 'º Bimestre de ' + ano, 'center');
-
-    doc.setFont('GreatVibes-Regular', 'normal');
-    y = 14.7;
-    doc.setFontSize(60);
-    doc.setTextColor(0, 0, 0);
-    doc.text(x, y, 'Conselho de classe/série', 'center');
+    doc.text(x, y, 'CONSELHO FINAL', 'center');
 
     doc.setLineWidth(0.2);
     doc.rect(0.7, 0.7, 19.6, 28.3, 'S');
@@ -53,35 +41,9 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
     doc.setLineWidth(0.05);
     doc.rect(1, 1, 19, 27.7, 'S');
 
-    doc.addPage();
-    doc.addPage();    
-
-    // agora gerará a capa da sala (obrigatório)
-    doc.setLineWidth(0.2);
-    doc.rect(0.7, 0.7, 19.6, 28.3, 'S');
-
-    doc.setLineWidth(0.05);
-    doc.rect(1, 1, 19, 27.7, 'S');
-
-    doc.setFont('BebasKai', 'normal');
-    doc.setFontSize(80);
-    doc.setTextColor(255, 0, 0);
-
-    x = 10.5;
-    y = 14.7;
-
-    //console.log(turma);
-    doc.text(x, y, turma, 'center');
-
-    tamanho = doc.getTextWidth(turma);
-
-    doc.setLineWidth(0.2);
-    doc.rect(x - (tamanho / 2) - 0.5, 11.7, tamanho + 1.5, 4);
-
-    doc.addPage();
-    doc.addPage();
-
-    // agora gerará a lista piloto do bimestre
+    // agora será gerada a lista piloto final
+    doc.addPage();  
+    
     var img = new Image();
 
     img.src = "/static/images/Logo%20Neo%20Sed%20White.png";
@@ -113,7 +75,7 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
     y = 1.6
 
     doc.setTextColor(0, 112, 192);
-    doc.text('Dados de Matrícula', 15.3, 3)
+    doc.text('RESULTADO FINAL', 15.3, 3)
     doc.setTextColor(0, 0, 0);
 
     doc.setFont('helvetica', 'bold');
@@ -168,6 +130,655 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
     doc.text('NOME', x_nome, y);
     //doc.text('NASC.', x_nasc, y);
     doc.text("RA", x_ra, y);
+    doc.text("SITUAÇÃO", x_mat, y);
+    //doc.text("FIM MATR.", x_mov, y);
+
+    doc.setLineWidth(0.01);
+    doc.line(0.4, y + 0.13, 20.6, y + 0.13);
+
+    doc.setFont('helvetica', 'normal');    
+
+    var cont = 0;    
+    var aprovados = 0;
+
+    for(let i = 0; i < lista['alunos'].length; i++) {
+
+        if (lista['alunos'][i]['abv1'] != "APROV") {
+            doc.setTextColor(255, 0, 0);
+        } else {
+            doc.setTextColor(0, 0, 0);
+            aprovados += 1;
+        }
+
+        
+        doc.setFont('helvetica', 'normal');
+        y += 0.49;
+
+        doc.text(String(lista['alunos'][i]['num']).padStart(2, "0"), x_num, y);   
+        doc.text(lista['alunos'][i]['rm'], x_rm, y)
+        doc.text(String(lista['alunos'][i]['serie']), x_serie + (tamanho / 2) - (doc.getTextWidth(String(lista['alunos'][i]['serie'])) / 2), y);
+        doc.text(PriMaiuscula(lista['alunos'][i]['nome']), x_nome, y);
+        //doc.text(table[i][5]['display'], x_nasc, y);
+        doc.text(lista['alunos'][i]['ra'], x_ra, y);
+
+        doc.setFont('helvetica', 'bold');
+
+        if (lista['alunos'][i]['abv1'] == "APROV") {
+            doc.setTextColor(0, 112, 192);
+        } else {
+            doc.setTextColor(255, 0, 0);
+        }
+        
+        doc.text(lista['alunos'][i]['situacao'], x_mat, y);
+
+        /*doc.setFont('helvetica', 'bold');
+        doc.text(lista['alunos'][i]['mat'], x_mat, y);*/
+
+        doc.setLineWidth(0.01);
+
+        if (i == lista['alunos'].length - 1 && i == 50) {
+            doc.setLineWidth(0.05);
+        }
+
+        doc.line(0.4, y + 0.13, 20.6, y + 0.13);
+        cont += 1;
+
+    }
+
+    var dif = 51 - cont;
+
+    if (dif > 0) {
+        var num = parseInt(lista['alunos'][lista['alunos'].length - 1]['num']) + 1;
+        doc.setFont('helvetica', 'normal');
+        doc.setLineWidth(0.01);
+        doc.setTextColor(0, 0, 0);
+
+        for(let i = 0; i < dif; i++) {
+            y += 0.49;
+
+            doc.text(String(num).padStart(2, "0"), x_num, y);
+            num += 1;
+
+            if (i == dif - 1) {
+                doc.setLineWidth(0.05);
+            }
+
+            doc.line(0.4, y + 0.13, 20.6, y + 0.13);                    
+        }
+    }
+
+    doc.setLineWidth(0.05);
+    doc.line(0.4, 3.6, 0.4, y + 0.13);
+    doc.line(x_rm - 0.2, 3.6, x_rm - 0.2, y + 0.13);
+    doc.line(x_nome - 0.2, 3.6, x_nome - 0.2, y + 0.13);
+    doc.line(x_serie - 0.2, 3.6, x_serie - 0.2, y + 0.13);
+    doc.line(x_ra - 0.2, 3.6, x_ra - 0.2, y + 0.13);
+    doc.line(x_mat - 0.2, 3.6, x_mat - 0.2, y + 0.13);
+    //doc.line(x_mov - 0.2, 3.6, x_mov - 0.2, y + 0.13);
+    doc.line(20.6, 3.6, 20.6, y + 0.13);    
+
+
+    x = 5.2;
+    y = 3.4;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Total:", x , y);
+    textWidth =  doc.getTextWidth("Total:") + x + 0.2;
+    doc.setFont('helvetica', 'normal');
+    doc.text(aprovados + " Aprovados (" + lista['alunos'].length + " no total).", textWidth, y);   
+
+
+    // agora gerar o lendário final
+    doc.addPage();
+    x = 1;
+    y = 1.5;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 0, 0);
+    
+    var splitText = doc.splitTextToSize('CONS. FINAL', 0.3);
+
+    /*doc.setFontSize(13);
+    doc.text(bimestre + 'º', x, y, 'center');
+    y += 1;*/
+
+    doc.setFontSize(11);
+    for (var i = 0, length = splitText.length; i < length; i++) {
+        // loop thru each line and increase
+        doc.text(splitText[i], x, y, 'center')
+        y += 0.5;
+      }
+
+    doc.setLineWidth(0.01);
+    doc.line(0.7, 6.2, 1.3, 6.2);
+
+    y += 0.2;
+
+    doc.setTextColor(0, 0, 0);
+    doc.text("Nº", x, y, 'center');
+    //doc.line(x + 0.3, 1, x + 0.3, y + 0.2);
+
+    //doc.line(1.4, 0.5, 11, 0.5);
+
+
+    doc.setFont('helvetica', 'normal');
+    
+    x = 1.3;
+    total = lista['disciplinas'].length;
+    dif = (10 - x) / total;
+
+    lin_inicial = y;
+    limite = 11;
+
+    doc.setFontSize(10);
+    for (var disc in lista['disciplinas']) {
+        center = x + (dif / 2);
+        doc.text(lista['disciplinas'][disc]['completo'], (center + 0.1), y, null, 90);
+        
+        if (disc == 0) {
+            doc.line(0.7, y + 0.15, limite, y + 0.15);
+        }
+
+        y += 0.5;
+
+        doc.setFontSize(9);
+        for (var aluno in lista['alunos']) {
+            doc.setFont('helvetica', 'bold');
+
+            if (disc == 0) {
+                doc.text(String(lista['alunos'][aluno]['num']).padStart(2, '0'), 1, y, 'center');
+                doc.line(0.7, y + 0.1, limite, y + 0.1);
+                ultimo = lista['alunos'][aluno]['num'];
+            }
+            
+            var ra = parseInt(lista['alunos'][aluno]['ra'].replaceAll('.', '').slice(0, -2));
+            doc.setFont('helvetica', 'normal');
+            //doc.setFontSize(7);
+            try {
+
+                if (lista['alunos'][aluno]['abv1'] == "APROV" || lista['alunos'][aluno]['abv1'] == "RETD") {
+                    if (lista['disciplinas'][disc]['notas'][ra]['media'] < 5) {
+                        doc.setTextColor(255, 0, 0);
+                    }
+    
+                    doc.text(String(lista['disciplinas'][disc]['notas'][ra]['media']), center, y, 'center');
+                    //doc.line(x - (dif / 3) + ((dif / 3) / 2), y - 0.4, x - (dif / 3) + ((dif / 3) / 2), y + 0.1);
+                    doc.setTextColor(0, 0, 0);
+                } else {
+                    doc.text('-', center, y - 0.05, 'center');
+                }
+
+            } catch (error) {
+                doc.text('-', center, y - 0.05, 'center');
+            }            
+
+            y += 0.45;
+        }
+
+        diferenca = 48 - lista['alunos'].length;
+
+        for (let i = 0; i < diferenca; i++) {
+            if (disc == 0) {
+                //doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                ultimo += 1;
+                doc.text(String(ultimo).padStart(2, '0'), 1, y, 'center');
+                //doc.setFont('helvetica', 'normal');        
+                
+                doc.line(0.7, y + 0.1, limite, y + 0.1);
+            }
+            
+            y += 0.45; 
+        }         
+
+        if (disc == 0) {
+            doc.line(1.3, 1, 1.3, y - 0.35);
+        }
+
+        if (disc == total - 1) {
+            doc.setLineWidth(0.05);
+        }
+
+        doc.line(center + (dif / 2), 1, center + (dif / 2), y - 0.35);
+
+        doc.setLineWidth(0.01);
+
+        x += dif;
+        lin_final = y;        
+        y = lin_inicial;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+    }
+
+    //x -= dif;
+
+    x += 0.5;
+
+    // após a digitação das notas será digitada as faltas
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text("TOTAL FALTAS", x, y - 0.3, null, 90);
+    doc.text("TOTAL AUS. COMPENSADAS", x + 0.7, y - 0.3, null, 90);
+    doc.text("% FREQUÊNCIA FINAL", x + 1.4, y - 0.3, null, 90);
+    doc.text("SITUAÇÃO FINAL", x + 2.8, y - 0.3, null, 90);
+
+    doc.line(x - 0.52, y + 0.15, x + 3.7, y + 0.15);
+
+    y += 0.5;
+
+    for (var aluno in lista['alunos']) {
+        try {
+
+            if (lista['alunos'][aluno]['abv1'] == "APROV" || lista['alunos'][aluno]['abv1'] == "RETD") {
+                ra = parseInt(lista['alunos'][aluno]['ra'].replaceAll('.', '').slice(0, -2));
+                doc.text(lista['freq'][ra]['total_faltas'], x - 0.15, y, 'center');
+    
+                doc.text(lista['freq'][ra]['ac'], x + 0.55, y, 'center');
+
+                if (lista['freq'][ra]['freq'] < 75) {
+                    doc.setTextColor(255, 0, 0);
+                }
+    
+                doc.text(lista['freq'][ra]['freq'], x + 1.25, y, 'center');
+                doc.setTextColor(0, 0, 0);
+                
+    
+                //doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+
+                if (lista['alunos'][aluno]['abv1'] == "APROV") {
+                    doc.setTextColor(0, 112, 192);
+                } else {
+                    doc.setTextColor(255, 0, 0);
+                }
+
+                doc.text(lista['alunos'][aluno]['abv1'], x + 2.65, y - 0.04, 'center');
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+            } else {
+                doc.text('-', x - 0.15, y, 'center');
+                doc.text('-', x + 0.55, y, 'center');
+                doc.text('-', x + 1.25, y, 'center');
+                doc.setTextColor(255, 0, 0);
+                doc.setFontSize(7);
+                doc.text(lista['alunos'][aluno]['abv1'], x + 2.65, y - 0.04, 'center');
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);                
+            }
+
+
+
+        } catch (error) {
+            doc.text('-', x - 0.15, y, 'center');
+            doc.text('-', x + 0.55, y, 'center');
+            doc.text('-', x + 1.25, y, 'center');
+            doc.setTextColor(255, 0, 0);
+            doc.setFontSize(7);
+            doc.text(lista['alunos'][aluno]['abv1'], x + 2.65, y - 0.04, 'center');
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+        }     
+        doc.line(x - 0.52, y + 0.1, x + 3.7, y + 0.1);
+        
+        y += 0.45;
+    }
+
+    for (let i = 0; i < diferenca; i++) {
+        doc.line(x - 0.52, y + 0.1, x + 3.7, y + 0.1);
+        
+        y += 0.45; 
+    } 
+    
+    // desenhar bordas da frequência
+    doc.setLineWidth(0.05);
+    doc.line(x + 0.2, 1, x + 0.2, y - 0.35);
+    doc.line(x + 0.9, 1, x + 0.9, y - 0.35);
+    doc.line(x + 1.6, 1, x + 1.6, y - 0.35);
+    doc.line(x + 3.7, 1, x + 3.7, y - 0.35);
+
+    // desenhar a parte direita da ata
+
+    var dt = new Date(lista['turma']['fim'].substring(6, 11), parseInt(lista['turma']['fim'].substring(3, 5)) - 1, parseInt(lista['turma']['fim'].substring(0, 2)));
+    
+    
+
+    console.log(dt);
+
+    // texto da ata
+
+    x += 7.2;
+
+    var in_x = x;
+
+    y = 1.5;
+    doc.text('CONSELHO DE CLASSE', x, y, 'center');
+    doc.setFont('helvetica', 'normal');
+    y += 1;
+    x -= 1.4;
+    
+    if (dt.getDate() == 1) {
+        doc.text('No primeiro dia do mês de', x - 0.55, y);
+    } else {
+        doc.text('Aos ', x, y);
+        tamanho = doc.getTextWidth('Aos ');
+        doc.setFont('helvetica', 'bold');
+        x += tamanho;
+        doc.text(String(dt.getDate()).padStart(2, '0'), x, y);
+        tamanho = doc.getTextWidth(String(dt.getDate()).padStart(2, '0'));
+        doc.setLineWidth(0.01);
+        doc.line(x, y + 0.05, x + tamanho, y + 0.05);
+        x += tamanho;
+        doc.setFont('helvetica', 'normal');
+        doc.text(' dias do mês de ', x, y);
+    }
+
+    y += 0.6;
+    x = in_x - 1.3;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(meses[dt.getMonth()], x + 0.25, y, 'center');
+    doc.line(x - 1, y + 0.05, x + 1.5, y + 0.05);
+    doc.setFont('helvetica', 'normal');
+    x += 1.5;
+    doc.text(" de ", x, y);
+    x += doc.getTextWidth(" de ");
+    doc.setFont('helvetica', 'bold');
+    doc.text('2023', x + 0.77, y, 'center');
+    doc.line(x, y + 0.05, x + 1.55, y + 0.05);
+
+    y += 0.6;
+    x = in_x;
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('realizou-se o Cons.  Final de ', x + 2.2, y, 'right');
+
+    y += 0.6;
+
+    doc.text('Classe e Série dos alunos da', x + 2.2, y, 'right');
+
+    y += 0.6;
+
+    doc.setTextColor(255, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    x -= 2.4;
+    doc.text(lista['turma']['nome_turma'], x, y);
+    tamanho = doc.getTextWidth(lista['turma']['nome_turma']);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    doc.text(" do", x + tamanho, y);
+
+    y += 0.6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(lista['turma']['tipo_ensino'], x, y);
+    tamanho = doc.getTextWidth(lista['turma']['tipo_ensino']);
+    doc.setFont('helvetica', 'normal');
+    doc.text(" da", x + tamanho, y);
+
+    y += 0.6;
+    
+    doc.text("EE Profª Alice Vilela Galvão", x, y);
+
+    y += 0.6;
+    doc.text('Canas, ' + lista['turma']['fim'], x + 4.5, y, 'right');
+
+    y += 0.6;
+    x = in_x - 2.7;
+
+    // lista dos professores
+
+    doc.setFontSize(5);
+    doc.line(x, y - 0.2, x + 5, y - 0.2);
+    doc.text('Matéria', x, y);
+    x += 1.5;
+    doc.text('Professor', x, y);
+    x += 2;
+    doc.text('Assinatura', x, y);
+    
+    y += 0.4;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    for (item in lista['disciplinas']) {
+        x = in_x - 2.7;
+
+        doc.setLineDash([0.05, 0.05]);
+        doc.line(x, y + 0.2, x + 5, y + 0.2);
+
+        doc.text(lista['disciplinas'][item]['desc_disc'], x, y);
+        x += 1.5;
+        doc.text(lista['disciplinas'][item]['nome_ata'], x, y); 
+        x += 2;
+
+        y += 0.6    
+    }
+
+    // observações
+
+    x = in_x - 2.7;
+    y += 0.3;
+    doc.text('OBSERVAÇÕES', x, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    for (item in dificuldades) {
+        y += 0.4;
+        doc.setFont('helvetica', 'bold');
+        //doc.text(String(dificuldades[item]['id']).padStart(2, '0'), x, y);
+        doc.setFont('helvetica', 'normal');
+        //doc.text(' - ' + dificuldades[item]['title'], x + doc.getTextWidth('00'), y);
+        doc.line(x, y + 0.14, x + 5, y + 0.14);
+        //console.log(dificuldades[item]);
+    }
+
+    // assinaturas
+
+    y += 1.5;
+
+    doc.setFontSize(8);
+    doc.setLineDash([]);
+    doc.line(x, y - 0.3, x + 5, y - 0.3);
+    doc.text("Coordenador Pedagógico", x + 2.5, y, 'center');
+
+    y += 1.5;
+    doc.line(x, y - 0.3, x + 5, y - 0.3);
+    doc.text("Diretor de Escola", x + 2.5, y, 'center');
+
+
+    // após escrever tudo gerar as bordas finais
+    doc.setLineWidth(0.05);
+
+    // borda esquerda
+    doc.line(0.68, 1, 0.68, lin_final - 0.31);
+    // borda inferior
+    doc.line(0.68, lin_final - 0.33, x + 5.5, lin_final - 0.33);
+    // borda direita
+    doc.line(x + 5.5, 1, x + 5.5, lin_final - 0.31);
+    // borda superior
+    doc.line(0.68, 1, x + 5.5, 1);
+
+    window.open(doc.output('bloburl'), '_blank');  
+
+    
+}
+
+function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
+    
+    // primeiro gerará a capa (opcional)
+    var doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'cm',
+        format: 'a4'
+    });
+
+    //console.log(lista);
+
+    if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+
+        doc.setFont('BebasKai', 'normal');
+        doc.setFontSize(50);
+        y = 3;
+        x = 10.5;
+        doc.text(x, y, 'EE PROFª ALICE VILELA GALVÃO', 'center');
+
+        y = 27;
+        doc.setTextColor(255, 0, 0);
+        doc.setFontSize(75);
+        doc.text(x, y, bimestre + 'º Bimestre de ' + ano, 'center');
+
+        doc.setFont('GreatVibes-Regular', 'normal');
+        y = 14.7;
+        doc.setFontSize(60);
+        doc.setTextColor(0, 0, 0);
+        doc.text(x, y, 'Conselho de classe/série', 'center');
+
+        doc.setLineWidth(0.2);
+        doc.rect(0.7, 0.7, 19.6, 28.3, 'S');
+
+        doc.setLineWidth(0.05);
+        doc.rect(1, 1, 19, 27.7, 'S');
+
+        doc.addPage();
+        doc.addPage();   
+    
+    }
+
+    // agora gerará a capa da sala (obrigatório)
+    doc.setLineWidth(0.2);
+    doc.rect(0.7, 0.7, 19.6, 28.3, 'S');
+
+    doc.setLineWidth(0.05);
+    doc.rect(1, 1, 19, 27.7, 'S');
+
+    doc.setFont('BebasKai', 'normal');
+    doc.setFontSize(80);
+    doc.setTextColor(255, 0, 0);
+
+    x = 10.5;
+    y = 14.7;
+
+    //console.log(turma);
+
+    if (lista['turma']['tipo_ensino'] == "Itinerário Formativo Regular") {
+        doc.text(x, y, "IF - REGULAR", 'center');
+        tamanho = doc.getTextWidth("IF - REGULAR");
+    } else {
+        doc.text(x, y, turma, 'center');
+        tamanho = doc.getTextWidth(turma);
+    }
+
+    doc.setLineWidth(0.2);
+    doc.rect(x - (tamanho / 2) - 0.5, 11.7, tamanho + 1.5, 4);
+
+    doc.addPage();
+    doc.addPage();
+
+    // agora gerará a lista piloto do bimestre
+    var img = new Image();
+
+    img.src = "/static/images/Logo%20Neo%20Sed%20White.png";
+    doc.addImage(img, 'png', 0, -1, 6, 6);        
+
+    doc.setFont('BebasKai', 'normal');
+    doc.setFontSize(20);
+    y = 1;
+    x = 2.7;
+
+    doc.setTextColor(0, 0, 0);
+    doc.text(x, y, 'Lista Geral - ');
+
+    textWidth = x + doc.getTextWidth('Lista Geral - ');
+
+    doc.setTextColor(255, 0, 0);
+    doc.text(textWidth, y, lista['turma']['nome_turma']);
+
+    textWidth = textWidth + doc.getTextWidth(lista['turma']['nome_turma']);
+
+    doc.setTextColor(0, 0, 0);
+
+    if (lista['turma']['tipo_ensino'] == "Itinerário Formativo Regular") {
+        doc.text(textWidth, y, " - " +  "IF - Regular");
+        textWidth = textWidth + doc.getTextWidth(" - " +  "IF - Regular");
+    } else {
+        doc.text(textWidth, y, " - " +  lista['turma']['tipo_ensino']);
+        textWidth = textWidth + doc.getTextWidth(" - " +  lista['turma']['tipo_ensino']);
+    }
+
+    
+
+    
+
+    doc.text(textWidth, y, " - " +  lista['turma']['desc_duracao']);    
+
+    x = 5.2;
+    y = 1.6
+
+    doc.setTextColor(0, 112, 192);
+    doc.text('Dados de Matrícula', 15.3, 3)
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text("Número da Classe:", x , y);
+    textWidth =  doc.getTextWidth("Número da Classe:") + x + 0.2;
+    doc.setFont('helvetica', 'normal');
+    doc.text(String(lista['turma']['num_classe']), textWidth, y);
+
+    y += 0.6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Período:", x , y);
+    textWidth =  doc.getTextWidth("Período:") + x + 0.2;
+    doc.setFont('helvetica', 'normal');
+    doc.text(lista['turma']['periodo'], textWidth, y);      
+
+    y += 0.6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("Duração:", x , y);
+    textWidth =  doc.getTextWidth("Duração:") + x + 0.2;
+    doc.setFont('helvetica', 'normal');
+    doc.text(lista['turma']['inicio'] + ' até ' + lista['turma']['fim'], textWidth, y); 
+
+    y += 0.6; 
+    
+    // agora que o bicho pega
+    x_num = 0.5;
+    x_rm = 1.2;
+
+    if (lista['turma']['tipo_ensino'] == "Itinerário Formativo Regular") {
+        x_nome = 2.3;
+        x_serie = 0;
+    } else {
+        x_serie = 2.3;
+        x_nome = 3.75;
+    }
+
+    x_ra = 13.9;
+    x_mat = 16.5;
+    x_mov = 18.7;
+
+    y = 4;
+
+    // borda do cabecalho
+    doc.setLineWidth(0.05);
+    doc.setFillColor(254, 254, 226);
+    doc.rect(0.4, 3.6, 20.2, 0.5, 'F');
+    doc.line(0.4, 3.6, 20.6, 3.6);
+
+    // desenha o cabeçalho
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Nº', x_num, y);
+    doc.text('RM', x_rm, y);
+
+    if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+        doc.text('SÉRIE', x_serie, y);
+        tamanho = doc.getTextWidth('SÉRIE');
+    }
+    
+    doc.text('NOME', x_nome, y);
+    //doc.text('NASC.', x_nasc, y);
+    doc.text("RA", x_ra, y);
     doc.text("MATR.", x_mat, y);
     doc.text("FIM MATR.", x_mov, y);
 
@@ -199,7 +810,9 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
 
         doc.text(String(lista['alunos'][i]['num']).padStart(2, "0"), x_num, y);   
         doc.text(lista['alunos'][i]['rm'], x_rm, y)
-        doc.text(String(lista['alunos'][i]['serie']), x_serie + (tamanho / 2) - (doc.getTextWidth(String(lista['alunos'][i]['serie'])) / 2), y);
+        if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+            doc.text(String(lista['alunos'][i]['serie']), x_serie + (tamanho / 2) - (doc.getTextWidth(String(lista['alunos'][i]['serie'])) / 2), y);
+        }
         doc.text(PriMaiuscula(lista['alunos'][i]['nome']), x_nome, y);
         //doc.text(table[i][5]['display'], x_nasc, y);
         doc.text(lista['alunos'][i]['ra'], x_ra, y);
@@ -558,7 +1171,12 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
     doc.setFontSize(10);
     for (var disc in lista['disciplinas']) {
         center = x + (dif / 2);
-        doc.text(lista['disciplinas'][disc]['completo'], (center + 0.1), y, null, 90);
+
+        if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+            doc.text(lista['disciplinas'][disc]['completo'], (center + 0.1), y, null, 90);
+        } else {
+            doc.text(lista['disciplinas'][disc]['desc_disc'], (center + 0.1), y, null, 90);
+        }
         
         if (disc == 0) {
             doc.line(0.7, y + 0.15, limite, y + 0.15);
@@ -781,8 +1399,16 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
     y += 0.6;
 
     doc.setFont('helvetica', 'bold');
-    doc.text(lista['turma']['tipo_ensino'], x, y);
-    tamanho = doc.getTextWidth(lista['turma']['tipo_ensino']);
+
+    if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+        doc.text(lista['turma']['tipo_ensino'], x, y);
+        tamanho = doc.getTextWidth(lista['turma']['tipo_ensino']);
+    } else {
+        doc.text("IF - Regular", x, y);
+        tamanho = doc.getTextWidth("IF - Regular");        
+    }
+
+
     doc.setFont('helvetica', 'normal');
     doc.text(" da", x + tamanho, y);
 
@@ -816,7 +1442,15 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
         doc.setLineDash([0.05, 0.05]);
         doc.line(x, y + 0.2, x + 5, y + 0.2);
 
-        doc.text(lista['disciplinas'][item]['desc_disc'], x, y);
+        if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+            doc.text(lista['disciplinas'][item]['desc_disc'], x, y);
+        } else {
+            doc.setFontSize(6);
+            doc.text(lista['disciplinas'][item]['desc_disc'], x, y);
+            doc.setFontSize(8);
+        }
+        
+        
         x += 1.5;
         doc.text(lista['disciplinas'][item]['nome_ata'], x, y); 
         x += 2;

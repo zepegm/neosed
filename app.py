@@ -161,6 +161,8 @@ def getPDFConselhoFinal():
                   "where num_classe = " + info['num_classe']  + " order by num_chamada"
 
             alunos = banco.executarConsulta(sql)
+            #print(alunos)
+            #print('------------------')
 
             sql = 'SELECT ' + \
 	              'num_classe, nome_turma, duracao.descricao as desc_duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, turma.ano, ' + \
@@ -176,16 +178,20 @@ def getPDFConselhoFinal():
                   "where num_classe = " + info['num_classe']
             
             turma = banco.executarConsulta(sql)[0]
+            #print(turma)
+            #print('------------------')
 
-            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
+            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
+
+            #print(disciplinas)
 
             # parei aqui
             for item in disciplinas:
                 sql = 'select ' + \
-	                  "vinculo_alunos_turmas.ra_aluno, vinculo_alunos_turmas.num_chamada as num, nota, falta, if(ac!=0, ac, '-') as ac " + \
-                      'from notas ' + \
-                      'inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.num_classe = notas.num_classe ' + \
-                      "where disciplina = %s and notas.num_classe = %s and bimestre = %s order by num_chamada" % (item['disciplina'], info['num_classe'], info['bimestre'])
+	                  "vinculo_alunos_turmas.ra_aluno, vinculo_alunos_turmas.num_chamada as num, media " + \
+                      'from conceito_final ' + \
+                      'inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = conceito_final.ra_aluno and vinculo_alunos_turmas.num_classe = conceito_final.num_classe ' + \
+                      "where disciplina = %s and conceito_final.num_classe = %s order by num_chamada" % (item['disciplina'], info['num_classe'])
                 
                 lista = {}
                 notas = banco.executarConsulta(sql)
@@ -197,10 +203,10 @@ def getPDFConselhoFinal():
                 sql = 'select ' + \
 	                  'ra_aluno, sum(falta) as total_faltas, ' + \
                       'sum(ac) as ac, ' + \
-                      'round(100 - (sum(falta) / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = %s and num_classe = %s) * 100)) as freq ' % (info['bimestre'], info['num_classe']) + \
-                      'from notas where num_classe = %s and bimestre = %s group by ra_aluno' % (info['num_classe'], info['bimestre'])
+                      'round(100 - ((sum(falta) - sum(ac)) / (select sum(aulas_dadas) from vinculo_prof_disc where num_classe = %s) * 100)) as freq ' % (info['num_classe']) + \
+                      'from notas where num_classe = %s group by ra_aluno' % (info['num_classe'])
 
-
+                #print(sql)
 
 
             lista_freq = {}
@@ -232,6 +238,20 @@ def getPDFListConselho():
 
             alunos = banco.executarConsulta(sql)
 
+            if (len(alunos) < 1):
+                sql = 'SELECT ' + \
+                    "num_chamada as num, ifnull(aluno.rm, '-') as rm, aluno.nome, " + \
+                    'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                    "if(fim_mat <= '" + info['fim_bim']  + "', situacao.abv1, if(matricula > '" + info['inicio']  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                    "if(fim_mat <= '" + info['fim_bim']  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
+                    "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe = " + info['num_classe'] + " and bimestre = " + info['bimestre'] + " and ra = aluno.ra), '') as dificuldade " + \
+                    "from vinculo_alunos_if " + \
+                    'inner join aluno ON aluno.ra = vinculo_alunos_if.ra_aluno ' + \
+                    'inner join situacao ON vinculo_alunos_if.situacao = situacao.id ' + \
+                    "where num_classe_if = " + info['num_classe']  + " and matricula <= '" + info['fim_bim']  + "' order by num_chamada"
+
+                alunos = banco.executarConsulta(sql)                
+
             for aluno in alunos:
                 if (aluno['dificuldade'] != ''):
                     lista = aluno['dificuldade'].split(',')
@@ -252,7 +272,25 @@ def getPDFListConselho():
                   "inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino " + \
                   "where num_classe = " + info['num_classe']
             
-            turma = banco.executarConsulta(sql)[0]
+            turma = banco.executarConsulta(sql)
+
+            if (len(turma) < 1):
+                sql = 'SELECT ' + \
+                    'num_classe, nome_turma, duracao.descricao as desc_duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, turma_if.ano, ' + \
+                    r"CASE WHEN turma_if.duracao < 3 THEN DATE_FORMAT(1bim_inicio,'%d/%m/%Y')" + \
+                    r"ELSE DATE_FORMAT(3bim_inicio,'%d/%m/%Y') END as inicio, " + \
+                    r"CASE WHEN turma_if.duracao = 1 OR turma_if.duracao = 3 THEN DATE_FORMAT(4bim_fim,'%d/%m/%Y')" + \
+                    r"ELSE DATE_FORMAT(2bim_fim,'%d/%m/%Y') END as fim " + \
+                    "from turma_if " + \
+                    "inner join periodo on periodo.id = turma_if.periodo " + \
+                    "inner join calendario on turma_if.ano = calendario.ano " + \
+                    "inner join duracao on turma_if.duracao = duracao.id " + \
+                    "inner join tipo_ensino on tipo_ensino.id = turma_if.tipo_ensino " + \
+                    "where num_classe = " + info['num_classe']
+                
+                turma = banco.executarConsulta(sql)  
+
+            turma = turma[0]              
 
             disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
 
@@ -265,6 +303,17 @@ def getPDFListConselho():
                 
                 lista = {}
                 notas = banco.executarConsulta(sql)
+
+
+                if (len(notas) < 1):
+                    sql = 'select ' + \
+                        "vinculo_alunos_if.ra_aluno, vinculo_alunos_if.num_chamada as num, nota, falta, if(ac!=0, ac, '-') as ac " + \
+                        'from notas ' + \
+                        'inner join vinculo_alunos_if on vinculo_alunos_if.ra_aluno = notas.ra_aluno and vinculo_alunos_if.num_classe_if = notas.num_classe ' + \
+                        "where disciplina = %s and notas.num_classe = %s and bimestre = %s order by num_chamada" % (item['disciplina'], info['num_classe'], info['bimestre']  )                  
+                                                                                                                    
+                    notas = banco.executarConsulta(sql)
+
                 for aluno in notas:
                     lista[aluno['ra_aluno']] = aluno
 
@@ -576,7 +625,7 @@ def uploadTurma():
 
                         sit = 0
 
-                        if situacao == "ATIVO":
+                        if situacao == "ATIVO" or situacao == "ENCERRADA":
                             sit = 1
                         elif situacao == 'BXTR' or situacao == 'TRAN':
                             sit = 2
@@ -678,6 +727,10 @@ def notas():
                 sql = "SELECT num_chamada, ra, nome FROM vinculo_alunos_turmas INNER JOIN aluno ON vinculo_alunos_turmas.ra_aluno = aluno.ra WHERE num_classe = %s AND fim_mat >= '%s' AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim'])
                 #print(sql)
                 alunos = banco.executarConsulta(sql)
+
+                if (len(alunos) < 1): #quer dizer que é itineráfio formativo
+                    sql = "SELECT num_chamada, ra, nome FROM vinculo_alunos_if INNER JOIN aluno ON vinculo_alunos_if.ra_aluno = aluno.ra WHERE num_classe_if = %s AND fim_mat >= '%s' AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim'])
+                    alunos = banco.executarConsulta(sql)
 
                 for aluno in alunos:
                     dificuldades = banco.executarConsultaVetor('select dificuldade from alunos_dificuldades where ra = %s and bimestre = %s and num_classe = %s' % (aluno['ra'], info['bimestre'], info['num_classe']))
@@ -805,10 +858,18 @@ def notas():
                 #print(sql)
                 alunos = banco.executarConsulta(sql)
 
+                if (len(alunos) < 1): # é itinerário formativo
+                    alunos = banco.executarConsulta("SELECT num_chamada, ra, nome, if(sexo='M', situacao.descricao, situacao.desc_fem) as situacao, situacao.abv1 FROM vinculo_alunos_if INNER JOIN aluno ON vinculo_alunos_if.ra_aluno = aluno.ra INNER JOIN situacao ON situacao.id = vinculo_alunos_if.situacao WHERE num_classe_if = %s AND fim_mat >= '%s' AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim']))
+
                 # carregar as médias caso elas existam
                 disciplinas = banco.executarConsulta('select disciplina, abv from conceito_final inner join disciplinas on disciplinas.codigo_disciplina = conceito_final.disciplina where num_classe = %s group by disciplina' % (info['num_classe']))
 
-                duracao = banco.executarConsulta('select duracao from turma where num_classe = %s' % info['num_classe'])[0]['duracao']
+                duracao = banco.executarConsulta('select duracao from turma where num_classe = %s' % info['num_classe'])
+
+                if (len(duracao) < 1):
+                    duracao = banco.executarConsulta('select duracao from turma_if where num_classe = %s' % info['num_classe'])
+
+                duracao = duracao[0]['duracao']
                 
                 bimestre = 4
                 if duracao == 2:
