@@ -65,9 +65,14 @@ function gerarAtaConselhoFinal(lista) {
     textWidth = textWidth + doc.getTextWidth(lista['turma']['nome_turma']);
 
     doc.setTextColor(0, 0, 0);
-    doc.text(textWidth, y, " - " +  lista['turma']['tipo_ensino']);
 
-    textWidth = textWidth + doc.getTextWidth(" - " +  lista['turma']['tipo_ensino']);
+    if (lista['turma']['tipo_ensino'] == "Itinerário Formativo Regular") {
+        doc.text(textWidth, y, " - " +  "IF - Regular");
+        textWidth = textWidth + doc.getTextWidth(" - " +  "IF - Regular");
+    } else {
+        doc.text(textWidth, y, " - " +  lista['turma']['tipo_ensino']);
+        textWidth = textWidth + doc.getTextWidth(" - " +  lista['turma']['tipo_ensino']);
+    }
 
     doc.text(textWidth, y, " - " +  lista['turma']['desc_duracao']);    
 
@@ -106,8 +111,15 @@ function gerarAtaConselhoFinal(lista) {
     // agora que o bicho pega
     x_num = 0.5;
     x_rm = 1.2;
-    x_serie = 2.3;
-    x_nome = 3.75;
+
+    if (lista['turma']['tipo_ensino'] == "Itinerário Formativo Regular") {
+        x_nome = 2.3;
+        x_serie = 0;
+    } else {
+        x_serie = 2.3;
+        x_nome = 3.75;
+    }
+
     x_ra = 13.9;
     x_mat = 16.5;
     x_mov = 18.7;
@@ -125,8 +137,12 @@ function gerarAtaConselhoFinal(lista) {
     doc.setFontSize(10);
     doc.text('Nº', x_num, y);
     doc.text('RM', x_rm, y);
-    doc.text('SÉRIE', x_serie, y);
-    tamanho = doc.getTextWidth('SÉRIE');
+    
+    if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+        doc.text('SÉRIE', x_serie, y);
+        tamanho = doc.getTextWidth('SÉRIE');
+    }
+
     doc.text('NOME', x_nome, y);
     //doc.text('NASC.', x_nasc, y);
     doc.text("RA", x_ra, y);
@@ -143,7 +159,7 @@ function gerarAtaConselhoFinal(lista) {
 
     for(let i = 0; i < lista['alunos'].length; i++) {
 
-        if (lista['alunos'][i]['abv1'] != "APROV") {
+        if (lista['alunos'][i]['abv1'] != "APROV" && lista['alunos'][i]['abv1'] != "ATIVO") {
             doc.setTextColor(255, 0, 0);
         } else {
             doc.setTextColor(0, 0, 0);
@@ -156,14 +172,16 @@ function gerarAtaConselhoFinal(lista) {
 
         doc.text(String(lista['alunos'][i]['num']).padStart(2, "0"), x_num, y);   
         doc.text(lista['alunos'][i]['rm'], x_rm, y)
-        doc.text(String(lista['alunos'][i]['serie']), x_serie + (tamanho / 2) - (doc.getTextWidth(String(lista['alunos'][i]['serie'])) / 2), y);
+        if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+            doc.text(String(lista['alunos'][i]['serie']), x_serie + (tamanho / 2) - (doc.getTextWidth(String(lista['alunos'][i]['serie'])) / 2), y);
+        }
         doc.text(PriMaiuscula(lista['alunos'][i]['nome']), x_nome, y);
         //doc.text(table[i][5]['display'], x_nasc, y);
         doc.text(lista['alunos'][i]['ra'], x_ra, y);
 
         doc.setFont('helvetica', 'bold');
 
-        if (lista['alunos'][i]['abv1'] == "APROV") {
+        if (lista['alunos'][i]['abv1'] == "APROV" || lista['alunos'][i]['abv1'] == "ATIVO") {
             doc.setTextColor(0, 112, 192);
         } else {
             doc.setTextColor(255, 0, 0);
@@ -225,7 +243,11 @@ function gerarAtaConselhoFinal(lista) {
     doc.text("Total:", x , y);
     textWidth =  doc.getTextWidth("Total:") + x + 0.2;
     doc.setFont('helvetica', 'normal');
-    doc.text(aprovados + " Aprovados (" + lista['alunos'].length + " no total).", textWidth, y);   
+    if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+        doc.text(aprovados + " Aprovados (" + lista['alunos'].length + " no total).", textWidth, y);   
+    } else {
+        doc.text(aprovados + " Ativos (" + lista['alunos'].length + " no total).", textWidth, y);   
+    }
 
 
     // agora gerar o lendário final
@@ -272,7 +294,12 @@ function gerarAtaConselhoFinal(lista) {
     doc.setFontSize(10);
     for (var disc in lista['disciplinas']) {
         center = x + (dif / 2);
-        doc.text(lista['disciplinas'][disc]['completo'], (center + 0.1), y, null, 90);
+
+        if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+            doc.text(lista['disciplinas'][disc]['completo'], (center + 0.1), y, null, 90);
+        } else {
+            doc.text(lista['disciplinas'][disc]['desc_disc'], (center + 0.1), y, null, 90);
+        }
         
         if (disc == 0) {
             doc.line(0.7, y + 0.15, limite, y + 0.15);
@@ -295,7 +322,7 @@ function gerarAtaConselhoFinal(lista) {
             //doc.setFontSize(7);
             try {
 
-                if (lista['alunos'][aluno]['abv1'] == "APROV" || lista['alunos'][aluno]['abv1'] == "RETD") {
+                if (lista['alunos'][aluno]['abv1'] == "APROV" || lista['alunos'][aluno]['abv1'] == "RETD" || lista['alunos'][aluno]['abv1'] == "ATIVO") {
                     if (lista['disciplinas'][disc]['notas'][ra]['media'] < 5) {
                         doc.setTextColor(255, 0, 0);
                     }
@@ -359,7 +386,11 @@ function gerarAtaConselhoFinal(lista) {
     doc.text("TOTAL FALTAS", x, y - 0.3, null, 90);
     doc.text("TOTAL AUS. COMPENSADAS", x + 0.7, y - 0.3, null, 90);
     doc.text("% FREQUÊNCIA FINAL", x + 1.4, y - 0.3, null, 90);
-    doc.text("SITUAÇÃO FINAL", x + 2.8, y - 0.3, null, 90);
+    if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+        doc.text("SITUAÇÃO FINAL", x + 2.8, y - 0.3, null, 90);
+    } else {
+        doc.text("SITUAÇÃO", x + 2.8, y - 0.3, null, 90);
+    }
 
     doc.line(x - 0.52, y + 0.15, x + 3.7, y + 0.15);
 
@@ -368,7 +399,7 @@ function gerarAtaConselhoFinal(lista) {
     for (var aluno in lista['alunos']) {
         try {
 
-            if (lista['alunos'][aluno]['abv1'] == "APROV" || lista['alunos'][aluno]['abv1'] == "RETD") {
+            if (lista['alunos'][aluno]['abv1'] == "APROV" || lista['alunos'][aluno]['abv1'] == "RETD" || lista['alunos'][aluno]['abv1'] == "ATIVO") {
                 ra = parseInt(lista['alunos'][aluno]['ra'].replaceAll('.', '').slice(0, -2));
                 doc.text(lista['freq'][ra]['total_faltas'], x - 0.15, y, 'center');
     
@@ -385,7 +416,7 @@ function gerarAtaConselhoFinal(lista) {
                 //doc.setFont('helvetica', 'normal');
                 doc.setFontSize(7);
 
-                if (lista['alunos'][aluno]['abv1'] == "APROV") {
+                if (lista['alunos'][aluno]['abv1'] == "APROV" || lista['alunos'][aluno]['abv1'] == "ATIVO") {
                     doc.setTextColor(0, 112, 192);
                 } else {
                     doc.setTextColor(255, 0, 0);
@@ -510,8 +541,15 @@ function gerarAtaConselhoFinal(lista) {
     y += 0.6;
 
     doc.setFont('helvetica', 'bold');
-    doc.text(lista['turma']['tipo_ensino'], x, y);
-    tamanho = doc.getTextWidth(lista['turma']['tipo_ensino']);
+
+    if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+        doc.text(lista['turma']['tipo_ensino'], x, y);
+        tamanho = doc.getTextWidth(lista['turma']['tipo_ensino']);
+    } else {
+        doc.text("IF - Regular", x, y);
+        tamanho = doc.getTextWidth("IF - Regular");        
+    }
+
     doc.setFont('helvetica', 'normal');
     doc.text(" da", x + tamanho, y);
 
@@ -545,7 +583,14 @@ function gerarAtaConselhoFinal(lista) {
         doc.setLineDash([0.05, 0.05]);
         doc.line(x, y + 0.2, x + 5, y + 0.2);
 
-        doc.text(lista['disciplinas'][item]['desc_disc'], x, y);
+        if (lista['turma']['tipo_ensino'] != "Itinerário Formativo Regular") {
+            doc.text(lista['disciplinas'][item]['desc_disc'], x, y);
+        } else {
+            doc.setFontSize(6);
+            doc.text(lista['disciplinas'][item]['desc_disc'], x, y);
+            doc.setFontSize(8);
+        }
+
         x += 1.5;
         doc.text(lista['disciplinas'][item]['nome_ata'], x, y); 
         x += 2;
