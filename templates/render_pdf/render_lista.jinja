@@ -1,0 +1,257 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: white;
+                position: absolute;
+                top:30px;
+                left: 30px;
+            }
+
+            #pagina2 {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: white;
+                position: absolute;
+                top:1155px;
+                left: 30px;
+            }            
+
+            #logo {
+                width: 270px;
+                height: 270px;
+
+                position: relative;
+                top: -64px;
+                left: -20px;
+            }
+
+            #titulo {
+                font-family:'BebasKai', sans-serif;
+                font-size: 25px;
+                position: absolute;
+                top: 5px;
+                left: 100px;
+            }
+
+            .blue {
+                color: rgb(12, 146, 255);
+            }
+
+            .red {
+                color:red;
+            }
+
+            #head {
+                font-family: 'Helvetica', 'sans-serif';
+                position: absolute;
+                top: 30px;
+                left: 210px;
+                line-height: 0.62;
+            }
+
+            .subtitulo {
+                font-family:'BebasKai', sans-serif;
+                font-size: 25px;
+                position: absolute;
+                top: 100px;
+            }
+
+            #sub1 {
+                color:rgb(12, 146, 255);
+                left: 516px;
+            }
+
+            #sub2 {
+                color:rgb(21, 179, 0);
+                left: 540px;
+            }
+
+            table, th, td {
+                font-family: 'Helvetica', 'sans-serif';
+                border: 1px solid;
+                border-color: black;
+                border-collapse: collapse;
+            }
+
+            table {
+                position: absolute;
+                top: 150px;
+                left: 0px;
+                height: 910px;
+            }
+
+            table {
+                border-width: 2px;
+            }
+
+            thead {
+                font-size:15px;
+            }
+
+            tbody {
+                font-size: 12px;
+            }
+
+            .center {
+                text-align: center;
+            }
+
+            th, td {
+                border-left-width: 1px;
+                border-bottom-color: rgb(0, 0, 0, 0.2);
+            }
+
+            th {
+                background-color: #FFFFE3;
+            }
+
+            .data {
+                position: absolute;
+                font-family: 'Helvetica', 'sans-serif';
+                font-weight: bold;
+                font-size: 14px;
+                top: 130px;
+                left: 512px;
+            }
+         
+        </style>
+    </head>
+    <body>
+        <div id="pagina">
+            <img id="logo" src="../static/images/Logo Neo Sed White.png">
+            <div id="titulo">Lista Geral - <span class="red">{{head['nome_turma']}}</span> - {{head['tipo_ensino']}} - {{head['duracao']}}</div>
+            <div id="head">
+                <p><b>Número da Classe: </b>{{head['num_classe']}}</p>
+                <p><b>Período:</b> {{head['periodo']}}</p>
+                <p><b>Duração:</b> {{head['duracao_tempo']}}</p>
+                <p><b>Total:</b> {{total['total_ativos']}} ativos ({{total['total']}} no total)</p>
+            </div>
+            <div id="sub1" class="subtitulo">
+                Dados de Matrícula
+            </div>
+            <div class="data">
+                Lista gerada em {{head['hoje']}}
+            </div>            
+            <table id="dados_matricula">
+                <thead>
+                    <tr>
+                        <th style="width:25px">Nº</th>
+                        <th style="width:33px">RM</th>
+                        <th>SÉRIE</th>
+                        <th style="width:360px;text-align:left;">&nbsp;NOME</th>
+                        <th style="width:85px">RA</th>
+                        <th style="width:85px">MATR.</th>
+                        <th style="width:85px">FIM MATR.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for n in range(0, 50) %}
+                    {% if loop.index <= alunos|length %}
+                    {% if alunos[n]['fim_mat'] != '' %}
+                    <tr class="red"> 
+                    {% else %}
+                    <tr>
+                    {% endif %}
+                        <td class="center">{{'%02d' % alunos[n]['num']}}</td>
+                        <td class="center">{{alunos[n]['rm']}}</td>
+                        <td class="center">{{alunos[n]['serie']}}</td>
+                        <td>&nbsp;{{alunos[n]['nome']}}</td>
+                        <td class="center">{{alunos[n]['ra']}}</td>
+                        {% if alunos[n]['fim_mat'] != '' %}
+                        <td class="center"><b>{{alunos[n]['mat']}}</b></td>
+                        {% else %}
+                        <td class="center blue"><b>{{alunos[n]['mat']}}</b></td>
+                        {% endif %}
+                        <td class="center"><b>{{alunos[n]['fim_mat']}}</b></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="center">{{'%02d' % loop.index}}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="pagina2">
+            <img id="logo" src="../static/images/Logo Neo Sed White.png">
+            <div id="titulo">Lista Geral - <span class="red">{{head['nome_turma']}}</span> - {{head['tipo_ensino']}} - {{head['duracao']}}</div>
+            <div id="head">
+                <p><b>Número da Classe: </b>{{head['num_classe']}}</p>
+                <p><b>Período:</b> {{head['periodo']}}</p>
+                <p><b>Duração:</b> {{head['duracao_tempo']}}</p>
+                <p><b>Total:</b> {{total['total_ativos']}} ativos ({{total['total']}} no total)</p>
+            </div>
+            <div id="sub2" class="subtitulo">
+                Dados Pessoais
+            </div>
+            <div class="data">
+                Lista gerada em {{head['hoje']}}
+            </div>            
+            <table id="dados_matricula">
+                <thead>
+                    <tr>
+                        <th style="width:25px">Nº</th>
+                        <th style="width:360px;text-align:left;">&nbsp;NOME</th>
+                        <th style="width:70px">NASC.</th>
+                        <th>SEXO</th>
+                        <th style="width:100px">CPF</th>
+                        <th style="width:124px">RG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for n in range(0, 50) %}
+                    {% if loop.index <= alunos|length %}
+                    {% if alunos[n]['fim_mat'] != '' %}
+                    <tr class="red"> 
+                    {% else %}
+                    <tr>
+                    {% endif %}
+                        <td class="center">{{'%02d' % alunos[n]['num']}}</td>
+                        <td>&nbsp;{{alunos[n]['nome']}}</td>
+                        <td class="center">{{alunos[n]['nascimento']}}</td>
+                        <td class="center">{{alunos[n]['sexo']}}</td>
+                        <td class="center">{{alunos[n]['cpf']}}</td>
+                        <td class="center">{{alunos[n]['rg']}}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="center">{{'%02d' % loop.index}}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </body>
+</htmL>

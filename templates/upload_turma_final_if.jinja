@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AVG - NeoSED</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">    
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+        .icon {
+            text-align: center;
+            margin-top: -90px;
+            margin-bottom: -100px;
+        }
+
+        img {
+            pointer-events: none;
+        }      
+
+        .AI,
+        .RETIDO,
+        .NCOM,
+        .TRAN,
+        .BXTR,
+        .REMA,
+        .ABAN,
+        .NCFP {
+            color:red;
+        }
+
+        .ATIVO {
+            color:rgba(0, 140, 255, 0.61);
+        }
+
+        .AT,
+        .AS,
+        .AR,
+        .APROVADO,
+        .CONCL {
+            color:rgba(0, 140, 255, 0.61);
+            font-weight: bold;
+        }
+            
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+               <i class="fa-solid fa-home"></i>
+                Home
+            </a>           
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../listaAlunos">Lista de Alunos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../notas">Notas</a>
+                    </li>                                      
+                </ul>
+            </div>
+        </div>
+    </nav> 
+
+    <main class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+                <span class="fw-bold">Nº da classe: </span>{{info[0]['num_classe']}}
+            </div>
+            <div class="col-sm-12">
+                <span class="fw-bold">Turma: </span>{{info[0]['nome_turma']}} - {{info[0]['periodo']}} - {{info[0]['tipo_ensino']}}
+            </div>
+            <div class="col-sm-12">&nbsp;</div>                                
+        </div>
+
+        <form action="{{ url_for('upload_turma_final_if')}}" enctype="multipart/form-data" method="post">
+            <div class="row">
+                <div class="col-sm-8">
+                    <label for="formFile" class="form-label">Selecionar Arquivo do Excel gerado pela SED:</label>
+                    <input class="form-control" type="file" id="file" name="file" accept=".csv" required>
+                    <input type="hidden" name="classe" value="{{info[0]['num_classe']}}" />
+                </div>
+                <div class="col-sm-4 align-self-end">
+                    <input class="btn btn-primary" type="submit" id="btnenviararquivo">
+                </div>
+            </div>
+        </form>
+
+        {% if lista|length > 1 %}
+        <div class="row">
+            <div class="col-sm-12">&nbsp;</div>
+            <div class="col-sm-12">
+                <table class="table table-light table-hover">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th scope="col">Nº</th>
+                            <th scope="col">RA:</th>
+                            <th scope="col">Nome:</th>
+                            <th scope="col" class="text-center">Situação:</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in lista %}
+                            <tr>
+                                <td>{{item['num_chamada']}}</td>
+                                <td>{{item['ra_aluno']}}-{{item['digito']}}</td>
+                                <td>{{item['nome']}}</td>
+                                <td class="text-center {{item['abv1']}}">{{item['abv1']}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>                   
+                </table>
+            </div>
+            <div id="feedback" class="col-sm-12"></div>         
+            <div class="col-sm-12">&nbsp;</div>   
+
+        </div>
+        {% endif %}
+    </main>
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> 
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+
+        $("#btnsalvar").on('click', function(e) {
+
+            var lista = [];
+
+            $("table tbody tr").each(function(index) {
+                var dict = {};
+
+                dict['ra'] = parseInt($(this).find('td:nth-child(2)').text().slice(0, -2));
+                dict['digito'] = "'" + $(this).find('td:nth-child(2)').text().slice(-1) + "'";
+                dict['nome'] = "'" + $(this).find('td:nth-child(3)').text() + "'";
+
+                nasc = $(this).find('td:nth-child(4)').text();
+
+
+                dict['nascimento'] = "'" + nasc.substring(6, 10) + "-" + nasc.substring(3, 5) + "-" + nasc.substring(0, 2) + "'";
+                dict['sexo'] = "'" + $(this).find('td:nth-child(5) select').val() + "'";
+                
+                if ($(this).find('td:nth-child(6) input').val() == "") {
+                    dict['rg'] = "null";
+                } else {
+                    dict['rg'] = "'" + $(this).find('td:nth-child(6) input').val() + "'";
+                }
+
+                if ($(this).find('td:nth-child(7) input').val() == "") {
+                    dict['cpf'] = "null";
+                } else {
+                    dict['cpf'] = $(this).find('td:nth-child(7) input').val();
+                }    
+
+                if ($(this).find('td:nth-child(8) input').val() == "") {
+                    dict['rm'] = "null";
+                } else {
+                    dict['rm'] = $(this).find('td:nth-child(8) input').val();
+                }                              
+
+
+                dict['num_chamada'] = $(this).find('td:nth-child(1)').text();
+
+                if ($(this).find('td:nth-child(9)').text() == "-") {
+                    dict['serie'] = "0";
+                } else {
+                    dict['serie'] = $(this).find('td:nth-child(9)').text();
+                }
+
+                
+
+                matricula = $(this).find('td:nth-child(10)').text();
+                dict['matricula'] = "'" + matricula.substring(6, 10) + "-" + matricula.substring(3, 5) + "-" + matricula.substring(0, 2) + "'";
+
+                fim_mat = $(this).find('td:nth-child(11)').text();
+                dict['fim_mat'] = "'" + fim_mat.substring(6, 10) + "-" + fim_mat.substring(3, 5) + "-" + fim_mat.substring(0, 2) + "'";
+
+                dict['situacao'] = $(this).find('td:nth-child(12)').attr('data-id');
+
+                dict['num_classe'] = {{info[0]['num_classe']}}
+
+                lista.push(dict);
+            });
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('importarTurma') }}",
+                contentType: "application/json",
+                data: JSON.stringify(lista),
+                dataType: "json",
+                success: function(response) {
+                    //console.log(response);
+                    if (response) {
+                        $("#feedback").append('<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Operação bem-sucedida!</strong> Dados importados com sucesso!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+                    } else {
+                        $("#feedback").append('<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Atenção!</strong> Erro inesperado ao tentar importar dados!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+                    }
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });             
+
+        });
+
+        $(document).ready(function(){
+            $('.cpf').mask('000.000.000-00');
+        });
+
+    </script>
+  </body>
+</html>

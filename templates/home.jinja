@@ -453,8 +453,8 @@
         <div class="modal-dialog" style="max-width: 90%;" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button> 
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>                  
                 </div>
                 <div class="modal-body">
                     <div class="row">
@@ -521,10 +521,22 @@
                 <div class="icon"><img src="{{ url_for('static', filename='images/Logo Neo Sed.png') }}" class="d-inline-block align-top" alt=""></div>
             </div>
             <div class="col-sm-12">{{msg|safe}}</div>
-            <div class="col-sm-12">
+            <div class="col-sm-10 align-self-end">
                 <button id="btnNovaTurma" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nova_turma_modal">Cadastrar Nova Turma</button>
                 <button id="btnNovoItinerario" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#novo_itinerario_modal">Cadastrar Itinerário Formativo</button>
-            </div>            
+            </div>
+            <div class="col-sm-1 align-self-center" style="text-align:right;">
+                <label for="cbAno">Ano:</label>
+            </div>
+            <div class="col-sm-1" style="text-align:right;">
+                <form id="mudarAno" method="post" action="{{ url_for('index') }}">
+                <select id="cbAno" name="cbAno" class="form-select" aria-label="Default select example">
+                    {% for ano in anos %}
+                        <option value="{{ano['ano']}}" {{ano['selected']}}>{{ano['ano']}}</option>
+                    {% endfor %}
+                </select>                 
+                </form>
+            </div>
         </div>
         <div class="row">&nbsp;</div>
         <div class="row">
@@ -582,6 +594,10 @@
     <script>
 
 
+        $("#cbAno").on('change', function() {
+            $("#mudarAno").submit();
+        });
+
         $("#form_cadastrar_itinerario").on('submit', function(e) {
             if ($("[name='turmas_vinculo_if']:checked").length < 1) {
                 e.preventDefault();
@@ -598,9 +614,25 @@
 
         $("#btnExportarTurma").on('click', function(e) {
 
-            var table = $('#tabela_alunos').DataTable().rows().data();
+            $("#loading").removeAttr('hidden');
+            $("#btnExportarTurma").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            $("#btnExportarTurma").attr('disabled', '');
 
-            gerarListaPilotoPadrao("{{url_for('static', filename='images/Logo Neo Sed White.png')}}", $("#descTurma").text(), $("#desc_tipo_ensino").text(), $("#descDuracao").text(), $("#numClasse").text(), $("#descPeriodo").text(), $("#inicioTurma").text(), $("#fimTurma").text(), $("#descTotal").text(), table);
+            info = {'destino':1, 'turma':$("#numClasse").text(), 'tipo':'turma'}
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $("#btnExportarTurma").html('Exportar PDF');
+                $("#btnExportarTurma").removeAttr('disabled');
+                },
+            });
+
             
         });
 
