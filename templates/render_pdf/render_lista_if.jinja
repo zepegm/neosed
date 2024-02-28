@@ -1,0 +1,154 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                top:30px;
+                left: 30px;
+            }
+
+            #pagina2 {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: white;
+                position: absolute;
+                top:1155px;
+                left: 30px;
+            }            
+
+            #logo {
+                width: 270px;
+                height: 270px;
+
+                position: relative;
+                top: -64px;
+                left: -20px;
+            }
+
+            #titulo {
+                font-family:'BebasKai', sans-serif;
+                font-size: 25px;
+
+            }
+
+            .blue {
+                color: rgb(12, 146, 255);
+            }
+
+            .red {
+                color:red;
+            }
+
+            #head {
+                font-family: 'Helvetica', 'sans-serif';
+                position: absolute;
+                top: 30px;
+                left: 210px;
+                line-height: 0.62;
+            }
+
+            .subtitulo {
+                font-family:'BebasKai', sans-serif;
+                font-size: 25px;
+                position: absolute;
+                top: 100px;
+            }
+
+            #sub1 {
+                color:rgb(12, 146, 255);
+                left: 516px;
+            }
+
+            #sub2 {
+                color:rgb(21, 179, 0);
+                left: 540px;
+            }
+
+            table, th, td {
+                font-family: 'Helvetica', 'sans-serif';
+                border: 1px solid;
+                border-color: black;
+                border-collapse: collapse;
+            }
+
+            table {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                height: 910px;
+            }
+
+            table {
+                border-width: 2px;
+            }
+
+            thead {
+                font-size:15px;
+            }
+
+            tbody {
+                font-size: 12px;
+            }
+
+            .center {
+                text-align: center;
+            }
+
+            th, td {
+                border-left-width: 1px;
+                border-bottom-color: rgb(0, 0, 0, 0.2);
+            }
+
+            .data {
+                position: absolute;
+                font-family: 'Helvetica', 'sans-serif';
+                font-weight: bold;
+                font-size: 14px;
+                top: 130px;
+                left: 512px;
+            }
+         
+        </style>
+    </head>
+    <body>
+        <div id="pagina">
+            <table>
+                <thead>
+                    <tr><td colspan="4" id="titulo">Itineráfio Formativo - <span class="red">{{serie}}</span></td></tr>
+                    <tr>
+                        {% for item in lista %}
+                        <th colspan="2">{{item['turma']}}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in lista %}
+                            {% for aluno in item['alunos'] %}
+                            <tr>
+                                <td>{{aluno['num_chamada']}}</td>
+                                <td>{{aluno['nome']}}</td>
+                            </tr>
+                            {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </body>
+</htmL>
