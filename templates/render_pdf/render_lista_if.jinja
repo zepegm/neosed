@@ -16,7 +16,7 @@
                 height: 1057px;
                 border-width: 2px;
                 border-style: solid;
-                border-color: black;
+                border-color: rgb(0,0,0,0);
                 position: absolute;
                 top:30px;
                 left: 30px;
@@ -45,6 +45,8 @@
             #titulo {
                 font-family:'BebasKai', sans-serif;
                 font-size: 25px;
+                text-align: center;
+                background-color: rgb(255, 245, 230);
 
             }
 
@@ -88,11 +90,12 @@
                 border-collapse: collapse;
             }
 
-            table {
+            #principal {
                 position: absolute;
                 top: 0px;
                 left: 0px;
-                height: 910px;
+                height: 980;
+                width: 730px;
             }
 
             table {
@@ -113,7 +116,15 @@
 
             th, td {
                 border-left-width: 1px;
-                border-bottom-color: rgb(0, 0, 0, 0.2);
+            }
+
+            th {
+                border-top-width: 2px;
+                border-bottom-width: 2px;
+            }
+
+            .left {
+                border-left-width: 2px;
             }
 
             .data {
@@ -124,28 +135,58 @@
                 top: 130px;
                 left: 512px;
             }
+
+            .subtitle {
+                background-color: rgb(255, 245, 230);                
+            }
+
+            .classe_1 {
+                background-color: rgb(215, 238, 249);
+            }
+
+            .classe_2 {
+                background-color: rgb(233, 248, 228);
+            }
          
+            #legenda {
+                position: relative;
+                top:1000px;
+                left:20px;
+                width: 100px;
+            }
+
         </style>
     </head>
     <body>
         <div id="pagina">
-            <table>
+            <table id="principal">
                 <thead>
-                    <tr><td colspan="4" id="titulo">Itineráfio Formativo - <span class="red">{{serie}}</span></td></tr>
+                    <tr><td colspan="6" id="titulo">Itineráfio Formativo - <span class="red">{{serie}}</span></td></tr>
                     <tr>
-                        {% for item in lista %}
-                        <th colspan="2">{{item['turma']}}</th>
+                        {% for item in classes_if %}
+                        <th class="left subtitle" colspan="3">{{item['nome_turma']}}</th>
                         {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in lista %}
-                            {% for aluno in item['alunos'] %}
+                    {% for item in lista_final %}
                             <tr>
-                                <td>{{aluno['num_chamada']}}</td>
-                                <td>{{aluno['nome']}}</td>
-                            </tr>
+                            {% for aluno in item %}
+                                <td class="center left {{class_color[aluno['serie']]}}">{{aluno['num_chamada']}}</td>
+                                <td class="{{class_color[aluno['serie']]}}">&nbsp;{{aluno['nome']}}</td>
+                                <td class="{{class_color[aluno['serie']]}}">&nbsp;{{aluno['serie']}}</td>
                             {% endfor %}
+                            </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <table id="legenda">
+                <thead>
+                    <tr><th>Legenda</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in classes_regulares %}
+                    <tr><td class="{{class_color[item['nome_turma']]}}">{{item['nome_turma']}}</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

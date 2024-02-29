@@ -614,7 +614,6 @@
 
         $("#btnExportarTurma").on('click', function(e) {
 
-            $("#loading").removeAttr('hidden');
             $("#btnExportarTurma").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
             $("#btnExportarTurma").attr('disabled', '');
 
@@ -638,21 +637,24 @@
 
         $("#btnExportarIf").on('click', function(e) {
 
-            num_classe = $("#numClasse_if").text();
+            $("#btnExportarIf").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            $("#btnExportarIf").attr('disabled', '');
+
+            info = {'destino':2, 'turma':$("#numClasse_if").text(), 'tipo':'turma_if'}
 
             $.ajax({
                 type: "POST",
-                url: "{{ url_for('getPDFListIf') }}",
+                url: "gerar_pdf",
                 contentType: "application/json",
-                data: JSON.stringify(num_classe),
+                data: JSON.stringify(info),
                 dataType: "json",
-                success: function(response) {                  
-                    gerarListaIF(response);
+                success: function(data) {
+                window.open(data);
+                $("#btnExportarIf").html('Exportar PDF');
+                $("#btnExportarIf").removeAttr('disabled');
                 },
-                error: function(err) {
-                    console.log(err);
-                }
-            });            
+            });
+           
             
         });        
 

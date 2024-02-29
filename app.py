@@ -218,18 +218,39 @@ def render_lista():
             classes_regulares = banco.executarConsulta('SELECT num_classe_em, turma.nome_turma FROM vinculo_if INNER JOIN turma ON turma.num_classe = num_classe_em where num_classe_if =  %s' % num_classe)
             classes_if = banco.executarConsulta('select num_classe_if, turma_if.nome_turma from vinculo_if inner join turma_if on turma_if.num_classe = num_classe_if where num_classe_em = %s' % classes_regulares[0]['num_classe_em'])
 
+            class_color = {}
+            cont = 1
+            for item in classes_regulares:
+                class_color[item['nome_turma']] = 'classe_%s' % cont
+                cont += 1
+
             lista = []
+            total = []
+            lista_final = []
             for classe in classes_if:
-                alunos = banco.executarConsulta('select num_chamada, aluno.nome from vinculo_alunos_if inner join aluno on aluno.ra = ra_aluno where num_classe_if = %s and situacao = 1 order by num_chamada' % classe['num_classe_if'])
+                alunos = banco.executarConsulta('select num_chamada, aluno.nome, (select turma.nome_turma from vinculo_alunos_turmas inner join turma on vinculo_alunos_turmas.num_classe = turma.num_classe where ra_aluno = vinculo_alunos_if.ra_aluno and (situacao = 1 or situacao = 6) order by fim_mat desc limit 1) as serie from vinculo_alunos_if inner join aluno on aluno.ra = ra_aluno where num_classe_if = %s and situacao = 1 order by num_chamada' % classe['num_classe_if'])
                 
+                total.append(len(alunos))
+
                 for aluno in alunos:
                     aluno['nome'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
 
-                lista.append({'turma':classe['nome_turma'], 'alunos':alunos})
+                lista.append(alunos)
                 
+
+            for i in range(0, max(total)):
+                aux_vec = []
+                for item in lista:
+                    try:
+                        aux_vec.append(item[i])
+                    except:
+                        aux_vec.append('')
+
+                lista_final.append(aux_vec)
+
             serie = classes_regulares[0]['nome_turma'].replace(" A", "").replace(" B", '')
 
-            return render_template('render_pdf/render_lista_if.jinja', classes_if=classes_if, serie=serie)
+            return render_template('render_pdf/render_lista_if.jinja', classes_if=classes_if, serie=serie, lista_final=lista_final, class_color=class_color, classes_regulares=classes_regulares)
 
 @app.route('/gerar_pdf', methods=['GET', 'POST'])
 async def gerar_pdf():
@@ -249,7 +270,24 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
-        return jsonify(pdf_path)        
+        return jsonify(pdf_path)       
+
+    elif info['destino'] == 2:
+        print(info)
+        pdf_path = 'static/docs/lista.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s' % (info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)    
 
 @app.route('/save_dificuldades', methods=['GET', 'POST'])
 def save_dificuldades():
