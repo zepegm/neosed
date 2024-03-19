@@ -916,6 +916,8 @@ def uploadTurma():
                             sit = 6
                         elif situacao == "RETIDO FREQ.":
                             sit = 10
+                        elif situacao == 'RECL':
+                            sit = 15
 
 
                         serie = "-"
