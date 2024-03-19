@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Declaração</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+          
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+               <i class="fa-solid fa-home"></i>
+                Home
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../listaAlunos">Lista de Alunos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../notas">Notas</a>
+                    </li>  
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Declaração</a>
+                    </li>                                       
+                </ul>                  
+            </div>            
+        </div>
+    </nav>  
+
+    <main class="container-xxl">
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="fs-2">Declaração Manual</p>
+                <p>Use essa tela para criar declarações de alunos antigos que não estão presentes no sistema, alunos de 2023 pra frente por favor use a <a href="../listaAlunos">Lista de Alunos.</a></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <label for="txt_nome">Nome do Aluno:</label>
+                <input type="text" class="form-control" id="txt_nome" name="txt_nome">    
+            </div>
+            <div class="col-sm-2">
+                <label for="txt_rg">RG:</label>
+                <input type="text" class="form-control" id="txt_rg" name="txt_rg">    
+            </div>     
+            <div class="col-sm-2">
+                <label for="cb_genero">Gênero:</label>
+                <select class="form-select" id="cb_genero" name="cb_genero">
+                    <option value="m">Masculino</option>
+                    <option value="f">Feminino</option>
+                </select>
+            </div>                   
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <label for="cb_ensino">Tipo de Ensino</label>
+                <select class="form-select" id="cb_ensino" name="cb_ensino">
+                    <option value="0">Ensino Médio Regular</option>
+                    <option value="1">Ensino Fundamental Regular</option>
+                    <option value="2">Ensino Médio EJA</option>
+                    <option value="3">Ensino Fundamental EJA - Multisseriada</option>
+                    <option value="4">Ensino Fundamental EJA - Padrão Antigo</option>
+                </select>
+            </div> 
+            <div class="col-sm-4">
+                <label for="cb_serie">Série</label>
+                <select class="form-select" id="cb_serie" name="cb_serie">
+                    <option>1ª série</option>
+                    <option>2ª série</option>
+                    <option>3ª série</option>
+                </select>
+            </div>                   
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                <label for="cb_tipo">Tipo de Declaração</label>
+                <select class="form-select" id="cb_tipo" name="cb_tipo">
+                    <option value="0">Conclusão</option>
+                    <option value="1">Transferência</option>
+                    <option value="2">Solicitação de vaga</option>
+                </select>                
+            </div>
+            <div class="col-sm-2">
+                <label for="txt_ano">Ano:</label>
+                <input type="number" class="form-control" id="txt_ano" name="txt_ano">  
+            </div>
+            <div class="col-sm-4 align-self-end">
+                <button id="btn_visualizar" class="btn btn-primary">Visualizar Declaração</button>
+                <button id="btn_gerar_pdf" class="btn btn-danger" disabled><i class="fa-solid fa-file-pdf"></i>&nbsp;Gerar PDF</button>
+            </div>
+        </div>
+        <div id="result"></div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+    <script>
+
+        $("#btn_visualizar").on('click', function() {
+            info = {};
+            info['nome'] = $('#txt_nome').val();
+            info['rg'] = $('#txt_rg').val();
+            info['genero'] = $('#cb_genero').val();
+            info['ensino'] = $("#cb_ensino option:selected").text();
+            info['serie'] = $("#cb_serie option:selected").text();
+            info['tipo'] = $("#cb_tipo").val();
+            info['ano'] = $("#txt_ano").val();
+            info['destino'] = 3;
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                    if (data) {
+                        $("#result").empty();
+                        $("#result").append('<iframe src="../render_lista?tipo=declaracao&num_classe=black" width="800px" height="1130px"></iframe>')
+                        $("#btn_gerar_pdf").removeAttr('disabled');
+                    }
+                },
+            });            
+        });
+
+        $("#btn_gerar_pdf").on('click', function() {
+            $(this).attr('disabled', '');
+            $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify({'destino':4}),
+                dataType: "json",
+                success: function(data) {
+                    window.open(data);
+                    $("#btn_gerar_pdf").html('Gerar PDF');
+                    $("#btn_gerar_pdf").removeAttr('disabled');
+                },
+            });             
+        });
+
+        $("#cb_ensino").on('change', function() {
+            val = $(this).val();
+            
+            switch (val) {
+                case '0':
+                    $("#cb_serie").empty();
+                    for (var i = 1; i < 4; i++) {
+                        $("#cb_serie").append('<option>' + i + 'ª série</option>');
+                    }
+                    break;
+                case '1':
+                    $("#cb_serie").empty();
+                        $("#cb_serie").append('<option>1º ano</option>');
+                    for (var i = 2; i < 10; i++) {
+                        $("#cb_serie").append('<option>' + i + 'º ano (' + (i - 1) + 'ª série)</option>');
+                    }
+                    break;
+                case '2':
+                    $("#cb_serie").empty();
+                    for (var i = 1; i < 5; i++) {
+                        $("#cb_serie").append('<option>' + i + 'º Termo</option>');
+                    }
+                    break;
+
+                case '3':
+                    $("#cb_serie").empty();
+                    var ano = 6;
+                    for (var i = 9; i < 13; i++) {
+                        $("#cb_serie").append('<option>' + i + 'ª Série (Correspondente ao ' + ano + 'º ano)</option>');
+                        ano++;
+                    }
+                    break;
+                case '4':
+                    $("#cb_serie").empty();
+                    var ano = 6;
+                    for (var i = 1; i < 5; i++) {
+                        $("#cb_serie").append('<option>' + i + 'º Termo (Correspondente ao ' + ano + 'º ano)</option>');
+                        ano++;
+                    }
+                    break;                    
+            }
+        });
+
+    </script>
+  </body>
+</html>

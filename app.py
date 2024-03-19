@@ -12,6 +12,9 @@ import os
 import csv
 import json
 from pyppeteer import launch
+import locale
+
+locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
 
 UPLOAD_FOLDER = os.path.join('staticFiles', 'uploads')
 
@@ -31,6 +34,7 @@ banco = db({'host':"localhost",    # your host, usually localhost
 
 
 home_directory = os.path.expanduser( '~' )
+aux_info = None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -252,6 +256,56 @@ def render_lista():
 
             return render_template('render_pdf/render_lista_if.jinja', classes_if=classes_if, serie=serie, lista_final=lista_final, class_color=class_color, classes_regulares=classes_regulares)
 
+
+        elif tipo == 'declaracao':
+            global aux_info
+            
+            pronome = 'o'
+            if aux_info['genero'] == 'f':
+                pronome = 'a'
+
+            texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, RG: ' + aux_info['rg']
+
+            if aux_info['tipo'] == '0':
+                titulo = 'DECLARAÇÃO DE ESCOLARIDADE'
+
+                if aux_info['ensino'] == 'Ensino Médio Regular' or aux_info['ensino'] == 'Ensino Fundamental EJA - Multisseriada':
+                    pronome_serie = 'na'
+                else:
+                    pronome_serie = 'no'
+
+                texto += ' foi alun%s regularmente matriculad%s %s <b>%s do %s</b>, no ano letivo de %s, tendo sido considerad%s <b>APROVAD%s.</b>' % (pronome, pronome, pronome_serie, aux_info['serie'], aux_info['ensino'].replace(' Regular', '').replace(' - Multisseriada', '').replace(' - Padrão Antigo', ''), aux_info['ano'], pronome, pronome.upper())
+            elif aux_info['tipo'] == '1' or aux_info['tipo'] == '2':
+
+                if aux_info['ensino'] == 'Ensino Médio Regular':
+                    fim = 'na <b>%s do Ensino Médio.</b>' % aux_info['serie']
+                elif aux_info['ensino'] == 'Ensino Fundamental Regular':
+                    fim = 'no <b>%s do Ensino Fundamental.</b>' % aux_info['serie']
+                elif aux_info['ensino'] == 'Ensino Médio EJA':
+                    fim = 'na <b>%sª série do Ensino Médio.</b>' % aux_info['serie'][0:1]
+                    if aux_info['serie'] == '4º Termo':
+                        fim = 'no <b>4º Termo (EJA) do Ensino Médio.</b>'
+                elif aux_info['ensino'] == 'Ensino Fundamental EJA - Multisseriada':
+                    try:
+                        fim = 'no <b>%s (%sª série) do Ensino Fundamental.</b>' % (aux_info['serie'][29:35], int(aux_info['serie'][29:30]) - 1)
+                    except:
+                        fim = 'no <b>%s (%sª série) do Ensino Fundamental.</b>' % (aux_info['serie'][28:34], int(aux_info['serie'][28:29]) - 1)
+                elif aux_info['ensino'] == 'Ensino Fundamental EJA - Padrão Antigo':
+                    fim = 'no <b>%s (%sª série) do Ensino Fundamental.</b>' % (aux_info['serie'][28:34], int(aux_info['serie'][28:29]) - 1) 
+
+                if aux_info['tipo'] == '1':
+                    titulo = 'DECLARAÇÃO DE TRANSFERÊNCIA'
+                    texto += ' solicitou transferência com direito a matricular-se %s' % fim
+                else:
+                    titulo = 'DECLARAÇÃO DE VAGA'
+                    texto += ' solicitou vaga %s' % fim
+
+                
+            data_atual = datetime.now()
+            data_formatada = data_atual.strftime("%d de %B de %Y")
+
+            return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe)
+
 @app.route('/gerar_pdf', methods=['GET', 'POST'])
 async def gerar_pdf():
     info = request.json
@@ -287,7 +341,30 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
-        return jsonify(pdf_path)    
+        return jsonify(pdf_path)  
+
+    elif info['destino'] == 3:
+        global aux_info
+        aux_info = info
+
+        return jsonify(True)
+
+    elif info['destino'] == 4:
+
+        pdf_path = 'static/docs/declaracao.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white')
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path) 
 
 @app.route('/save_dificuldades', methods=['GET', 'POST'])
 def save_dificuldades():
@@ -411,6 +488,11 @@ def getPDFConselhoFinal():
             #print(disciplinas)
             return jsonify({'alunos':alunos, 'turma':turma, 'disciplinas':disciplinas, 'freq':lista_freq})
 
+
+@app.route('/declaracoes', methods=['GET', 'POST'])
+def declaracoes():
+
+    return render_template('declaracoes.jinja')
 
 @app.route('/getPDFListConselho', methods=['GET', 'POST'])
 def getPDFListConselho():

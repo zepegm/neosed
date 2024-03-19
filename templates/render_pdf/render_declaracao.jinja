@@ -1,0 +1,89 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: {{cor}};
+                position: absolute;
+                top:30px;
+                left: 30px;
+                background-color: white;
+            }          
+
+            #logo {
+                width: 117px;
+                height: 136px;
+
+                position: relative;
+                top: 0px;
+                left: 0px;
+            }
+
+            #head {
+                font-family: Arial, Helvetica, sans-serif;
+                font-weight: bold;
+                position: absolute;
+                top:0px;
+                left:132px;
+                line-height: 0.55;                 
+            }
+         
+            #titulo {
+                text-align: center;
+                font-weight: bold;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 25px;
+                margin-top: 80px;
+            }
+
+            #texto {
+                font-family: Arial, Helvetica, sans-serif;
+                text-align: justify;
+                width: 90%;
+                position: relative;
+                left: 5%;
+                font-size: 20px;
+                margin-top: 60px;
+                line-height: 2;
+                text-indent: 100px
+            }
+
+            #data {
+                font-family: Arial, Helvetica, sans-serif;
+                text-align: right;
+                margin-top: 60px;
+                font-size: 20px;
+                margin-right: 5%;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="pagina">
+            <img id="logo" src="../static/images/brasao.svg">
+            <div id="head">
+                <p>GOVERNO DO ESTADO DE SÃO PAULO</p>
+                <p>SECRETARIA DE ESTADO DA EDUCAÇÃO</p>
+                <p>DIRETORIA DE ENSINO REGIÃO GUARATINGUETÁ</p>
+                <p>EE “PROFª. ALICE VILELA GALVÃO”</p>
+                <p>Rua Homero Ortiz Marcondes, 470, Centro, Canas-SP-CEP: 12615-000</p>
+            </div>
+            <div id="titulo">{{titulo}}</div>
+            <div id="texto">{{texto}}</div>
+            <div id="data">Canas, {{data}}</div>
+        </div>
+    </body>
+</htmL>
