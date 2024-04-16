@@ -46,7 +46,7 @@ class xls:
         self.wb.Worksheets(name).Range(endereco).Cells(row, col).value = val
     
     def getActiveRow(self):
-        return self.wb.ActiveCell.Row
+        return self.app.ActiveCell.Row
     
     def setRowHeight(self, row, height):
         self.wb.Rows(str(row) + ":" + str(row)).RowHeight = height
