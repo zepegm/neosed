@@ -722,6 +722,22 @@
                     }
                 }); 
             } else {
+
+                info = {'destino':5, 'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':$("#cbBimestre").val()}
+
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify(info),
+                    dataType: "json",
+                    success: function(data) {
+                    window.open(data);
+                    $("#btnExportarTurma").html('Exportar PDF');
+                    $("#btnExportarTurma").removeAttr('disabled');
+                    },
+                });
+
                 $.ajax({
                     type: "POST",
                     url: "{{ url_for('getPDFListConselho') }}",
@@ -735,7 +751,7 @@
                     error: function(err) {
                         console.log(err);
                     }
-                }); 
+                });
             }            
 
             //gerarAtaConselho($("#cbBimestre").val(), anoAtual, turma);

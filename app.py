@@ -13,6 +13,7 @@ import csv
 import json
 from pyppeteer import launch
 import locale
+import math
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
 
@@ -153,6 +154,147 @@ def index():
 
 
     return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos)
+
+
+@app.route('/render_conselho_bimestre',  methods=['GET', 'POST'])
+def render_conselho_bimestre():
+    if request.method == 'GET':
+        bimestre = request.args.getlist('bimestre')[0]
+        num_classe = request.args.getlist('num_classe')[0]
+
+        inicio = str(banco.executarConsultaVetor('select %sbim_inicio from calendario where ano = (select ano from turma where num_classe = 280612383)' % bimestre)[0])
+        fim = str(banco.executarConsultaVetor('select %sbim_fim from calendario where ano = (select ano from turma where num_classe = 280612383)' % bimestre)[0])
+
+        sql = 'SELECT ' + \
+                "num_chamada as num, ifnull(aluno.rm, '-') as rm, serie, aluno.nome, " + \
+                'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                "ra_aluno as ra_bruto, " + \
+                "if(fim_mat <= '" + fim  + "', situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                "if(fim_mat <= '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
+                "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe = " + num_classe + " and bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade " + \
+                "from vinculo_alunos_turmas " + \
+                'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
+                'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
+                "where num_classe = " + num_classe  + " and matricula <= '" + fim  + "' order by num_chamada"
+
+        alunos = banco.executarConsulta(sql)
+        #print(alunos)
+
+        if (len(alunos) < 1):
+            sql = 'SELECT ' + \
+                "num_chamada as num, ifnull(aluno.rm, '-') as rm, aluno.nome, " + \
+                'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                "ra_aluno as ra_bruto, " + \
+                "if(fim_mat < '" + fim  + "', situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                "if(fim_mat < '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
+                "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade " + \
+                "from vinculo_alunos_if " + \
+                'inner join aluno ON aluno.ra = vinculo_alunos_if.ra_aluno ' + \
+                'inner join situacao ON vinculo_alunos_if.situacao = situacao.id ' + \
+                "where num_classe_if = " + num_classe  + " and matricula <= '" + fim  + "' order by num_chamada"
+
+            #print(sql)
+            alunos = banco.executarConsulta(sql)                
+
+        total = {}
+        ativos = 0
+        maximo = 0
+        for aluno in alunos:
+            if aluno['mat'] == '':
+                ativos += 1
+            maximo += 1
+            if (aluno['dificuldade'] != ''):
+                lista = aluno['dificuldade'].split(',')
+                aluno['dificuldade'] = converterLista(lista)
+                
+                #print(aluno)
+
+        total['total_ativos'] = ativos
+        total['total'] = maximo
+
+        print(total)
+
+        sql = 'SELECT ' + \
+                'num_classe, nome_turma, duracao.descricao as desc_duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, turma.ano, ' + \
+                r"CASE WHEN turma.duracao < 3 THEN DATE_FORMAT(1bim_inicio,'%d/%m/%Y')" + \
+                r"ELSE DATE_FORMAT(3bim_inicio,'%d/%m/%Y') END as inicio, " + \
+                r"CASE WHEN turma.duracao = 1 OR turma.duracao = 3 THEN DATE_FORMAT(4bim_fim,'%d/%m/%Y')" + \
+                r"ELSE DATE_FORMAT(2bim_fim,'%d/%m/%Y') END as fim " + \
+                "from turma " + \
+                "inner join periodo on periodo.id = turma.periodo " + \
+                "inner join calendario on turma.ano = calendario.ano " + \
+                "inner join duracao on turma.duracao = duracao.id " + \
+                "inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino " + \
+                  "where num_classe = " + num_classe
+            
+        turma = banco.executarConsulta(sql)
+
+        if (len(turma) < 1):
+            sql = 'SELECT ' + \
+                'num_classe, nome_turma, duracao.descricao as desc_duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, turma_if.ano, ' + \
+                r"CASE WHEN turma_if.duracao < 3 THEN DATE_FORMAT(1bim_inicio,'%d/%m/%Y')" + \
+                r"ELSE DATE_FORMAT(3bim_inicio,'%d/%m/%Y') END as inicio, " + \
+                r"CASE WHEN turma_if.duracao = 1 OR turma_if.duracao = 3 THEN DATE_FORMAT(4bim_fim,'%d/%m/%Y')" + \
+                r"ELSE DATE_FORMAT(2bim_fim,'%d/%m/%Y') END as fim " + \
+                "from turma_if " + \
+                "inner join periodo on periodo.id = turma_if.periodo " + \
+                "inner join calendario on turma_if.ano = calendario.ano " + \
+                "inner join duracao on turma_if.duracao = duracao.id " + \
+                "inner join tipo_ensino on tipo_ensino.id = turma_if.tipo_ensino " + \
+                "where num_classe = " + num_classe
+                
+            turma = banco.executarConsulta(sql)  
+
+        turma = turma[0]              
+
+        disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, num_classe))
+
+        for item in disciplinas:
+            sql = 'select ' + \
+                    "vinculo_alunos_turmas.ra_aluno, vinculo_alunos_turmas.num_chamada as num, nota, falta, if(ac!=0, ac, '-') as ac " + \
+                    'from notas ' + \
+                    'inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.num_classe = notas.num_classe ' + \
+                    "where disciplina = %s and notas.num_classe = %s and bimestre = %s order by num_chamada" % (item['disciplina'], num_classe, bimestre)
+            
+            lista = {}
+            notas = banco.executarConsulta(sql)
+
+
+            if (len(notas) < 1):
+                sql = 'select ' + \
+                    "vinculo_alunos_if.ra_aluno, vinculo_alunos_if.num_chamada as num, nota, falta, if(ac!=0, ac, '-') as ac " + \
+                    'from notas ' + \
+                    'inner join vinculo_alunos_if on vinculo_alunos_if.ra_aluno = notas.ra_aluno and vinculo_alunos_if.num_classe_if = notas.num_classe ' + \
+                    "where disciplina = %s and notas.num_classe = %s and bimestre = %s order by num_chamada" % (item['disciplina'], num_classe, bimestre)
+                                                                                                                
+                notas = banco.executarConsulta(sql)
+
+            for aluno in notas:
+                lista[aluno['ra_aluno']] = aluno
+
+            item['notas'] = lista
+
+            sql = 'select ' + \
+                    'ra_aluno, sum(falta) as total_faltas, ' + \
+                    'sum(ac) as ac, ' + \
+                    'round(100 - (sum(falta) / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = %s and num_classe = %s) * 100)) as freq ' % (bimestre, num_classe) + \
+                    'from notas where num_classe = %s and bimestre = %s group by ra_aluno' % (num_classe, bimestre)
+
+
+
+
+        lista_freq = {}
+        freq = banco.executarConsulta(sql)
+        for aluno in freq:
+            lista_freq[aluno['ra_aluno']] = aluno
+
+        #print(disciplinas)
+        #print(alunos)
+        #print(turma)
+        #print(disciplinas)
+        #print(freq)
+
+        return render_template('render_pdf/render_conselho_bimestre.jinja', alunos=alunos, turma=turma, disciplinas=disciplinas, freq=freq, total=total, bimestre=bimestre)
 
 @app.route('/render_lista', methods=['GET', 'POST'])
 def render_lista():
@@ -365,6 +507,25 @@ async def gerar_pdf():
         await browser.close()
 
         return jsonify(pdf_path) 
+    
+    elif info['destino'] == 5: # conselho bimestral
+        pdf_path = 'static/docs/conselho.pdf'
+
+        print(info)
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_conselho_bimestre?bimestre=%s&num_classe=%s' % (info['bimestre'], info['num_classe']), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)          
+
 
 @app.route('/save_dificuldades', methods=['GET', 'POST'])
 def save_dificuldades():
@@ -980,7 +1141,6 @@ def listaAlunos():
 
 @app.route('/notas', methods=['GET', 'POST'])
 def notas():
-
     msg = ""
 
     if 'status' in request.args:
@@ -999,6 +1159,8 @@ def notas():
 
         if request.is_json:
             info = request.json
+
+            
 
             # significa que é pra carregar a lista de alunos e as notas atuais
             if info['action'] == 0:
@@ -1042,11 +1204,10 @@ def notas():
             
             # significa que é pra importar o mapão da SED
             elif info['action'] == 1:
-                print(info)
                 file_dir = home_directory + r'\Downloads' + '\\' + info['file']
 
                 data = pd.read_html(file_dir)
-                #print(data)
+                print(data)
                 #df2 = data[0].sum()
                 
                 #coluna = 1
@@ -1065,9 +1226,10 @@ def notas():
 
                 lista = []
 
-                for i in range(0, int(total)):
+                print(total)
+                for i in range(0, int(math.ceil(total))):
                     item = {'disc':data[0][coluna][12]}
-                    #print(item)
+                    print(item)
                     
                     if str(item['disc']).isnumeric():
 
@@ -1274,9 +1436,9 @@ def notas():
         if item['total'] > 0:
 
             if item['id'] != 2 and item['id'] != 5:
-                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s order by duracao, nome_turma' % item['id'])
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = year(now()) order by duracao, nome_turma' % item['id'])
             else:
-                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s order by duracao, nome_turma' % item['id'])
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = year(now()) order by duracao, nome_turma' % item['id'])
 
             listaTurmas.append({'tipo_ensino':item, 'lista':turmas})
 
