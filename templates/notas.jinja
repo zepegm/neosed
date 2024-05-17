@@ -174,7 +174,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" name="checkProfs" type="checkbox" value="{{item['rg']}}" id="check{{item['rg']}}" disabled>
                                     <label class="form-check-label" for="check{{item['rg']}}">
-                                        {{item['nome_ata']}}
+                                        {{item['nome']}}
                                     </label>
                                 </div>
                             {% endfor %}  
@@ -447,7 +447,7 @@
                 type: "POST",
                 url: "{{ url_for('notas') }}",
                 contentType: "application/json",
-                data: JSON.stringify({'action':1, 'file':document.getElementById("file").files[0].name, 'num_classe':$("#lista_geral .active").attr("data-id"), 'duracao':$("#lista_geral .active").attr("data-duracao")}),
+                data: JSON.stringify({'action':1, 'file':document.getElementById("file").files[0].name, 'num_classe':$("#lista_geral .active").attr("data-id"), 'duracao':$("#lista_geral .active").attr("data-duracao"), 'bimestre':$("#cbBimestre").val()}),
                 dataType: "json",
                 success: function(response) {     
                     console.log(response);
@@ -545,7 +545,12 @@
                             $("#tb-mapao tbody .aulas_dadas").append("<th style='border-right-width:4px;' colspan='3'>" + response['lista'][i]['AD'] + "</th>")
 
                             for (var prof in response['professores']) {
-                                $("#prof" + response['lista'][i]['disc']).append("<option value='" + response['professores'][prof]['rg'] + "'>" + response['professores'][prof]['nome_ata'] + "</option>")
+                                var rg = response['professores_atuais'][response['lista'][i]['disc']];
+                                if (rg == response['professores'][prof]['rg']) {
+                                    $("#prof" + response['lista'][i]['disc']).append("<option value='" + response['professores'][prof]['rg'] + "' selected>" + response['professores'][prof]['nome_ata'] + "</option>")
+                                } else {
+                                    $("#prof" + response['lista'][i]['disc']).append("<option value='" + response['professores'][prof]['rg'] + "'>" + response['professores'][prof]['nome_ata'] + "</option>")
+                                }
                             }
                         }
                     }
@@ -723,6 +728,10 @@
                 }); 
             } else {
 
+                $("#btn_gerar_conselho").attr('disabled', '');
+                $("#btn_gerar_conselho").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+
+
                 info = {'destino':5, 'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':$("#cbBimestre").val()}
 
                 $.ajax({
@@ -733,24 +742,9 @@
                     dataType: "json",
                     success: function(data) {
                     window.open(data);
-                    $("#btnExportarTurma").html('Exportar PDF');
-                    $("#btnExportarTurma").removeAttr('disabled');
+                    $("#btn_gerar_conselho").html('Gerar Ata do Conselho');
+                    $("#btn_gerar_conselho").removeAttr('disabled');
                     },
-                });
-
-                $.ajax({
-                    type: "POST",
-                    url: "{{ url_for('getPDFListConselho') }}",
-                    contentType: "application/json",
-                    data: JSON.stringify({'inicio':bimestres[$("#cbBimestre").val() + 'bim']['inicio'], 'fim_bim':bimestres[$("#cbBimestre").val() + 'bim']['fim'], 'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':$("#cbBimestre").val()}),
-                    dataType: "json",
-                    success: function(response) {    
-                        console.log(response);
-                        gerarAtaConselho($("#cbBimestre").val(), anoAtual, turma, bimestres[$("#cbBimestre").val() + 'bim']['fim'], response, dificuldades);
-                    },
-                    error: function(err) {
-                        console.log(err);
-                    }
                 });
             }            
 

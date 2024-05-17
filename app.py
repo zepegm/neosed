@@ -161,6 +161,7 @@ def render_conselho_bimestre():
     if request.method == 'GET':
         bimestre = request.args.getlist('bimestre')[0]
         num_classe = request.args.getlist('num_classe')[0]
+        tipo = 'padrao'
 
         inicio = str(banco.executarConsultaVetor('select %sbim_inicio from calendario where ano = (select ano from turma where num_classe = 280612383)' % bimestre)[0])
         fim = str(banco.executarConsultaVetor('select %sbim_fim from calendario where ano = (select ano from turma where num_classe = 280612383)' % bimestre)[0])
@@ -171,14 +172,17 @@ def render_conselho_bimestre():
                 "ra_aluno as ra_bruto, " + \
                 "if(fim_mat <= '" + fim  + "', situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
                 "if(fim_mat <= '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
-                "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe = " + num_classe + " and bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade " + \
+                "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe = " + num_classe + " and bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade, " + \
+                '(select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') as total_faltas, ' + \
+                'round(100 - ((select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') * 100 / (select sum(aulas_dadas) from  vinculo_prof_disc where bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ')), 0) as freq, ' + \
+                '(select sum(ac) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') as ac ' + \
                 "from vinculo_alunos_turmas " + \
                 'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
                 'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
                 "where num_classe = " + num_classe  + " and matricula <= '" + fim  + "' order by num_chamada"
 
         alunos = banco.executarConsulta(sql)
-        #print(alunos)
+        #print(sql)
 
         if (len(alunos) < 1):
             sql = 'SELECT ' + \
@@ -187,20 +191,27 @@ def render_conselho_bimestre():
                 "ra_aluno as ra_bruto, " + \
                 "if(fim_mat < '" + fim  + "', situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
                 "if(fim_mat < '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
-                "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade " + \
+                "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe_if = " + num_classe + " and bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade, " + \
+                '(select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') as total_faltas, ' + \
+                'round(100 - ((select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') * 100 / (select sum(aulas_dadas) from  vinculo_prof_disc where bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ')), 0) as freq, ' + \
+                '(select sum(ac) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') as ac ' + \
                 "from vinculo_alunos_if " + \
                 'inner join aluno ON aluno.ra = vinculo_alunos_if.ra_aluno ' + \
                 'inner join situacao ON vinculo_alunos_if.situacao = situacao.id ' + \
                 "where num_classe_if = " + num_classe  + " and matricula <= '" + fim  + "' order by num_chamada"
 
             #print(sql)
-            alunos = banco.executarConsulta(sql)                
+            alunos = banco.executarConsulta(sql)
+            tipo = 'if'
+
+        for item in alunos:
+            item['nome'] = item['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')            
 
         total = {}
         ativos = 0
         maximo = 0
         for aluno in alunos:
-            if aluno['mat'] == '':
+            if aluno['fim_mat'] == '':
                 ativos += 1
             maximo += 1
             if (aluno['dificuldade'] != ''):
@@ -294,7 +305,57 @@ def render_conselho_bimestre():
         #print(disciplinas)
         #print(freq)
 
-        return render_template('render_pdf/render_conselho_bimestre.jinja', alunos=alunos, turma=turma, disciplinas=disciplinas, freq=freq, total=total, bimestre=bimestre)
+        sql = 'select %sbim_fim as fim from calendario where ano = (select ano from turma where num_classe = %s)' % (bimestre, num_classe)
+        try:
+            fim_bimestre = banco.executarConsulta(sql)[0]['fim']
+        except:
+            sql = 'select %sbim_fim as fim from calendario where ano = (select ano from turma_if where num_classe = %s)' % (bimestre, num_classe)
+            fim_bimestre = banco.executarConsulta(sql)[0]['fim']
+
+        dificuldades = banco.executarConsulta("select * from dificuldades")
+
+        # verificar se existe itinerário formativo e se existir puxar as notas dele
+
+        turmas_if = []
+        colspan_if = 0
+
+        if tipo == 'padrao':
+            turmas_if = banco.executarConsulta('select num_classe_if from vinculo_if where num_classe_em = %s' % num_classe)
+
+            if len(turmas_if) > 1: # implica que existe Itinerário
+                for aluno in alunos: # buscar pela nota IF individual de cada aluno
+                    notas_if = {}
+                    total_faltas_if = 0
+                    total_ac_if = 0
+
+                    for itf in turmas_if:
+                        notas = banco.executarConsulta('select * from notas where ra_aluno = %s and num_classe = %s and bimestre = %s' % (aluno['ra_bruto'], itf['num_classe_if'], bimestre))
+                        
+                        for n in notas:
+                            notas_if[n['disciplina']] = {'nota':n['nota'], 'falta':n['falta'], 'ac':n['ac']}
+                            total_faltas_if += n['falta']
+                            total_ac_if += n['ac']
+
+                    aluno['if'] = notas_if
+
+            for item in turmas_if:
+                item['nome'] = banco.executarConsultaVetor('select nome_turma from turma_if where num_classe = %s' % item['num_classe_if'])[0]
+
+                sql = 'select ' + \
+	                  'notas.disciplina, ' + \
+                      'disciplinas.descricao, ' + \
+                      'disciplinas.abv, ' + \
+	                  '(select aulas_dadas from vinculo_prof_disc where bimestre = notas.bimestre and disciplina = notas.disciplina and num_classe = notas.num_classe) as aulas_dadas, ' + \
+                      '(select nome_ata from professor where rg = (select rg_prof from vinculo_prof_disc where bimestre = notas.bimestre and disciplina = notas.disciplina and num_classe = notas.num_classe )) as professor ' + \
+                      'from notas ' + \
+                      'inner join disciplinas on disciplinas.codigo_disciplina = disciplina ' + \
+                       'where notas.bimestre = %s and notas.num_classe = %s ' % (bimestre, item['num_classe_if']) + \
+                       'group by disciplina '
+
+                item['disciplinas'] = banco.executarConsulta(sql)
+                colspan_if += len(item['disciplinas'])
+
+        return render_template('render_pdf/render_conselho_bimestre.jinja', alunos=alunos, turma=turma, disciplinas=disciplinas, freq=freq, total=total, bimestre=bimestre, fim_bimestre=fim_bimestre, dificuldades=dificuldades, turmas_if=turmas_if, colspan_if=colspan_if)
 
 @app.route('/render_lista', methods=['GET', 'POST'])
 def render_lista():
@@ -1276,8 +1337,13 @@ def notas():
                 professores = banco.executarConsulta('select rg, nome_ata from vinculo_turma_prof INNER JOIN professor ON professor.rg = vinculo_turma_prof.rg_prof where id_turma = %s order by nome_ata' % info['num_classe'])
                 #print(lista)
 
+                #verificar se já existe professores vinculados a disciplina e se existir criar uma lista
+                professores_atuais = banco.executarConsulta('select rg_prof, disciplina from vinculo_prof_disc where bimestre = %s and num_classe = %s' % (info['bimestre'], info['num_classe']))
+                dict_aux = {}
+                for item in professores_atuais:
+                    dict_aux[item['disciplina']] = item['rg_prof']
 
-                return jsonify({'lista':lista, 'professores':professores})
+                return jsonify({'lista':lista, 'professores':professores, 'professores_atuais':dict_aux})
             
             elif info['action'] == 2:
                 return jsonify(banco.salvarVinculoProfs(info))
