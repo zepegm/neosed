@@ -182,7 +182,7 @@ def render_conselho_bimestre():
                 "where num_classe = " + num_classe  + " and matricula <= '" + fim  + "' order by num_chamada"
 
         alunos = banco.executarConsulta(sql)
-        #print(sql)
+        #print(alunos)
 
         if (len(alunos) < 1):
             sql = 'SELECT ' + \
@@ -321,22 +321,33 @@ def render_conselho_bimestre():
 
         if tipo == 'padrao':
             turmas_if = banco.executarConsulta('select num_classe_if from vinculo_if where num_classe_em = %s' % num_classe)
-
-            if len(turmas_if) > 1: # implica que existe Itinerário
+            
+            if len(turmas_if) > 0: # implica que existe Itinerário
+                
+                turmas_if_concat = banco.executarConsulta("select group_concat(num_classe_if SEPARATOR ', ') as classes_if from vinculo_if where num_classe_em = %s" % num_classe)[0]['classes_if']
+                
                 for aluno in alunos: # buscar pela nota IF individual de cada aluno
                     notas_if = {}
-                    total_faltas_if = 0
-                    total_ac_if = 0
 
                     for itf in turmas_if:
                         notas = banco.executarConsulta('select * from notas where ra_aluno = %s and num_classe = %s and bimestre = %s' % (aluno['ra_bruto'], itf['num_classe_if'], bimestre))
                         
                         for n in notas:
                             notas_if[n['disciplina']] = {'nota':n['nota'], 'falta':n['falta'], 'ac':n['ac']}
-                            total_faltas_if += n['falta']
-                            total_ac_if += n['ac']
 
                     aluno['if'] = notas_if
+
+                    sql = 'select ' + \
+	                      'sum(falta) as total_faltas_if, ' + \
+                          'sum(ac) as total_ac_if, ' + \
+                          'round(100 - ((select sum(falta) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = ' + str(bimestre) + ' and num_classe =  (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
+                          'from notas ' + \
+                          'where num_classe in (' + turmas_if_concat + ') and bimestre = ' + str(bimestre) + ' and ra_aluno = ' + str(aluno['ra_bruto'])
+                    print(sql)
+
+                    freq_if = banco.executarConsulta(sql)[0]
+                    
+                    aluno['freq_if'] = freq_if
 
             for item in turmas_if:
                 item['nome'] = banco.executarConsultaVetor('select nome_turma from turma_if where num_classe = %s' % item['num_classe_if'])[0]
