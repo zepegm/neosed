@@ -187,7 +187,8 @@ def render_conselho_bimestre_all():
         inicio = str(banco.executarConsultaVetor('select %sbim_inicio from calendario where ano = (select ano from turma where num_classe = 280612383)' % bimestre)[0])
         fim = str(banco.executarConsultaVetor('select %sbim_fim from calendario where ano = (select ano from turma where num_classe = 280612383)' % bimestre)[0])
 
-        top = 2280
+        top = 2278
+        limite = 1124
 
         # listar turma por turma
         for turma in turmas:
@@ -260,13 +261,13 @@ def render_conselho_bimestre_all():
 
             turma['fim_bimestre'] = fim_bimestre
             turma['top'] = top
-            top += 1125
+            top += limite
             turma['top_mapao'] = top
-            top += 1125
+            top += limite
             turma['top_verso'] = top
-            top += 1125
+            top += limite
             turma['top_blank'] = top
-            top += 1125
+            top += limite
 
             # verificar se existe IF nessa turma
             turmas_if = []
@@ -277,9 +278,9 @@ def render_conselho_bimestre_all():
             if len(turmas_if) > 0: # implica que existe Itinerário
 
                 turma['top_mapao_if'] = top
-                top += 1125
+                top += limite
                 turma['top_verso_if'] = top
-                top += 1125
+                top += limite
                 
                 turmas_if_concat = banco.executarConsulta("select group_concat(num_classe_if SEPARATOR ', ') as classes_if from vinculo_if where num_classe_em = %s" % turma['num_classe'])[0]['classes_if']
                 
@@ -764,6 +765,22 @@ async def gerar_pdf():
 
         page = await browser.newPage()
         await page.goto('http://localhost/render_conselho_bimestre?bimestre=%s&num_classe=%s' % (info['bimestre'], info['num_classe']), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)  
+
+    elif info['destino'] == 6: # conselho bimestral completo
+        pdf_path = 'static/docs/conselho.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_conselho_bimestre_all?bimestre=%s&ano=%s' % (info['bimestre'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
