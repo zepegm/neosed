@@ -383,11 +383,11 @@
         <div id="pag2" class="blank_pag"></div>
         <div id="pag3">
             <img id="logo" src="../static/images/Logo Neo Sed White.png">
-            <div id="titulo">Lista Geral - <span class="red">{{turma['nome_turma']}}</span> - {{turma['tipo_ensino']}} - {{turma['duracao']}}</div>
+            <div id="titulo">Lista Geral - <span class="red">{{turma['nome_turma']}}</span> - {{turma['tipo_ensino']}} - {{turma['desc_duracao']}}</div>
             <div id="head">
                 <p><b>Número da Classe: </b>{{turma['num_classe']}}</p>
                 <p><b>Período:</b> {{turma['periodo']}}</p>
-                <p><b>Duração:</b> {{turma['duracao_tempo']}}</p>
+                <p><b>Duração:</b> {{turma['inicio']}} até {{turma['fim']}}</p>
                 <p><b>Total:</b> {{total['total_ativos']}} ativos ({{total['total']}} no total)</p>
             </div>
             <div id="sub1" class="subtitulo">
