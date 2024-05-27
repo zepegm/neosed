@@ -386,10 +386,6 @@
                         <button id="btn_dificuldades" class="btn btn-danger" disabled>Salvar Dificuldades</button>
                         <button id="btn_import_dificuldades" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importDificuldades" disabled>Importar Dificuldades</button> 
                     </div>
-                    <div class="col-sm-12">&nbsp;</div>  
-                    <div class="col-sm-12 align-items-end">
-                        <button id="btn_boletim" class="btn btn-primary" disabled>Gerar Boletins</button>
-                    </div>
                     <div id="feedback_geral" class="col-sm-12">&nbsp;</div>              
                     <div id="listaGeral" class="col-sm-12"></div>
                 </div>
@@ -825,7 +821,6 @@
             $("#lista_geral .list-group-item").removeClass('active');
             $(this).addClass('active');
             $("#cbBimestre").removeAttr('disabled');
-            $("#btn_boletim").removeAttr('disabled');
             $("#file").removeAttr('disabled');
             $("#cbBimestre").empty();
 
