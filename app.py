@@ -14,6 +14,7 @@ import json
 from pyppeteer import launch
 import locale
 import math
+import calendar
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
 
@@ -1716,6 +1717,39 @@ def notas():
     bim['4bim'] = {'inicio':bimestres[0]['4bim_inicio'], 'fim':bimestres[0]['4bim_fim']}
 
     return render_template('notas.jinja', bimestres=json.dumps(bim, indent=4, sort_keys=True, default=str), classificacao=classificacao, msg=msg, disciplinas=disciplinas, listaTurmas=listaTurmas, professores=professores, dificuldades=json.dumps(dificuldades))
+
+
+@app.route('/calendario', methods=['GET', 'POST'])
+def calendario():
+
+    # montando calendário padrão
+
+    ano = 2024
+
+    calendario = []
+    letivos = 0
+
+    # percorrendo todo os meses do ano
+    for i in range(1, 13):
+        qtd_dias = calendar.monthrange(ano, i)[1]
+
+        dias = []
+
+        for j in range(1, qtd_dias + 1):
+            date_aux = datetime(ano, i, j)
+            
+
+            if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb':
+                letivos += 1
+                dias.append({'dia':j, 'semana':date_aux.strftime("%a"), 'situacao':'Letivo'})
+            else:
+                dias.append({'dia':j, 'semana':date_aux.strftime("%a"), 'situacao':'-'})
+
+        #desc_mes = datetime(ano, i, 1)
+
+        calendario.append({'dias':dias, 'descricao':calendar.month_name[i].title()})
+
+    return render_template('calendario.jinja', calendario=calendario, letivos=letivos)
 
 if __name__ == '__main__':
     app.run('0.0.0.0',port=80)

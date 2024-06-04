@@ -1,15 +1,32 @@
-from excel import xls
-from MySQL import db
+import calendar
+from datetime import datetime
+import locale
 
-def my_sql():
-    banco = db({'host':"localhost",    # your host, usually localhost
-                'user':"root",         # your username
-                'passwd':"Yasmin",  # your password
-                'db':"neosed"})
-    
-    turmas_if = banco.executarConsulta('select num_classe_if from vinculo_if where num_classe_em = 280178138')
+locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
 
-    if len(turmas_if) > 1: # implica que existe Itinerário
-        print('a')
+# montando calendário padrão
 
-my_sql()
+ano = 2024
+
+calendario = []
+letivos = 0
+
+# percorrendo todo os meses do ano
+for i in range(1, 13):
+    qtd_dias = calendar.monthrange(ano, i)[1]
+
+    dias = []
+
+    for j in range(1, qtd_dias + 1):
+        date_aux = datetime(ano, i, j)
+        dias.append({'dia':j, 'semana':date_aux.strftime("%a")})
+
+        if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb':
+            letivos += 1
+
+    #desc_mes = datetime(ano, i, 1)
+
+    calendario.append({'dias':dias, 'descricao':calendar.month_name[i].title()})
+
+print(calendario)
+print(letivos)
