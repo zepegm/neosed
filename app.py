@@ -1718,13 +1718,121 @@ def notas():
 
     return render_template('notas.jinja', bimestres=json.dumps(bim, indent=4, sort_keys=True, default=str), classificacao=classificacao, msg=msg, disciplinas=disciplinas, listaTurmas=listaTurmas, professores=professores, dificuldades=json.dumps(dificuldades))
 
+@app.route('/frequencia', methods=['GET', 'POST'])
+def frequencia():
+
+    msg = ''
+
+    if request.method == 'POST':
+        if request.is_json:
+            info = request.json
+
+            if info['action'] == 1: # pegar lista de alunos
+                
+                sql = "select vinculo_alunos_turmas.ra_aluno, aluno.nome, " + \
+                      'if(frequencia.freq = 0, "", "checked") as check_form, ' + \
+                      'if(frequencia.freq = 0, "text-danger", "") as text_form ' + \
+                      "from vinculo_alunos_turmas " + \
+                      "inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno " + \
+                      "left join frequencia on frequencia.ra_aluno = vinculo_alunos_turmas.ra_aluno and frequencia.`date` = '%s' " % info['dia'] + \
+                      "where num_classe = %s and ('%s' BETWEEN matricula and fim_mat) order by nome" % (info['num_classe'], info['dia'])
+                
+                alunos = banco.executarConsulta(sql)
+
+                sql = "select count(frequencia.freq) as total " + \
+                      "from vinculo_alunos_turmas " + \
+                      "inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno " + \
+                      "left join frequencia on frequencia.ra_aluno = vinculo_alunos_turmas.ra_aluno and frequencia.`date` = '%s' " % info['dia'] + \
+                      "where num_classe = %s and ('%s' BETWEEN matricula and fim_mat) order by nome" % (info['num_classe'], info['dia'])
+                
+                total = banco.executarConsultaVetor(sql)[0]
+
+
+                return jsonify({'lista':alunos, 'total':total})
+            
+            elif info['action'] == 2: # salvar lista
+
+                lista = info['lista']
+
+                resultado = True
+
+                for item in lista:
+                    if not banco.insertOrUpdate(item, 'frequencia'):
+                        resultado = False
+
+                return jsonify(resultado)
+            
+            elif info['action'] == 3:
+
+                texto_final = '*Faltas do dia %s/%s/%s*' % (info['data'][8:10], info['data'][5:7], info['data'][0:4])
+                texto_final += '\n\n'
+
+                turmas = banco.executarConsulta('select num_classe, nome_turma from turma where ano = %s order by tipo_ensino, nome_turma' % info['data'][:4])
+
+                for turma in turmas:
+                    texto_final += "*" + turma['nome_turma'].replace(' série ', '') + ':*\n'
+
+                    alunos = banco.executarConsulta("SELECT	vinculo_alunos_turmas.ra_aluno, aluno.nome FROM vinculo_alunos_turmas INNER JOIN frequencia ON frequencia.ra_aluno = vinculo_alunos_turmas.ra_aluno and frequencia.date = '%s'INNER JOIN aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno WHERE num_classe = %s and vinculo_alunos_turmas.situacao = 1 and freq = 0 ORDER BY nome" % (info['data'], turma['num_classe']))
+
+                    for aluno in alunos:
+                        texto_final += '- %s\n' % aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+
+                    texto_final += '\n'
+
+
+                print(texto_final)
+
+    listaTipos = banco.executarConsulta('select tipo_ensino.id, tipo_ensino.descricao as tipo_ensino, if (count(turma.tipo_ensino) > 0, count(turma.tipo_ensino), count(turma_if.tipo_ensino)) as total from tipo_ensino LEFT JOIN turma ON turma.tipo_ensino = tipo_ensino.id LEFT JOIN turma_if ON turma_if.tipo_ensino = tipo_ensino.id WHERE id != 2 and id != 5 GROUP BY id order by id')
+
+    listaTurmas = []
+    hoje = datetime.now()
+
+    for item in listaTipos:
+        
+        if item['total'] > 0:
+
+            if item['id'] != 2 and item['id'] != 5:
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = year(now()) order by duracao, nome_turma' % item['id'])
+            else:
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = year(now()) order by duracao, nome_turma' % item['id'])
+
+            listaTurmas.append({'tipo_ensino':item, 'lista':turmas})
+
+    return render_template('frequencia.jinja', listaTurmas=listaTurmas, data=hoje.strftime('%Y-%m-%d'), msg=msg)
+
 
 @app.route('/calendario', methods=['GET', 'POST'])
 def calendario():
 
-    # montando calendário padrão
+    status = ''
+    ano = datetime.now().year
 
-    ano = 2024
+    if request.method == 'POST': # recebeu novo pedido para cadastrar evento
+        data_inicial = request.form['data_inicial']
+        data_final = request.form['data_final']
+        evento = request.form['cb_evento']
+        descricao = request.form['descricao']
+
+        # verificar se o ano foi digitado corretamente
+        if int(data_inicial[0:4]) == ano and int(data_final[0:4]) == ano:
+            # prosseguir
+            if banco.inserirEvento(data_inicial, data_final, evento, descricao):
+                status = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação bem sucedida!</strong> Evento cadastrado com sucesso.' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'          
+            else:
+                status = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Erro falta!</strong> Falha ao tentar inserir informações no Banco de Dados!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'                  
+        else:
+            status = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                     '<strong>Atenção!</strong> Por favor digite uma data dentro do <strong>ano atual!</strong>' \
+                     '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                     '</div>'
+
+    # montando calendário padrão
 
     calendario = []
     letivos = 0
@@ -1734,22 +1842,55 @@ def calendario():
         qtd_dias = calendar.monthrange(ano, i)[1]
 
         dias = []
+        letivos_mes = 0
 
         for j in range(1, qtd_dias + 1):
             date_aux = datetime(ano, i, j)
             
 
-            if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb':
-                letivos += 1
-                dias.append({'dia':j, 'semana':date_aux.strftime("%a"), 'situacao':'Letivo'})
+            if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb': # dias de semana
+
+                evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
+
+                situacao = 'Letivo'
+                color = 'table-light'
+
+                if (len(evento) > 0):
+                    letivos += evento[0]['qtd_letivo']
+                    letivos_mes += evento[0]['qtd_letivo']
+                    situacao = evento[0]['descricao']
+                    color = 'table-danger'
+                else:
+                    letivos += 1
+                    letivos_mes += 1
+
+                dias.append({'dia':j, 'semana':date_aux.strftime("%a"), 'situacao':situacao, 'color':color})
             else:
-                dias.append({'dia':j, 'semana':date_aux.strftime("%a"), 'situacao':'-'})
+
+                evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
+
+                situacao = '-'
+                color = 'table-secondary'
+
+                if (len(evento) > 0):
+                    letivos += evento[0]['qtd_letivo']
+                    letivos_mes += evento[0]['qtd_letivo']
+                    situacao = evento[0]['descricao']
+
+                    if situacao == 'Reposição':
+                        color = 'table-warning'
+                    else:
+                        color = 'table-danger'
+
+                dias.append({'dia':j, 'semana':date_aux.strftime("%a"), 'situacao':situacao, 'color':color})
 
         #desc_mes = datetime(ano, i, 1)
 
-        calendario.append({'dias':dias, 'descricao':calendar.month_name[i].title()})
+        calendario.append({'dias':dias, 'descricao':calendar.month_name[i].title(), 'letivos':letivos_mes})
 
-    return render_template('calendario.jinja', calendario=calendario, letivos=letivos)
+    eventos = banco.executarConsulta('select id, descricao from cat_letivo')
+
+    return render_template('calendario.jinja', calendario=calendario, letivos=letivos, ano=ano, eventos=eventos, status=status)
 
 if __name__ == '__main__':
     app.run('0.0.0.0',port=80)

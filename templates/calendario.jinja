@@ -40,8 +40,11 @@
                         <a class="nav-link" href="../notas">Notas</a>
                     </li>  
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Declaração</a>
-                    </li>                                       
+                        <a class="nav-link" href="../declaracoes">Declaração</a>
+                    </li>   
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Calendário</a>
+                    </li>                                                          
                 </ul>                  
             </div>            
         </div>
@@ -50,23 +53,43 @@
     <main class="container-xxl">
         <div class="row">
             <div class="col-sm-12">
-                <p class="fs-2">Cadastro do Calendário Letivo</p>
+                <p class="fs-2">Cadastro do Calendário Letivo - {{ano}} - <b>Dias Letivos no Ano: {{letivos}}</b></p>
+            </div>
+            <div class="col-sm-12">{{status}}</div>
+            <div class="col-sm-12">
+                <form method="POST" action="/calendario">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1">De: </span>
+                        <input type="date" class="form-control" id="data_inicial" name="data_inicial" min="{{ano}}-01-01" max="{{ano}}-12-31" value="{{ano}}-01-01" required>
+                        <span class="input-group-text" id="basic-addon1">Até: </span>
+                        <input type="date" class="form-control" id="data_final" name="data_final" min="{{ano}}-01-01" max="{{ano}}-12-31" value="{{ano}}-01-01" required>
+                        <span class="input-group-text" id="basic-addon1">Tipo de Evento: </span>
+                        <select class="form-select" name="cb_evento">
+                            {% for opcao in eventos %}
+                                <option value="{{opcao['id']}}">{{opcao['descricao']}}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="input-group-text" id="basic-addon1">Descrição: </span>
+                        <input type="text" class="form-control" name="descricao">
+                        <input type="submit" value="Cadastrar Novo Evento" class="btn btn-primary">
+                    </div>
+                </form>
             </div>
             <div class="col-sm-12">&nbsp;</div>
             {% for item in calendario %}
-                <div class="col-sm-4">
+                <div class="col-sm-3">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th colspan="3">{{item['descricao']}}</th>
+                                <td colspan="3" class="table-warning text-center"><b>{{item['descricao']}} - {{item['letivos']}}</b> dias letivos</td>
                             </tr>
                         </thead>
                         <tbody>
                             {% for dia in item['dias'] %}
                             <tr>
-                                <td>{{dia['dia']}}</td>
-                                <td>{{dia['semana']}}</td>
-                                <td>{{dia['situacao']}}</td>
+                                <th class="text-center {{dia['color']}}">{{'%02d' % dia['dia']}}</th>
+                                <td class="text-center {{dia['color']}}">{{dia['semana']}}</td>
+                                <td class="text-center {{dia['color']}}">{{dia['situacao']}}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -83,6 +106,10 @@
 
     <script>
 
+    $("#data_inicial").on('change', function(){
+        $("#data_final").val($(this).val());
+        $("#data_final").attr('min', $(this).val());
+    });
 
     </script>
   </body>

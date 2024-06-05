@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Frequência dos alunos</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+        table {
+            border: solid 4px rgba(0,0,0,1);
+        }
+
+        .form-check-input {
+            cursor: pointer;
+        }
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+               <i class="fa-solid fa-home"></i>
+                Home
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../listaAlunos">Lista de Alunos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../notas">Notas</a>
+                    </li>  
+                    <li class="nav-item">
+                        <a class="nav-link" href="../declaracoes">Declaração</a>
+                    </li>   
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Calendário</a>
+                    </li>                                                          
+                </ul>                  
+            </div>            
+        </div>
+    </nav>  
+
+    <main class="container-xxl">
+
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="fs-2">Cadastro Frequência</p>
+            </div>
+            <div class="col-sm-12" id="status_result">{{msg|safe}}</div>
+        </div>
+
+        <hr>
+        <div class="row">
+            <div class="col-sm-5">
+                <div id="lista_geral" class="list-group">
+                    {% for ensino in listaTurmas %}
+                        <p class="fs-4">{{ensino['tipo_ensino']['tipo_ensino']}}</p>
+                        {% for turma in ensino['lista'] %}
+                            <a data-duracao="{{turma['duracao']}}" href="#" class="list-group-item list-group-item-action" data-id="{{turma['num_classe']}}">
+                                {{turma['nome_turma']}} - {{turma['duracao']}}
+                            </a>
+                        {% endfor %}
+
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-sm-7">
+                <div class="row">
+                    <div class="col-sm-4">
+                        <p class="fs-4">Data:</p>
+                        <input type="date" class="form-control" id="data_freq" value="{{data}}" disabled>                 
+                    </div>
+                    <div class="col-sm-8 align-self-end">
+                        <button id="btn_salvar" class="btn btn-primary" disabled>Salvar Frequência</button>
+                        <button id="btn_text_wp" class="btn btn-success">Pegar texto pra WP</button>
+                    </div>
+                    <div class="col-sm-12">
+                        <div id="lista_alunos" class="row"></div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-sm-6">
+                
+            </div>
+        </div>        
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+    <script>
+
+        function carregarAlunos(dia, num_classe) {
+            info = {'action':1, 'dia':dia, 'num_classe':num_classe}
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('frequencia') }}",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(response) {
+                    $("#lista_alunos").empty();
+
+                    $("#lista_alunos").append("<div class='col-sm-12 text-secondary'><hr></div>");
+
+                    if (response['total'] > 0) {
+                        $("#lista_alunos").append("<div class='col-sm-12 text-success'>Registro já lançado!</div>");
+                    } else {
+                        $("#lista_alunos").append("<div class='col-sm-12 text-secondary'>Registro não lançado!</div>");
+                    }
+
+                    $("#lista_alunos").append("<div class='col-sm-12 text-secondary'><hr></div>");
+
+                    for (item in response['lista']) {
+                        $("#lista_alunos").append('<div class="col-sm-8 ' + response['lista'][item]['text_form'] + '" id="lb_aluno' + response['lista'][item]['ra_aluno'] + '">' + response['lista'][item]['nome'] + '</div>')
+                        $("#lista_alunos").append('<div class="col-sm-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" data-ra="' + response['lista'][item]['ra_aluno'] + '" id="check_aluno' + response['lista'][item]['ra_aluno'] + '" ' + response['lista'][item]['check_form'] + '><label class="form-check-label" for="flexSwitchCheckDefault">Frequente</label></div></div>')
+                    }
+
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });
+        }
+
+        $("#btn_text_wp").on('click', function() {
+
+            info = {'action':3, 'data':$('#data_freq').val()}
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('frequencia') }}",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(response) {
+                    console.log(response);
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            })            
+        });
+
+        $("#btn_salvar").on('click', function() {
+            // iniciar salvamento da lista de frequência
+
+            lista = [];
+
+            $(".form-check-input").each(function( index ) {
+                ra_aluno = $(this).attr('data-ra');
+                dia = $("#data_freq").val();
+
+                if ($(this).is(":checked")) {
+                    lista.push({'ra_aluno':"'" + ra_aluno + "'", 'date':"'" + dia + "'", 'freq':'1'});
+                } else {
+                    lista.push({'ra_aluno':"'" + ra_aluno + "'", 'date':"'" + dia + "'", 'freq':'0'});
+                }                
+
+            }); 
+
+            info = {'action':2, 'lista':lista}
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('frequencia') }}",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(response) {
+                    if (response) {
+                        $("#status_result").html('<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Operação bem sucedida!</strong> Frequência registrada com sucesso!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+                    } else {
+                        $("#status_result").html('<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Erro falta!</strong> Falha grave ao tentar inserir dados de frequência no banco.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+                    }
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });
+
+        });
+
+        $("#lista_geral .list-group-item").on('click', function() {            
+
+            $("#lista_geral .list-group-item").removeClass('active');
+            $(this).addClass('active');
+            $("#data_freq").removeAttr('disabled');
+            $("#btn_salvar").removeAttr('disabled');
+            
+            dia = $("#data_freq").val();
+            num_classe = $(this).attr('data-id');
+
+            carregarAlunos(dia, num_classe);
+
+        });
+
+        $("#lista_alunos").on('change', '.form-check-input', function(e) {
+            ra_aluno = $(this).attr('data-ra');
+
+            if ($(this).is(":checked")) {
+                $("#lb_aluno" + ra_aluno).removeClass('text-danger');
+            } else {
+                $("#lb_aluno" + ra_aluno).addClass('text-danger');
+            }
+        });
+
+        $("#data_freq").on('change', function() {
+            dia = $(this).val();
+            num_classe = $('#lista_geral .active').attr("data-id");
+            
+            carregarAlunos(dia, num_classe);
+        });
+
+    </script>
+  </body>
+</html>

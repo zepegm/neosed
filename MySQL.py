@@ -252,7 +252,7 @@ class db:
 
             sql = "INSERT INTO " + tabela + " (" + keys[:-2] + ") VALUES(" + data[:-2] + ") ON DUPLICATE KEY UPDATE " + update[:-2]
 
-            print(sql)
+            #print(sql)
 
             cur.execute(sql)
             database.commit()
@@ -287,3 +287,31 @@ class db:
         except Exception as error:
             print("An exception occurred:", error) # An exception occurred: division by zero
             return False            
+        
+
+    def inserirEvento(self, data_inicial, data_final, evento, descricao):
+        try:
+
+            if descricao == '':
+                descricao = 'null'
+            else:
+                descricao = "'" + descricao + "'"
+
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()        
+
+            # remover dados conflitantes
+            cur.execute('SET SQL_SAFE_UPDATES = 0')
+            cur.execute("DELETE FROM eventos_calendario WHERE (data_inicial BETWEEN '%s' AND '%s')" % (data_inicial, data_final))
+            cur.execute("DELETE FROM eventos_calendario WHERE (data_final BETWEEN '%s' AND '%s')" % (data_inicial, data_final))
+            cur.execute('SET SQL_SAFE_UPDATES = 1;')
+            print("INSERT INTO eventos_calendario VALUES('%s', '%s', %s, %s)" % (data_inicial, data_final, evento, descricao))
+            cur.execute("INSERT INTO eventos_calendario VALUES('%s', '%s', %s, %s)" % (data_inicial, data_final, evento, descricao))
+
+            database.commit()
+
+            return True
+
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
+            return False  
