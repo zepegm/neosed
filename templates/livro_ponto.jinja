@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastro de Livro Ponto</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+        table {
+            border: solid 4px rgba(0,0,0,1);
+        }
+
+        .form-check-input {
+            cursor: pointer;
+        }
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    {% block menu_superior %}
+      {% include 'menu.jinja' %}
+    {% endblock %}  
+
+    <div class="modal fade" id="modal_cadastro_professor" tabindex="-1" aria-labelledby="modal_mapaoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <form action="ponto" method="POST" id="enviarDadosProf">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_mapaoLabel">Cadastro de Professor:</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="scoll-tree">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_nome">Nome:</label>
+                                    <input type="text" class="form-control" placeholder="Nome Completo" name="nome" id="txt_nome" maxlength="200" required>                                
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_cpf">CPF:</label>
+                                    <input type="text" class="form-control" placeholder="Somente Números" name="cpf" id="txt_cpf" maxlength="11" required>                                
+                                </div>
+                            </div>
+                            <div class="col-sm-2">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_cpf">Faixa/Nível:</label>
+                                    <input type="text" class="form-control" name="faixa" id="txt_faixa" maxlength="11">                                
+                                </div>
+                            </div>
+
+                            <div class="col-sm-5">
+                                <label class="form-label" for="txt_rg">RG:</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" class="form-control" id="txt_rg" name="rg" style="width: 50%" required>
+                                    <span class="input-group-text" id="basic-addon1">-</span>
+                                    <input type="text" class="form-control" id="txt_digito_rg" name="digito_rg" maxlength="1">
+                                </div>
+                            </div>
+                            <div class="col-sm-5">
+                                <label class="form-label" for="txt_rs">RS/PV:</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" class="form-control" id="txt_rs" name="rs" style="width: 50%" required>
+                                    <span class="input-group-text" id="basic-addon1">-</span>
+                                    <input type="number" class="form-control" id="txt_pv" name="pv">
+                                </div>                                
+                            </div> 
+                            <div class="col-sm-2">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_di">DI:</label>
+                                    <input type="number" class="form-control" id="txt_di" name="di">
+                                </div>
+                            </div>  
+
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_cargo">Cargo:</label>
+                                    <select class="form-select" id="cb_cargo" name="cargo">
+                                        {% for cargo in cargos %}
+                                        <option value="{{cargo['id']}}">{{cargo['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-3">
+                                <div class="mb-3">
+                                <label class="form-label" for="cb_categoria">Categoria:</label>
+                                    <select class="form-select" id="cb_categoria" name="categoria">
+                                        {% for item in categorias %}
+                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-3">
+                                <div class="mb-3">
+                                <label class="form-label" for="cb_jornada">Jornada:</label>
+                                    <select class="form-select" id="cb_jornada" name="jornada">
+                                        {% for item in jornadas %}
+                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_sede_classificacao">Sede de Classificação:</label>
+                                    <select class="form-select" id="cb_sede_classificacao" name="sede_classificacao">
+                                        {% for item in escolas %}
+                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_sede_frequencia">Sede de Controle de Frequência:</label>
+                                    <select class="form-select" id="cb_sede_frequencia" name="sede_frequencia">
+                                        {% for item in escolas %}
+                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_disciplina">Disciplina:</label>
+                                    <select class="form-select" id="cb_disciplina" name="disciplina">
+                                        <option value="null">-</option>
+                                        {% for item in disciplinas %}
+                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>                            
+
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_afastamento">Afastamento:</label>
+                                    <select class="form-select" id="cb_afastamento" name="afastamento">
+                                        <option value="null">-</option>
+                                        {% for item in afastamentos %}
+                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div> 
+
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="assina" name="assina" checked>
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            Assina o livro ponto?
+                                        </label>
+                                    </div>                               
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" id="btn-confirmar" class="btn btn-warning">Confirmar Dados</button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+
+    <main class="container-xxl">
+
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="fs-2">Cadastro de Livro Ponto</p>
+            </div>
+            <div class="col-sm-12" id="status_result">{{msg|safe}}</div>
+        </div>
+
+        <hr>
+        <div class="row">
+            <div class="col-sm-12">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_cadastro_professor">Cadastrar Novo Professor</button>
+            </div>
+        </div>     
+        <hr>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <table id="tb-principal" class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nome</th>
+                            <th scope="col">RG</th>
+                            <th scope="col">CPF</th>                        
+                        </tr>
+                    </thead>
+                    <tbody class="table-light">
+                        {% for professor in professores %}
+                        <tr>
+                            <td>{{professor['nome']}}</td>
+                            <td></td>
+                            <td>{{professor['cpf']}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>           
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> 
+
+    <script>
+
+        $("#txt_cpf").mask('000.000.000-00', {reverse: true});
+
+        $("#txt_nome").on('change', function() {
+            $(this).val(capitalizeFirstLetter($(this).val()));
+        });
+
+        function capitalizeFirstLetter(string) {
+            result = string.toLowerCase();
+            return result.replace(/\b\w/g, c => c.toUpperCase())
+        }
+
+    </script>
+  </body>
+</html>

@@ -1765,22 +1765,26 @@ def frequencia():
             elif info['action'] == 3:
 
                 texto_final = '*Faltas do dia %s/%s/%s*' % (info['data'][8:10], info['data'][5:7], info['data'][0:4])
-                texto_final += '\n\n'
+                texto_final += '<br><br>'
 
                 turmas = banco.executarConsulta('select num_classe, nome_turma from turma where ano = %s order by tipo_ensino, nome_turma' % info['data'][:4])
 
                 for turma in turmas:
-                    texto_final += "*" + turma['nome_turma'].replace(' série ', '') + ':*\n'
+                    texto_final += "*" + turma['nome_turma'].replace(' série ', '') + ':*<br>'
 
                     alunos = banco.executarConsulta("SELECT	vinculo_alunos_turmas.ra_aluno, aluno.nome FROM vinculo_alunos_turmas INNER JOIN frequencia ON frequencia.ra_aluno = vinculo_alunos_turmas.ra_aluno and frequencia.date = '%s'INNER JOIN aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno WHERE num_classe = %s and vinculo_alunos_turmas.situacao = 1 and freq = 0 ORDER BY nome" % (info['data'], turma['num_classe']))
 
+                    if len(alunos) < 1:
+                        texto_final += ' - Sem Faltas Registradas<br>'
+
                     for aluno in alunos:
-                        texto_final += '- %s\n' % aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+                        texto_final += '- %s<br>' % aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
 
-                    texto_final += '\n'
+                    texto_final += '<br>'
 
 
-                print(texto_final)
+                #print(texto_final.replace('<br>', '\n'))
+                return jsonify(texto_final)
 
     listaTipos = banco.executarConsulta('select tipo_ensino.id, tipo_ensino.descricao as tipo_ensino, if (count(turma.tipo_ensino) > 0, count(turma.tipo_ensino), count(turma_if.tipo_ensino)) as total from tipo_ensino LEFT JOIN turma ON turma.tipo_ensino = tipo_ensino.id LEFT JOIN turma_if ON turma_if.tipo_ensino = tipo_ensino.id WHERE id != 2 and id != 5 GROUP BY id order by id')
 
@@ -1799,6 +1803,56 @@ def frequencia():
             listaTurmas.append({'tipo_ensino':item, 'lista':turmas})
 
     return render_template('frequencia.jinja', listaTurmas=listaTurmas, data=hoje.strftime('%Y-%m-%d'), msg=msg)
+
+@app.route('/ponto', methods=['GET', 'POST'])
+def ponto():
+
+    msg = ''
+
+    if request.method == 'POST': # ouve envio de formulário
+        if 'nome' in request.form: # é para cadastrar ou alterar professor
+
+            # preparar dados
+            dados = {}
+            dados['cpf'] = request.form['cpf'].replace('.', '').replace('-', '')
+            dados['nome'] = "'%s'" % request.form['nome']
+            dados['rg'] = "'%s'" % request.form['rg']
+            dados['digito'] = 'null' if request.form['digito_rg'] == '' else "'%s'" % request.form['digito_rg']
+            dados['rs'] = 'null' if request.form['rs'] == '' else request.form['rs']
+            dados['pv'] = 'null' if request.form['pv'] == '' else request.form['pv']
+            dados['cargo'] = request.form['cargo']
+            dados['categoria'] = request.form['categoria']
+            dados['jornada'] = request.form['jornada']
+            dados['sede_classificacao'] = request.form['sede_classificacao']
+            dados['sede_controle_freq'] = request.form['sede_frequencia']
+            dados['di'] = 'null' if request.form['di'] == '' else request.form['di']
+            dados['disciplina'] = request.form['disciplina']
+            dados['afastamento'] = request.form['afastamento']
+            dados['FNREF'] = 'null' if request.form['faixa'] == '' else "'%s'" % request.form['faixa']
+            dados['assina_livro'] = 1 if 'assina' in request.form else 0
+
+            if banco.insertOrUpdate(dados, 'professor_livro_ponto'):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação bem-sucedida!</strong> Dados do(a) Professor(a) <strong>' + dados['nome'] + '</strong> inseridos com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'  
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados do professor no banco de dados!"' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'                   
+
+
+    cargos = banco.executarConsulta('select * from cargos_livro_ponto')
+    categorias = banco.executarConsulta('select * from categoria_livro_ponto')
+    jornadas = banco.executarConsulta('select * from jornada_livro_ponto')
+    escolas = banco.executarConsulta("select id, concat('UA: ', id, ' - ', descricao) as descricao from sede_livro_ponto order by id")
+    disciplinas = banco.executarConsulta('select codigo_disciplina as id, descricao from disciplinas where classificacao = 1 order by descricao')
+    afastamentos = banco.executarConsulta('select * from afastamento_livro_ponto order by descricao')
+
+    professores = banco.executarConsulta('select cpf, nome from professor_livro_ponto where ativo = 1 order by nome')
+
+    return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores)
 
 
 @app.route('/calendario', methods=['GET', 'POST'])

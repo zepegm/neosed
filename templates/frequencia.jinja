@@ -26,33 +26,29 @@
   </head>
   <body style="background-color: rgba(244, 244, 244);">
 
-    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-               <i class="fa-solid fa-home"></i>
-                Home
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="../listaAlunos">Lista de Alunos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../notas">Notas</a>
-                    </li>  
-                    <li class="nav-item">
-                        <a class="nav-link" href="../declaracoes">Declaração</a>
-                    </li>   
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Calendário</a>
-                    </li>                                                          
-                </ul>                  
-            </div>            
+    {% block menu_superior %}
+      {% include 'menu.jinja' %}
+    {% endblock %}  
+
+    <div class="modal fade" id="modal_text_wp" tabindex="-1" aria-labelledby="modal_mapaoLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_mapaoLabel">Texto formatado para WP:</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="scoll-tree">
+                        <div id="content_text_wp"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <!-- <button id="btn-importar_if" class="btn btn-warning">Importar Alunos</button> -->
+                </div>
+            </div>
         </div>
-    </nav>  
+    </div>
 
     <main class="container-xxl">
 
@@ -86,7 +82,7 @@
                     </div>
                     <div class="col-sm-8 align-self-end">
                         <button id="btn_salvar" class="btn btn-primary" disabled>Salvar Frequência</button>
-                        <button id="btn_text_wp" class="btn btn-success">Pegar texto pra WP</button>
+                        <button id="btn_text_wp" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modal_text_wp">Pegar texto pra WP</button>
                     </div>
                     <div class="col-sm-12">
                         <div id="lista_alunos" class="row"></div>
@@ -152,7 +148,7 @@
                 data: JSON.stringify(info),
                 dataType: "json",
                 success: function(response) {
-                    console.log(response);
+                    $("#content_text_wp").html(response);
                 },
                 error: function(err) {
                     console.log(err);

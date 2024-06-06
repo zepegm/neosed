@@ -244,11 +244,11 @@ class db:
             update = ""
 
             for item in dados:
-                keys += item + ", "
-                data += dados[item] + ", "
+                keys += "%s, " % item
+                data += "%s, " % dados[item]
 
                 if item != 'codigo_disciplina':
-                    update += item + "=" + dados[item] + ", "
+                    update += "%s=%s, " % (item, dados[item])
 
             sql = "INSERT INTO " + tabela + " (" + keys[:-2] + ") VALUES(" + data[:-2] + ") ON DUPLICATE KEY UPDATE " + update[:-2]
 
