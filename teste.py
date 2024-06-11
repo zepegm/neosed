@@ -1,32 +1,7 @@
-import calendar
-from datetime import datetime
-import locale
+cpf = "%08d" % 49087779
 
-locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
+print(cpf)
 
-# montando calendário padrão
+result = '%s.%s.%s-%s' % (cpf[:2], cpf[2:5], cpf[5:8], cpf[8:])
 
-ano = 2024
-
-calendario = []
-letivos = 0
-
-# percorrendo todo os meses do ano
-for i in range(1, 13):
-    qtd_dias = calendar.monthrange(ano, i)[1]
-
-    dias = []
-
-    for j in range(1, qtd_dias + 1):
-        date_aux = datetime(ano, i, j)
-        dias.append({'dia':j, 'semana':date_aux.strftime("%a")})
-
-        if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb':
-            letivos += 1
-
-    #desc_mes = datetime(ano, i, 1)
-
-    calendario.append({'dias':dias, 'descricao':calendar.month_name[i].title()})
-
-print(calendario)
-print(letivos)
+print(result)

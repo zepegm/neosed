@@ -1810,6 +1810,15 @@ def ponto():
     msg = ''
 
     if request.method == 'POST': # ouve envio de formulário
+
+        if request.is_json: # enviado por ajax
+            info = request.json
+
+            if info['destino'] == 0: # pegar os dados do professor para exibir no formulário
+                detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF from professor_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
+                return jsonify(detalhes)
+
+
         if 'nome' in request.form: # é para cadastrar ou alterar professor
 
             # preparar dados
@@ -1848,9 +1857,16 @@ def ponto():
     jornadas = banco.executarConsulta('select * from jornada_livro_ponto')
     escolas = banco.executarConsulta("select id, concat('UA: ', id, ' - ', descricao) as descricao from sede_livro_ponto order by id")
     disciplinas = banco.executarConsulta('select codigo_disciplina as id, descricao from disciplinas where classificacao = 1 order by descricao')
-    afastamentos = banco.executarConsulta('select * from afastamento_livro_ponto order by descricao')
+    afastamentos = banco.executarConsulta("select id, concat(id, ' - ', descricao) as desc_longo from afastamento_livro_ponto order by descricao")
 
-    professores = banco.executarConsulta('select cpf, nome from professor_livro_ponto where ativo = 1 order by nome')
+    professores = banco.executarConsulta("select nome, rg, digito, cpf, categoria_livro_ponto.descricao as categoria, ifnull(afastamento_livro_ponto.descricao, '-') as afastamento from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto on afastamento_livro_ponto.id = professor_livro_ponto.afastamento where ativo = 1 order by nome")
+    for professor in professores:
+        professor['raw_cpf'] = professor['cpf']
+        cpf = "%011d" % professor['cpf']
+        professor['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
+
+        rg = "%08d" % int(professor['rg'])
+        professor['rg'] = '%s.%s.%s-%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])
 
     return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores)
 

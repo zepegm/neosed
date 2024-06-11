@@ -21,6 +21,8 @@
         .form-check-input {
             cursor: pointer;
         }
+
+        .row_professor { cursor: pointer; }
     </style>
 
   </head>
@@ -156,7 +158,7 @@
                                     <select class="form-select" id="cb_afastamento" name="afastamento">
                                         <option value="null">-</option>
                                         {% for item in afastamentos %}
-                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        <option value="{{item['id']}}">{{item['desc_longo']}}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -209,15 +211,21 @@
                         <tr>
                             <th scope="col">Nome</th>
                             <th scope="col">RG</th>
-                            <th scope="col">CPF</th>                        
+                            <th scope="col">CPF</th>   
+                            <th scope="col">Categoria</th>
+                            <th scope="col">Afastamento</th>
+                            <th scope="col">Editar</th>
                         </tr>
                     </thead>
                     <tbody class="table-light">
                         {% for professor in professores %}
                         <tr>
                             <td>{{professor['nome']}}</td>
-                            <td></td>
+                            <td>{{professor['rg']}}</td>
                             <td>{{professor['cpf']}}</td>
+                            <td>{{professor['categoria']}}</td>
+                            <td>{{professor['afastamento']}}</td>
+                            <td class="row_professor" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-pen-to-square"></i></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -240,9 +248,52 @@
             $(this).val(capitalizeFirstLetter($(this).val()));
         });
 
+        $(".row_professor").on('click', function() {
+            cpf = $(this).attr('data-id');
+
+            info = {'destino':0, 'cpf':cpf}
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('ponto') }}",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(response) {
+                    console.log(response);
+                    $("#txt_nome").val(response['nome']);
+                    $("#txt_cpf").val(response['cpf']);
+                    $("#txt_faixa").val(response['FNREF']);
+                    $("#txt_rg").val(response['rg']);
+                    $("#txt_digito_rg").val(response['digito']);
+                    $("#txt_rs").val(response['rs']);
+                    $("#txt_pv").val(response['pv']);
+                    $("#txt_di").val(response['di']);
+                    $("#cb_cargo").val(response['cargo']);
+                    $("#cb_categoria").val(response['categoria']);
+                    $("#cb_jornada").val(response['jornada']);
+                    $("#cb_sede_classificacao").val(response['sede_classificacao']);
+                    $("#cb_sede_frequencia").val(response['sede_controle_freq']);
+                    $("#cb_disciplina").val(response['disciplina']);
+                    $("#cb_afastamento").val(response['afastamento']);
+
+                    if (response['assina_livro'] == 1) {
+                        $("#assina").attr('checked', '');
+                    } else {
+                        $("#assina").removeAttr('checked');
+                    }
+
+                    $("#modal_cadastro_professor").modal('show');
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });            
+        });
+
         function capitalizeFirstLetter(string) {
             result = string.toLowerCase();
-            return result.replace(/\b\w/g, c => c.toUpperCase())
+            return result.replace(/\b\w/g, c => c.toUpperCase()).replaceAll('Da ', 'da ')..replaceAll('De ', 'de ').replaceAll('Do ', 'do ').replaceAll('Dos ', 'dos ');
         }
 
     </script>
