@@ -1815,8 +1815,31 @@ def ponto():
             info = request.json
 
             if info['destino'] == 0: # pegar os dados do professor para exibir no formulário
-                detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF from professor_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
+                detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs from professor_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
                 return jsonify(detalhes)
+            
+        if 'ativacao' in request.form: # é pra desativar ou ativar o professor
+            ativacao = int(request.form['ativacao'])
+            id = request.form['cpf']
+            
+            basic_sql = 'UPDATE professor_livro_ponto SET ativo = %s WHERE cpf = %s' % (ativacao, id)
+
+            if banco.executeBasicSQL(basic_sql):
+                if ativacao == 0:
+                    msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                            '<strong>Operação realizada com sucesso!</strong> Professor desativado do Livro Ponto' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'    
+                else:
+                    msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                            '<strong>Operação realizada com sucesso!</strong> Professor reativado no Livro Ponto' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'                      
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados do professor no banco de dados!"' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'                     
 
 
         if 'nome' in request.form: # é para cadastrar ou alterar professor
@@ -1839,6 +1862,7 @@ def ponto():
             dados['afastamento'] = request.form['afastamento']
             dados['FNREF'] = 'null' if request.form['faixa'] == '' else "'%s'" % request.form['faixa']
             dados['assina_livro'] = 1 if 'assina' in request.form else 0
+            dados['obs'] = 'null' if request.form['obs'] == '' else "'%s'" % request.form['obs']
 
             if banco.insertOrUpdate(dados, 'professor_livro_ponto'):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -1859,16 +1883,25 @@ def ponto():
     disciplinas = banco.executarConsulta('select codigo_disciplina as id, descricao from disciplinas where classificacao = 1 order by descricao')
     afastamentos = banco.executarConsulta("select id, concat(id, ' - ', descricao) as desc_longo from afastamento_livro_ponto order by descricao")
 
-    professores = banco.executarConsulta("select nome, rg, digito, cpf, categoria_livro_ponto.descricao as categoria, ifnull(afastamento_livro_ponto.descricao, '-') as afastamento from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto on afastamento_livro_ponto.id = professor_livro_ponto.afastamento where ativo = 1 order by nome")
+    professores = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf, categoria_livro_ponto.descricao as categoria, ifnull(afastamento_livro_ponto.descricao, '-') as afastamento from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto on afastamento_livro_ponto.id = professor_livro_ponto.afastamento where ativo = 1 order by nome")
     for professor in professores:
         professor['raw_cpf'] = professor['cpf']
         cpf = "%011d" % professor['cpf']
         professor['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
 
         rg = "%08d" % int(professor['rg'])
-        professor['rg'] = '%s.%s.%s-%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])
+        professor['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])
 
-    return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores)
+    desativados = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf from professor_livro_ponto where ativo = 0 order by nome")
+    for professor in desativados:
+        professor['raw_cpf'] = professor['cpf']
+        cpf = "%011d" % professor['cpf']
+        professor['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
+
+        rg = "%08d" % int(professor['rg'])
+        professor['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])    
+
+    return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores, desativados=desativados)
 
 
 @app.route('/calendario', methods=['GET', 'POST'])

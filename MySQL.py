@@ -231,7 +231,21 @@ class db:
         except Exception as error:
             print("An exception occurred:", error) # An exception occurred: division by zero
             return False
-        
+
+
+    def executeBasicSQL(self, sql):
+        try:
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()
+            cur.execute(sql)
+            database.commit()
+            database.close()
+            return True
+
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
+            return False     
+
 
     def insertOrUpdate(self, dados, tabela):
             

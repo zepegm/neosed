@@ -15,7 +15,7 @@
     <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
 
     <style>
-        #loading-mask {
+        #loading {
             background-color: white;
             height: 100%;
             left: 0;
@@ -23,7 +23,27 @@
             top: 0;
             width: 100%;
             z-index: 9999;
-        } 
+        }
+
+        .loader {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            bottom: 0;
+            margin: auto;
+            border: 20px solid #EAF0F6;
+            border-radius: 50%;
+            border-top: 20px solid #FF7A59;
+            width: 200px;
+            height: 200px;
+            animation: spinner 4s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }  
+
 
         .center {
             margin: auto;
@@ -304,9 +324,7 @@
     </div>
 
     <main class="container-xxl">
-        <div id="loading-mask">
-            <h1 class="center">AGUARDE...</h1>
-        </div>
+        <div id="loading"><div class="loader"></div></div>
         <div class="row">
             <div class="col-sm-12">
                 <p class="fs-2">Cadastro Notas</p>
@@ -394,7 +412,7 @@
         const array_disc = [];
 
         window.onload=function() {
-            document.getElementById('loading-mask').style.display='none';         
+            $("#loading").remove();
         }
 
         $("#btn_confirmar_importacao").on('click', function(e) {

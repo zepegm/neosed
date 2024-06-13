@@ -11,18 +11,44 @@
     <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='datatable/datatables.min.css') }}" rel="stylesheet">
     <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
 
     <style>
-        table {
-            border: solid 4px rgba(0,0,0,1);
+        #loading {
+            background-color: white;
+            height: 100%;
+            left: 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 9999;
         }
+
+        .loader {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            bottom: 0;
+            margin: auto;
+            border: 20px solid #EAF0F6;
+            border-radius: 50%;
+            border-top: 20px solid #FF7A59;
+            width: 200px;
+            height: 200px;
+            animation: spinner 4s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }  
 
         .form-check-input {
             cursor: pointer;
         }
 
-        .row_professor { cursor: pointer; }
+        .row_professor, .view_professor, .desativar_prof, .reativar_professor { cursor: pointer; }
     </style>
 
   </head>
@@ -31,6 +57,61 @@
     {% block menu_superior %}
       {% include 'menu.jinja' %}
     {% endblock %}  
+
+    <div class="modal fade" tabindex="-1" id="modal_confirmar_desativacao">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Desativação de Professor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Você tem certeza que deseja desativar o(a) professor(a) <span class="fw-bold" id="lb_professor_nome_exclusao"></span> do Livro Ponto?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não</button>
+                    <button type="button" id="btn_enviar_desativacao" class="btn btn-danger">Sim</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" id="modal_lista_desativados">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Lista de Professores Desativados</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nome</th>
+                                <th>RG</th>
+                                <th>CPF</th>
+                                <th class="text-center">Reativar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for professor in desativados %}
+                            <tr>
+                                <td>{{professor['nome']}}</td>
+                                <td>{{professor['rg']}}</td>
+                                <td>{{professor['cpf']}}</td>
+                                <td class="reativar_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-trash-can-arrow-up"></i></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div> 
+
 
     <div class="modal fade" id="modal_cadastro_professor" tabindex="-1" aria-labelledby="modal_mapaoLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -57,7 +138,7 @@
                             </div>
                             <div class="col-sm-2">
                                 <div class="mb-3">
-                                    <label class="form-label" for="txt_cpf">Faixa/Nível:</label>
+                                    <label class="form-label" for="txt_cpf">Faixa/Nível/REF:</label>
                                     <input type="text" class="form-control" name="faixa" id="txt_faixa" maxlength="11">                                
                                 </div>
                             </div>
@@ -175,6 +256,13 @@
                                 </div>
                             </div>
 
+                            <div class="col-sm-12">
+                                <div class="mb-3">
+                                    <label class="form-check-label" for="txt_obs">Observação Rodapé</label>
+                                    <textarea class="form-control" name="obs" id="txt_obs"></textarea>                       
+                                </div>                            
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -188,7 +276,7 @@
     </div>
 
     <main class="container-xxl">
-
+        <div id="loading"><div class="loader"></div></div>
         <div class="row">
             <div class="col-sm-12">
                 <p class="fs-2">Cadastro de Livro Ponto</p>
@@ -200,21 +288,25 @@
         <div class="row">
             <div class="col-sm-12">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_cadastro_professor">Cadastrar Novo Professor</button>
+                {% if desativados|length > 0 %}
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal_lista_desativados">Professores Desativados</button>
+                {% endif %}
             </div>
         </div>     
         <hr>
 
         <div class="row">
             <div class="col-sm-12">
-                <table id="tb-principal" class="table table-hover">
-                    <thead>
+                <table id="tb-principal" class="table table-hover table-striped">
+                    <thead class="table-dark">
                         <tr>
                             <th scope="col">Nome</th>
                             <th scope="col">RG</th>
                             <th scope="col">CPF</th>   
                             <th scope="col">Categoria</th>
-                            <th scope="col">Afastamento</th>
-                            <th scope="col">Editar</th>
+                            <th class="text-center" scope="col">Visualizar</th>
+                            <th class="text-center" scope="col">Editar</th>
+                            <th class="text-center" scope="col">Desativar</th>
                         </tr>
                     </thead>
                     <tbody class="table-light">
@@ -224,8 +316,9 @@
                             <td>{{professor['rg']}}</td>
                             <td>{{professor['cpf']}}</td>
                             <td>{{professor['categoria']}}</td>
-                            <td>{{professor['afastamento']}}</td>
-                            <td class="row_professor" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-pen-to-square"></i></td>
+                            <td class="view_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-magnifying-glass"></i></td>
+                            <td class="row_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-pen-to-square"></i></td>
+                            <td class="desativar_prof text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-trash"></i></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -233,19 +326,71 @@
             </div>
         </div>           
 
+    <form id="form_ativacao_prof" action="/ponto" method="POST">
+        <input type="hidden" name="cpf" id="cpf_ativacao">
+        <input type="hidden" name="ativacao" id="ativacao">
+    </form>
+
     </main>
 
     <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
     <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
     <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> 
+    <script src="{{ url_for('static', filename='datatable/datatables.min.js') }}"></script>
 
     <script>
+
+        window.onload=function() {
+            $("#loading").remove();
+        }
+
+        $( document ).ready(function() {
+            let dataTable = new DataTable("#tb-principal", {
+                    order: [[0, 'asc']],
+                    lengthMenu: [
+                        [15, 100, 500, 1000],
+                        [15, 100, 500, 1000],
+                    ], 
+                    "autoWidth": false,
+                    "oLanguage": {
+                        "sSearch": "Pesquisar:",
+                    },
+                    "language": {
+                        "lengthMenu": "Exibir _MENU_ itens por página",
+                        "zeroRecords": "Nada encontrado - Desculpe",
+                        "info": "Exibindo _START_ até _END_ de um total de _TOTAL_ registro(s)",
+                        "infoEmpty": "Sem registros",
+                        "infoFiltered": "(filtrado de um total de _MAX_ registro(s))",
+                        "paginate": {
+                            "previous": "Anterior",
+                            "next": "Próximo"
+                        }
+                    }                    
+            }); 
+        });
 
         $("#txt_cpf").mask('000.000.000-00', {reverse: true});
 
         $("#txt_nome").on('change', function() {
             $(this).val(capitalizeFirstLetter($(this).val()));
+        });
+
+        $(".desativar_prof").on('click', function() {
+            $("#lb_professor_nome_exclusao").text($(this).parent().find('td:first').text());
+            $("#ativacao").val(0);
+            $("#cpf_ativacao").val($(this).attr('data-id'));
+            $("#modal_confirmar_desativacao").modal('show');
+        });
+
+        $(".reativar_professor").on('click', function() {
+            $("#ativacao").val(1);
+            $("#cpf_ativacao").val($(this).attr('data-id'));
+            $("#form_ativacao_prof").submit();
+        });
+
+        $("#btn_enviar_desativacao").on('click', function() {
+            $("#form_ativacao_prof").submit();
         });
 
         $(".row_professor").on('click', function() {
@@ -276,6 +421,7 @@
                     $("#cb_sede_frequencia").val(response['sede_controle_freq']);
                     $("#cb_disciplina").val(response['disciplina']);
                     $("#cb_afastamento").val(response['afastamento']);
+                    $("#txt_obs").val(response['obs']);
 
                     if (response['assina_livro'] == 1) {
                         $("#assina").attr('checked', '');
@@ -293,7 +439,7 @@
 
         function capitalizeFirstLetter(string) {
             result = string.toLowerCase();
-            return result.replace(/\b\w/g, c => c.toUpperCase()).replaceAll('Da ', 'da ')..replaceAll('De ', 'de ').replaceAll('Do ', 'do ').replaceAll('Dos ', 'dos ');
+            return result.replace(/\b\w/g, c => c.toUpperCase()).replaceAll('Da ', 'da ').replaceAll('De ', 'de ').replaceAll('Do ', 'do ').replaceAll('Dos ', 'dos ');
         }
 
     </script>
