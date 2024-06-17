@@ -1818,6 +1818,11 @@ def ponto():
                 detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs from professor_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
                 return jsonify(detalhes)
             
+            elif info['destino'] == 1: # pegar quadro aula
+                quadro = banco.executarConsulta('select * from horario_livro_ponto where cpf_professor = %s' % info['cpf'])
+                
+                return jsonify(quadro)
+            
         if 'ativacao' in request.form: # é pra desativar ou ativar o professor
             ativacao = int(request.form['ativacao'])
             id = request.form['cpf']
@@ -1900,6 +1905,10 @@ def ponto():
 
         rg = "%08d" % int(professor['rg'])
         professor['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])    
+
+
+    periodos = banco.executarConsulta('select * from periodo_livro_ponto')
+    print(periodos)
 
     return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores, desativados=desativados)
 

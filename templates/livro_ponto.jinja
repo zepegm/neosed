@@ -48,7 +48,7 @@
             cursor: pointer;
         }
 
-        .row_professor, .view_professor, .desativar_prof, .reativar_professor { cursor: pointer; }
+        .quadro_aulas, .row_professor, .view_professor, .desativar_prof, .reativar_professor { cursor: pointer; }
     </style>
 
   </head>
@@ -57,6 +57,24 @@
     {% block menu_superior %}
       {% include 'menu.jinja' %}
     {% endblock %}  
+
+    <div class="modal fade" tabindex="-1" id="modal_quadro_aula">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Quadro Aulas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="body-quadro">
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não</button>
+                    <button type="button" id="btn_enviar_desativacao" class="btn btn-danger">Sim</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade" tabindex="-1" id="modal_confirmar_desativacao">
         <div class="modal-dialog">
@@ -304,6 +322,7 @@
                             <th scope="col">RG</th>
                             <th scope="col">CPF</th>   
                             <th scope="col">Categoria</th>
+                            <th class="text-center" scope="col">Quadro Aula</th>
                             <th class="text-center" scope="col">Visualizar</th>
                             <th class="text-center" scope="col">Editar</th>
                             <th class="text-center" scope="col">Desativar</th>
@@ -316,6 +335,7 @@
                             <td>{{professor['rg']}}</td>
                             <td>{{professor['cpf']}}</td>
                             <td>{{professor['categoria']}}</td>
+                            <td class="quadro_aulas text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-table"></i></td>
                             <td class="view_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-magnifying-glass"></i></td>
                             <td class="row_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-pen-to-square"></i></td>
                             <td class="desativar_prof text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-trash"></i></td>
@@ -391,6 +411,45 @@
 
         $("#btn_enviar_desativacao").on('click', function() {
             $("#form_ativacao_prof").submit();
+        });
+
+        $(".quadro_aulas").on('click', function() {
+            cpf = $(this).attr('data-id');
+
+            info = {'destino':1, 'cpf':cpf}
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('ponto') }}",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(response) {
+                    console.log(response);
+
+                    $("#body-quadro").empty();
+                    $("#body-quadro").append('<table class="table table-striped"><thead class="table-dark"><tr><th>Período</th><th>Horário</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sab</th><th>Dom</th></tr></thead><tbody id="tb-quadro-principal"></tbody></table>');
+
+                    if (response.length > 0) {
+
+                    } else {
+
+                        periodo = '<select class="form-control">';
+                        
+                        
+
+                        periodo += '</select>';
+
+                        $("#tb-quadro-principal").append('<tr><td></td></tr>')
+                    }
+
+                    $("#modal_quadro_aula").modal('show');
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            }); 
+
         });
 
         $(".row_professor").on('click', function() {
