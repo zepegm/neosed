@@ -328,4 +328,41 @@ class db:
 
         except Exception as error:
             print("An exception occurred:", error) # An exception occurred: division by zero
-            return False  
+            return False
+        
+
+    def inserirQuadro(self, cpf, quadro):
+        try:
+
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()        
+
+            print("DELETE FROM horario_livro_ponto WHERE cpf_professor = %s" % cpf)
+
+            # remover dados conflitantes
+            cur.execute('SET SQL_SAFE_UPDATES = 0')
+            cur.execute("DELETE FROM horario_livro_ponto WHERE cpf_professor = %s" % cpf)
+            cur.execute('SET SQL_SAFE_UPDATES = 1')
+
+
+            for item in quadro:
+
+                seg = "'" + item['seg'] + "'" if item['seg'] != '' else 'null'
+                ter = "'" + item['ter'] + "'" if item['ter'] != '' else 'null'
+                qua = "'" + item['qua'] + "'" if item['qua'] != '' else 'null'
+                qui = "'" + item['qui'] + "'" if item['qui'] != '' else 'null'
+                sex = "'" + item['sex'] + "'" if item['sex'] != '' else 'null'
+                sab = "'" + item['sab'] + "'" if item['sab'] != '' else 'null'
+                dom = "'" + item['dom'] + "'" if item['dom'] != '' else 'null'
+
+                print(seg)
+
+                cur.execute("INSERT INTO horario_livro_ponto VALUES(%s, %s, '%s', '%s', %s, %s, %s, %s, %s, %s, %s)" % (cpf, item['periodo'], item['inicio'], item['fim'], seg, ter, qua, qui, sex, sab, dom))
+
+            database.commit()
+
+            return True
+
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
+            return False        

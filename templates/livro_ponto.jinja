@@ -48,6 +48,23 @@
             cursor: pointer;
         }
 
+        th, td {
+            vertical-align: middle;
+        }
+
+        #tb-quadro-principal td {
+            border: solid 1px black;
+            text-align: center;
+        }
+
+        #body-quadro th {
+            border: solid 1px white;
+        }
+
+        #tb-quadro-principal td:last-child { border-right: none; }
+        
+        #tb-quadro-principal td:first-child { border-left: none; }
+
         .quadro_aulas, .row_professor, .view_professor, .desativar_prof, .reativar_professor { cursor: pointer; }
     </style>
 
@@ -69,8 +86,8 @@
                     
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não</button>
-                    <button type="button" id="btn_enviar_desativacao" class="btn btn-danger">Sim</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btn_cadastrar_quadro" class="btn btn-primary">Salvar</button>
                 </div>
             </div>
         </div>
@@ -351,6 +368,11 @@
         <input type="hidden" name="ativacao" id="ativacao">
     </form>
 
+    <form id="form_quadro_aula" action="/ponto" method="POST">
+        <input type="hidden" name="cpf" id="cpf_quadro">
+        <input type="hidden" name="quadro" id="quadro_aula">    
+    </form>
+
     </main>
 
     <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
@@ -360,6 +382,18 @@
     <script src="{{ url_for('static', filename='datatable/datatables.min.js') }}"></script>
 
     <script>
+
+        var periodos = {{periodos}};
+
+        periodo = '<select class="form-control cb_periodo">';
+        
+        for (let i = 0; i < periodos.length; i++) {
+            periodo += '<option value="' + periodos[i]['id'] + '">' + periodos[i]['descricao'] + '</option>'
+        }
+
+        periodo += '</select>';     
+
+        basic_row = '<tr><td>' + periodo + '</td><td><input type="time" class="form-control txt_inicio_quadro"></td><td><input type="time" class="form-control txt_fim_quadro"></td><td contenteditable="true" class="seg"></td><td contenteditable="true" class="ter"></td><td contenteditable="true" class="qua"></td><td contenteditable="true" class="qui"></td><td contenteditable="true" class="sex"></td><td contenteditable="true" class="sab"></td><td contenteditable="true" class="dom"></td><td><button class="btn btn-danger btn-remove-row"><i class="fa-sharp fa-solid fa-minus"></i></button></td></tr>';
 
         window.onload=function() {
             $("#loading").remove();
@@ -416,6 +450,8 @@
         $(".quadro_aulas").on('click', function() {
             cpf = $(this).attr('data-id');
 
+            $("#cpf_quadro").val(cpf);
+
             info = {'destino':1, 'cpf':cpf}
 
             $.ajax({
@@ -426,21 +462,49 @@
                 dataType: "json",
                 success: function(response) {
                     console.log(response);
+                    
 
                     $("#body-quadro").empty();
-                    $("#body-quadro").append('<table class="table table-striped"><thead class="table-dark"><tr><th>Período</th><th>Horário</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sab</th><th>Dom</th></tr></thead><tbody id="tb-quadro-principal"></tbody></table>');
+                    $("#body-quadro").append('<table class="table table-striped"><thead class="table-dark"><tr><th>Período</th><th>Início</th><th>Fim</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sab</th><th>Dom</th><td><button class="btn btn-success btn-add-row"><i class="fa-sharp fa-solid fa-plus"></i></button></td></tr></thead><tbody id="tb-quadro-principal"></tbody></table>');
 
                     if (response.length > 0) {
 
+                        for (let i = 0; i < response.length; i++) {
+                            
+                            periodo_aux = '<select class="form-control cb_periodo">';
+        
+                            for (let j = 0; j < periodos.length; j++) {
+
+                                if (response[i]['periodo'] == periodos[j]['id']) {
+                                    periodo_aux += '<option value="' + periodos[j]['id'] + '" selected>' + periodos[j]['descricao'] + '</option>'
+                                } else {
+                                    periodo_aux += '<option value="' + periodos[j]['id'] + '">' + periodos[j]['descricao'] + '</option>'
+                                }
+
+                                
+                            }
+
+                            periodo_aux += '</select>';
+                            
+                            
+                            row = '<tr><td>' + periodo_aux + '</td>' +
+                            '<td><input type="time" class="form-control txt_inicio_quadro" value="' + response[i]['inicio'] + '"></td>' + 
+                            '<td><input type="time" class="form-control txt_fim_quadro" value="' + response[i]['fim'] + '"></td>' + 
+                            '<td contenteditable="true" class="seg">' + response[i]['seg'] + '</td>' + 
+                            '<td contenteditable="true" class="ter">' + response[i]['ter'] + '</td>' + 
+                            '<td contenteditable="true" class="qua">' + response[i]['qua'] + '</td>' + 
+                            '<td contenteditable="true" class="qui">' + response[i]['qui'] + '</td>' + 
+                            '<td contenteditable="true" class="sex">' + response[i]['sex'] + '</td>' + 
+                            '<td contenteditable="true" class="sab">' + response[i]['sab'] + '</td>' + 
+                            '<td contenteditable="true" class="dom">' + response[i]['dom'] + '</td>' + 
+                            '<td><button class="btn btn-danger btn-remove-row"><i class="fa-sharp fa-solid fa-minus"></i></button></td></tr>'
+                            
+                            $("#tb-quadro-principal").append(row)
+                        }
+
                     } else {
 
-                        periodo = '<select class="form-control">';
-                        
-                        
-
-                        periodo += '</select>';
-
-                        $("#tb-quadro-principal").append('<tr><td></td></tr>')
+                        $("#tb-quadro-principal").append(basic_row)
                     }
 
                     $("#modal_quadro_aula").modal('show');
@@ -451,6 +515,40 @@
             }); 
 
         });
+
+        $("#btn_cadastrar_quadro").on('click', function() {
+            // pegar a listinha do quadro
+
+            lista_final = [];
+
+            $("#tb-quadro-principal tr").each(function( index ) {
+                info = {'periodo':$(this).find('.cb_periodo').val()};
+                info['inicio'] = '2000-01-01 ' + $(this).find('.txt_inicio_quadro').val();
+                info['fim'] = '2000-01-01 ' + $(this).find('.txt_fim_quadro').val();
+                info['seg'] = $(this).find('.seg').text();
+                info['ter'] = $(this).find('.ter').text();
+                info['qua'] = $(this).find('.qua').text();
+                info['qui'] = $(this).find('.qui').text();
+                info['sex'] = $(this).find('.sex').text();
+                info['sab'] = $(this).find('.sab').text();
+                info['dom'] = $(this).find('.dom').text();
+
+                lista_final.push(info);
+                
+            });
+
+            $("#quadro_aula").val(JSON.stringify(lista_final));
+            $("#form_quadro_aula").submit();
+
+        });
+
+        $("#body-quadro").on('click', '.btn-add-row', function() {
+            $("#tb-quadro-principal").append(basic_row);
+        });
+
+        $("#body-quadro").on('click', '.btn-remove-row', function() {
+            $(this).parent().parent().remove();
+        });        
 
         $(".row_professor").on('click', function() {
             cpf = $(this).attr('data-id');

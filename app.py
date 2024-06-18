@@ -1819,9 +1819,25 @@ def ponto():
                 return jsonify(detalhes)
             
             elif info['destino'] == 1: # pegar quadro aula
-                quadro = banco.executarConsulta('select * from horario_livro_ponto where cpf_professor = %s' % info['cpf'])
+                quadro = banco.executarConsulta(r"select periodo,  DATE_FORMAT(inicio, '%H:%i') as inicio, DATE_FORMAT(fim, '%H:%i') as fim, ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sab, ifnull(dom, '') as dom from horario_livro_ponto where cpf_professor = " + info['cpf'] + ' ORDER BY inicio')
                 
                 return jsonify(quadro)
+            
+        if 'quadro' in request.form: # é pra cadastrar o quadro de aulas do professor
+            id = request.form['cpf']
+            quadro = json.loads(request.form.getlist('quadro')[0])
+
+
+            if banco.inserirQuadro(id, quadro):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação realizada com sucesso!</strong> Quadro de aulas do professor registrado com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'    
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados do professor no banco de dados! Por favor quando for descrever a aula ou APTC, use no máximo 4 caracteres.' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'                   
             
         if 'ativacao' in request.form: # é pra desativar ou ativar o professor
             ativacao = int(request.form['ativacao'])
@@ -1908,9 +1924,8 @@ def ponto():
 
 
     periodos = banco.executarConsulta('select * from periodo_livro_ponto')
-    print(periodos)
 
-    return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores, desativados=desativados)
+    return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores, desativados=desativados, periodos=periodos)
 
 
 @app.route('/calendario', methods=['GET', 'POST'])
