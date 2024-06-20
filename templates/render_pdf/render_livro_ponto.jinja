@@ -1,0 +1,104 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            @font-face {
+                font-family:greatvibes-regular;
+                font-style:normal;
+                font-weight:400;
+                src:local('GreatVibes-Regular'),
+                url({{ url_for('static', filename='fonts/GreatVibes-Regular.woff') }}) format('woff')
+            }            
+             
+
+            .blank_pag {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                left: 30px;
+            }            
+
+
+            .pag {
+                width: 699px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                /*top:2280px;*/
+                left: 60px;
+            }
+
+
+
+            .titulo {
+                font-family:'BebasKai', sans-serif;
+                font-size: 25px;
+                position: absolute;
+                top: 5px;
+                left: 100px;
+            }
+
+            .blue {
+                color: rgb(12, 146, 255);
+            }
+
+            .red {
+                color:red;
+            }
+
+            .head {
+                font-family: 'Helvetica', 'sans-serif';
+                position: absolute;
+                top: 30px;
+                left: 210px;
+                line-height: 0.62;
+            }
+
+            table, th, td {
+                font-family: 'Helvetica', 'sans-serif';
+                border: 1px solid;
+                border-color: black;
+                border-collapse: collapse;
+            }
+
+            table {
+                position: absolute;
+                top: 150px;
+                left: 0px;
+                height: 910px;
+            }
+
+            .center {
+                text-align: center;
+            }
+
+
+        </style>
+    </head>
+    <body>
+        {% for professor in professores %}
+        <div class="pag" style="top:{{professor['pos']}}px;">
+            
+        </div>
+        {% endfor %}
+    </body>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <script>
+
+    </script>
+</html>

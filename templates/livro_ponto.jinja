@@ -75,6 +75,24 @@
       {% include 'menu.jinja' %}
     {% endblock %}  
 
+
+    <div class="modal fade" tabindex="-1" id="modal_visualizar">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes do Professor:</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" id="body-detalhes"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" tabindex="-1" id="modal_quadro_aula">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -324,8 +342,9 @@
             <div class="col-sm-12">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_cadastro_professor">Cadastrar Novo Professor</button>
                 {% if desativados|length > 0 %}
-                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal_lista_desativados">Professores Desativados</button>
+                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_lista_desativados">Professores Desativados</button>
                 {% endif %}
+                <button class="btn btn-danger" id="btn_gerar_livro_completo">Gerar Livro Completo</button>
             </div>
         </div>     
         <hr>
@@ -430,6 +449,26 @@
             $(this).val(capitalizeFirstLetter($(this).val()));
         });
 
+        $("#btn_gerar_livro_completo").on('click', function() {
+            $(this).attr('disabled');
+            $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+
+            info = {'destino':7, 'mes':6}
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $("#btn_gerar_livro_completo").html('Gerar Livro Completo');
+                $("#btn_gerar_livro_completo").removeAttr('disabled');
+                },
+            });
+        });
+
         $(".desativar_prof").on('click', function() {
             $("#lb_professor_nome_exclusao").text($(this).parent().find('td:first').text());
             $("#ativacao").val(0);
@@ -445,6 +484,77 @@
 
         $("#btn_enviar_desativacao").on('click', function() {
             $("#form_ativacao_prof").submit();
+        });
+
+        $(".view_professor ").on('click', function() {
+            cpf = $(this).attr('data-id');
+
+            info = {'destino':2, 'cpf':cpf}
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('ponto') }}",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(response) {
+                    console.log(response);
+
+                    $("#body-detalhes").empty();
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>Nome: </b>" + response['detalhes']['nome'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>RG: </b>" + response['detalhes']['rg'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>Faixa/Nível/REF: </b>" + response['detalhes']['FNREF'] + "</div>");
+
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>CPF: </b>" + response['detalhes']['cpf'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>RS/PV: </b>" + response['detalhes']['rs'] + " / " + response['detalhes']['pv'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>DI: </b>" + response['detalhes']['di'] + "</div>");
+
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>Cargo: </b>" + response['detalhes']['cargo'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>Categoria: </b>" + response['detalhes']['categoria'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>Jornada: </b>" + response['detalhes']['jornada'] + "</div>");
+
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>Disciplina: </b>" + response['detalhes']['disciplina'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-8'><b>Sede de Classificação: </b>" + response['detalhes']['sede_classificacao'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-4'><b>Assina Livro Ponto: </b>" + response['detalhes']['assina_livro'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-8'><b>Sede de Frequência: </b>" + response['detalhes']['sede_controle_freq'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-12'><b>Afastamento: </b>" + response['detalhes']['afastamento'] + "</div>");
+                    $("#body-detalhes").append("<div class='col-sm-12'><b>OBS no Rodapé: </b>" + response['detalhes']['obs'] + "</div>");
+
+                    if (response['quadro'].length > 0) {
+                        $("#body-detalhes").append("<div class='col-sm-12'><hr></div>");
+                        $("#body-detalhes").append("<div class='col-sm-12'><b>Quadro de Aula:</b></div>");
+
+                        tabela = "<table class='table table-stripped'><thead class='table-dark'><tr><th class='text-center'>Período</th><th class='text-center' colspan='2'>Horário</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th><th>Dom</th></tr></thead>";
+
+                        for (let i = 0;  i < response['quadro'].length; i++) {
+                            tabela += '<tr>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['periodo'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['inicio'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['fim'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['seg'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['ter'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['qua'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['qui'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['sex'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['sab'] + '</td>';
+                            tabela += '<td class="text-center">' + response['quadro'][i]['dom'] + '</td>';
+                            tabela += '</tr>';
+                        }
+
+                        tabela += "</table>"
+
+                        $("#body-detalhes").append("<div class='col-sm-12'>" + tabela + "</div>")
+                    }
+
+
+
+
+                    $("#modal_visualizar").modal('show');
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });             
         });
 
         $(".quadro_aulas").on('click', function() {

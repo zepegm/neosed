@@ -156,6 +156,21 @@ def index():
 
     return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos)
 
+@app.route('/render_livro_ponto',  methods=['GET', 'POST'])
+def render_livro_ponto():
+
+    professores = banco.executarConsulta('select * from professor_livro_ponto where ativo = 1')
+
+    pos_inicial = 30
+
+    for professor in professores:
+        professor['pos'] = pos_inicial
+
+        pos_inicial += 1124
+
+    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores)
+
+
 
 @app.route('/render_conselho_bimestre_all',  methods=['GET', 'POST'])
 def render_conselho_bimestre_all():
@@ -785,7 +800,23 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
-        return jsonify(pdf_path)          
+        return jsonify(pdf_path)
+    
+    elif info['destino'] == 7: # livro ponto completo
+        pdf_path = 'static/docs/livro_ponto.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_livro_ponto?mes=%s' % info['mes'], {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)        
 
 
 @app.route('/save_dificuldades', methods=['GET', 'POST'])
@@ -1814,7 +1845,7 @@ def ponto():
         if request.is_json: # enviado por ajax
             info = request.json
 
-            if info['destino'] == 0: # pegar os dados do professor para exibir no formulário
+            if info['destino'] == 0: # pegar os dados do professor para editar no formulário
                 detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs from professor_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
                 return jsonify(detalhes)
             
@@ -1822,6 +1853,41 @@ def ponto():
                 quadro = banco.executarConsulta(r"select periodo,  DATE_FORMAT(inicio, '%H:%i') as inicio, DATE_FORMAT(fim, '%H:%i') as fim, ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sab, ifnull(dom, '') as dom from horario_livro_ponto where cpf_professor = " + info['cpf'] + ' ORDER BY inicio')
                 
                 return jsonify(quadro)
+            
+            elif info['destino'] == 2: # pegar os dado do professor para exibir no formulário
+
+                sql = "SELECT nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
+                      "jornada_livro_ponto.descricao as jornada, sede_c.descricao as sede_classificacao, sede_f.descricao as sede_controle_freq, ifnull(di, '') as di, " + \
+                      "CASE WHEN disciplina IS NULL THEN '-' ELSE disciplinas.descricao END as disciplina, " + \
+                      "CASE WHEN afastamento IS NULL THEN '-' ELSE CONCAT(professor_livro_ponto.afastamento, ' - ', afastamento_livro_ponto.descricao) END as afastamento, " + \
+                      "CASE WHEN assina_livro = 1 THEN 'Sim' ELSE 'Não' END as assina_livro, "  + \
+                      "ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs " + \
+                      "FROM professor_livro_ponto " + \
+                      "LEFT JOIN cargos_livro_ponto ON cargos_livro_ponto.id = professor_livro_ponto.cargo " + \
+                      "LEFT JOIN categoria_livro_ponto ON categoria_livro_ponto.id = professor_livro_ponto.categoria " + \
+                      "LEFT JOIN jornada_livro_ponto ON jornada_livro_ponto.id = professor_livro_ponto.jornada " + \
+                      "LEFT JOIN sede_livro_ponto AS sede_c ON sede_c.id = professor_livro_ponto.sede_classificacao " + \
+                      "LEFT JOIN sede_livro_ponto AS sede_f ON sede_f.id = professor_livro_ponto.sede_controle_freq " + \
+                      "LEFT JOIN disciplinas ON disciplinas.codigo_disciplina = professor_livro_ponto.disciplina " + \
+                      "LEFT JOIN afastamento_livro_ponto ON afastamento_livro_ponto.id = professor_livro_ponto.afastamento " + \
+                      "WHERE cpf = %s" % info['cpf']
+
+                detalhes = banco.executarConsulta(sql)[0]
+
+                aux = '%011d' % int(info['cpf'])
+                detalhes['cpf'] = aux[:3] + "." + aux[3:6] + "." + aux[6:9] + "-" + aux[9:]
+
+                aux_rg = '%08d' % int(detalhes['rg'])
+
+                detalhes['rg'] = aux_rg[0:2] + "." + aux_rg[2:5] + "." + aux_rg[5:]
+
+                if (detalhes['digito'] != ''):
+                    detalhes['rg'] = detalhes['rg'] + "-" + detalhes['digito']
+
+                # os detalhes estão completos, basta agora pegar o quadro
+                quadro = banco.executarConsulta(r"select periodo_livro_ponto.descricao as periodo, DATE_FORMAT(inicio, '%H:%i') as inicio, DATE_FORMAT(fim, '%H:%i') as fim, ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sab, ifnull(dom, '') as dom from horario_livro_ponto inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo where cpf_professor = " + info['cpf'] + ' ORDER BY inicio')
+
+                return jsonify({'quadro':quadro, 'detalhes':detalhes})
             
         if 'quadro' in request.form: # é pra cadastrar o quadro de aulas do professor
             id = request.form['cpf']
