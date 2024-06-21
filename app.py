@@ -6,7 +6,7 @@ from waitress import serve
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista
+from utilitarios import converterLista, getMes
 import pandas as pd
 import os
 import csv
@@ -159,16 +159,32 @@ def index():
 @app.route('/render_livro_ponto',  methods=['GET', 'POST'])
 def render_livro_ponto():
 
-    professores = banco.executarConsulta('select * from professor_livro_ponto where ativo = 1')
+    ano = request.args.getlist('ano')[0]
+    mes = request.args.getlist('mes')[0]
+    professores = banco.executarConsulta("select nome, ifnull(di, '-') as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, cargos_livro_ponto.descricao as cargo, concat('(', categoria_livro_ponto.letra, ') ', categoria_livro_ponto.descricao) as categoria from professor_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria where ativo = 1 order by rg")
 
     pos_inicial = 30
 
     for professor in professores:
         professor['pos'] = pos_inicial
 
+        aux_rg = '%08d' % int(professor['rg'])
+        professor['rg'] = aux_rg[0:2] + "." + aux_rg[2:5] + "." + aux_rg[5:]
+
+        if (professor['digito'] != ''):
+            professor['rg'] = professor['rg'] + "-" + professor['digito']
+
+        aux_rs = '%08d' % int(professor['rs'])
+        professor['rs'] = aux_rs[0:2] + "." + aux_rs[2:5] + "." + aux_rs[5:]
+        if (professor['pv'] != ''):
+            professor['rs'] = professor['rs'] + " / " + '%02d' % int(professor['pv'])   
+
+        aux = '%011d' % int(professor['cpf'])
+        professor['cpf'] = aux[:3] + "." + aux[3:6] + "." + aux[6:9] + "-" + aux[9:]               
+
         pos_inicial += 1124
 
-    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores)
+    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano))
 
 
 
@@ -812,7 +828,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto?mes=%s' % info['mes'], {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s' % (info['mes'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 

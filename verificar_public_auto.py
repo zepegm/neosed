@@ -3,6 +3,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 import time
+import subprocess
 from MySQL import db
 
 
@@ -12,14 +13,19 @@ banco = db({'host':"localhost",    # your host, usually localhost
             'passwd':"Yasmin",  # your password
             'db':"neosed"})
 
-#run in cmd - chrome.exe -remote-debugging-port=9014 --user-data-dir="C:\ChromeData"
+#run in cmd - "C:\Program Files\Google\Chrome\Application\chrome.exe" -remote-debugging-port=9014 --user-data-dir="C:\ChromeData"
+#subprocess.run(r'"C:\Program Files\Google\Chrome\Application\chrome.exe" -remote-debugging-port=9014 --user-data-dir="C:\ChromeData"')
+
+#time.sleep(3)
 
 options = webdriver.ChromeOptions() 
 options.add_experimental_option("debuggerAddress","localhost:9014")
 
 driver = webdriver.Chrome(options)
 
-#driver.get("https://sed.educacao.sp.gov.br/FechamentoNovo/TurmaEscola")
+#driver.get("https://sed.educacao.sp.gov.br/SedCon/ConsultaPublicacao/Index")
+
+#time.sleep(3)
 
 label = driver.find_element(By.CLASS_NAME, "tit")
 txtRgFiltro = driver.find_element(By.ID, 'txtRgFiltro')

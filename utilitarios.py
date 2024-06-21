@@ -1,3 +1,5 @@
+meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
+
 def converterLista(lista):
     texto = ""
     aux = 0
@@ -25,3 +27,7 @@ def converterLista(lista):
         texto += str(aux)
 
     return texto
+
+def getMes(mes):
+    id = int(mes) - 1
+    return meses[id]
