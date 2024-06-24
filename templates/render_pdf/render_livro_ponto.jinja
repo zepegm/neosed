@@ -58,7 +58,7 @@
             }
 
             .red {
-                color:red;
+                color:#DC3545;
             }
 
             .head {
@@ -77,6 +77,25 @@
                 border-collapse: collapse;*/
             }
 
+            .tb_calendar {
+                border: 1px solid;
+                border-color: black;
+                border-collapse: collapse;
+
+                position: relative;
+                left: -1px;
+                width: 482px;
+                /*table-layout: fixed;*/
+            }
+
+            .tb_calendar td {
+                border: 1px solid;
+                border-color: black;
+                border-collapse: collapse;
+
+                font-size: 8px;
+            }
+
             .center {
                 text-align: center;
             }
@@ -86,22 +105,63 @@
             }
 
             .identificador {
+                position: absolute;
                 font-family: Arial, Helvetica, sans-serif;
-                border: solid black 1px;
+                border-right: solid black 1px;
+                border-bottom: solid black 1px;
                 font-size: 9px;
                 width: 15px;
                 height: 15px;
-                top:-1px;
-                left: -1px;;
-                position: absolute;
-
+                top:0px;
+                left:0px;
                 line-height: 15px;
-                text-align: center;                
+                text-align: center;
             }
 
             .tb_head {
-                font-size: 14px;
+                font-size: 12px;
                 width: 100%;
+            }
+
+            .tb-head-max {
+                font-size: 16px;
+            }
+
+            .txt_idf5 {
+                position: relative;
+            }
+
+            .txt_idf3 {
+                margin-top: 15px;
+            }
+
+            .txt_idf4 {
+                margin-left: 15px;
+            }            
+
+            .vertical_text {
+                writing-mode: vertical-rl;
+                transform:scale(-1);
+                text-orientation: mixed;
+            }
+
+            .basic-col {
+                position: relative;
+                text-align: center;
+                height: 16px;
+            }
+
+            .fixed-col {
+                width: 15px;
+                text-align: center;
+            }
+
+            .right-strong-border {
+                border-right: solid 2px black !important;
+            }
+
+            .gray {
+                background-color: #E7E7E7;
             }
 
 
@@ -115,21 +175,136 @@
                 <div class="titulo">FREQUÊNCIA DO MÊS DE <span class="red">{{data}}</span></div>
                 <table class="tb_head">
                     <tbody>
-                        <tr>
-                            <td class="right"><b>Nome:</b></td><td colspan="5">{{professor['nome']}}</td>
-                            <td class="right"><b>DI:</b></td><td>{{professor['di']}}</td>
+                        <tr class="tb-head-max">
+                            <td class="right"><b>Nome:</b></td><td colspan="6"><u><b class="blue">{{professor['nome']}}</b></u></td>
                         </tr>
                         <tr>
-                            <td class="right"><b>RG:</b></td><td>{{professor['rg']}}</td>
-                            <td class="right"><b>RS:</b></td><td colspan="2">{{professor['rs']}}</td>
-                            <td class="right"><b>CPF:</b></td><td colspan="2">{{professor['cpf']}}</td>
+                            <td class="right"><b>RG:</b></td><td><u>{{professor['rg']}}</u></td>
+                            <td class="right"><b>RS:</b></td><td colspan="2"><u>{{professor['rs']}}</u></td>
+                            <td class="right"><b>CPF:</b></td><td colspan="2"><u>{{professor['cpf']}}</u></td>
                         </tr>
                         <tr>
-                            <td class="right"><b>Cargo:</b></td><td colspan="4">{{professor['cargo']}}</td>
-                            <td class="right"><b>Cat:</b></td><td colspan="2">{{professor['categoria']}}</td>
+                            <td class="right"><b>Cargo:</b></td><td colspan="4"><u>{{professor['cargo']}}</u></td>
+                            <td class="right"><b>Cat:</b></td><td colspan="2"><u>{{professor['categoria']}}</u></td>
                         </tr>
+                        <tr>
+                            <td class="right"><b>{{professor['txt_sit']}}</b></td><td colspan="5"><u><span class="{{professor['class_afast']}}">{{professor['situacao']}}</span></u></td>
+                        </tr>
+                        <tr>
+                            <td class="right"><b>Jornada:</b></td><td colspan="2"><u>{{professor['jornada']}}</u></td>
+                            <td class="right" colspan="3"><b>{{professor['txt_carga']}}</b></td><td><u>{{professor['carga']}}</u></td>
+                        </tr>
+                        <tr>
+                            <td class="right"><b>Disciplina:</b></td><td><u>{{professor['disciplina']}}</u></td>
+                            <td class="right"><b>DI: </b></td><td><u>{{professor['di']}}</u></td>
+                            <td class="right" colspan="2"><b>F/N REF: </b></td><td><u>{{professor['FNREF']}}</u></td>
+                        </tr>
+                        <tr>
+                            <td class="right" colspan="3"><b>Sede de Classificação: </b></td><td colspan="5"><u>{{professor['sede_c']}}</u></td>
+                        </tr>
+                        <tr>
+                            <td class="right" colspan="3"><b>Sede de Controle de Frequência: </b></td><td colspan="5"><u>{{professor['sede_f']}}</u></td>
+                        </tr>                        
                     </tbody>
                 </table>
+
+                <table class="tb_calendar">
+                    <thead>
+                        <tr>
+                            <td rowspan="3" class="center">
+                                <div class="identificador">2</div>
+                                ASSINATURAS
+                            </td>
+                            <td rowspan="2" colspan="2" class="basic-col">
+                                <div class="identificador">3</div>
+                                <div class="txt_idf3">Dias</div>
+                            </td>
+                            <td rowspan="2" colspan="4" class="basic-col right-strong-border">
+                                <div class="identificador">4</div>
+                                <div class="txt_idf4">Qtde. aula<br>por dia</div>
+                            </td>
+                            <td colspan="16" class="basic-col">
+                                <div class="identificador">5</div>
+                                <div class="txt_idf5 center">AUSÊNCIAS</div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td colspan="11" class="center right-strong-border">Nesta Unidade Escolar</td>
+                            <td colspan="3" class="center right-strong-border">Total</td>
+                            <td class="vertical_text center" rowspan="2">NATUREZA (TIPO) DA FALTA</td>
+                            <td class="vertical_text center" rowspan="2">FALTA MÉDICA PARCIAL</td>
+                        </tr>
+
+                        <tr>
+                            <td class="vertical_text center fixed-col">DIA DO MÊS</td>
+                            <td class="vertical_text center fixed-col">DIA DA SEMANA</td>
+                            <td class="vertical_text center fixed-col">AULAS NESTA U.E. (SCF)</td>
+                            <td class="vertical_text center fixed-col">AULAS EM OUTRAS U.E.s</td>
+                            <td class="vertical_text center fixed-col">SUBSTITUIÇÃO</td>
+                            <td class="vertical_text center fixed-col right-strong-border">TOTAL GERAL</td>
+
+
+                            {% for i in range(1, 11) %}
+                            <td class="fixed-col">{{i}}ª</td>
+                            {% endfor %}
+
+                            <td class="fixed-col right-strong-border">11ª</td>
+
+                            <td class="vertical_text center fixed-col">U.E. LOCAL</td>
+                            <td class="vertical_text center fixed-col">OUTRAS  U.E.s</td>
+                            <td class="vertical_text center fixed-col right-strong-border">GERAL</td>
+
+                        </tr>
+
+                    </thead>
+                    <tbody>
+                        {% for dia in dias %}
+                        <tr class="center {{dia['class-bg']}}" style="height: 16px;">
+                            <td class="red txt-assinatura">{{dia['Assinatura']}}</td>
+                            <td class="{{dia['class-txt']}}">{{dia['dia']}}</td>
+                            <td class="{{dia['class-txt']}}">{{dia['semana']}}</td>
+
+                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 %}
+                            <td class="blue">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
+                            {% else %}
+                            <td></td>
+                            {% endif %}
+
+                            <td></td><td></td>
+
+                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 %}
+                            <td class="blue right-strong-border">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
+                            {% else %}
+                            <td class = 'right-strong-border'></td>
+                            {% endif %}   
+
+                            {% for n in range(10) %}
+                            <td></td>
+                            {% endfor %}
+
+                            <td class="right-strong-border"></td>
+
+                            <td></td><td></td><td class="right-strong-border"></td>
+
+                            <td></td><td></td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="23" class="center basic-col">
+                                <div class="identificador">6</div>
+                                OBSERVAÇÕES
+                            </td>
+                        </tr>
+                        <tr>
+                            
+                        </tr>
+                    </tfoot>
+                </table>
+
             </div>
         </div>
         {% endfor %}

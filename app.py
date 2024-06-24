@@ -159,12 +159,31 @@ def index():
 @app.route('/render_livro_ponto',  methods=['GET', 'POST'])
 def render_livro_ponto():
 
-    ano = request.args.getlist('ano')[0]
-    mes = request.args.getlist('mes')[0]
-    professores = banco.executarConsulta("select nome, ifnull(di, '-') as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, cargos_livro_ponto.descricao as cargo, concat('(', categoria_livro_ponto.letra, ') ', categoria_livro_ponto.descricao) as categoria from professor_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria where ativo = 1 order by rg")
+    ano = int(request.args.getlist('ano')[0])
+    mes = int(request.args.getlist('mes')[0])
+
+    # ---------------------------------------------------------------------------
+    # pegar a lista de professores
+    sql = "select " + \
+          "nome, ifnull(di, '-') as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
+          "cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
+          "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuídas ', (select count(seg) + count(ter) + count(qua) + count(qui) + count(sex) + count(sab) + count(dom) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf), ' aulas nesta unidade escolar'), 'Atribuídas 0 aulas nesta unidade escolar', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
+          "ifnull(FNREF, '') as FNREF, jornada_livro_ponto.descricao as jornada, jornada_livro_ponto.qtd as qtd_jornada, " + \
+          "(select count(seg) + count(ter) + count(qua) + count(qui) + count(sex) + count(sab) + count(dom) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) as total_aulas, " + \
+          "ifnull(professor_livro_ponto.afastamento, '') as afastamento, " + \
+          "ifnull(disciplinas.descricao, 'Não Possui') as disciplina, ifnull(obs, ''), " + \
+          "concat(c.id, ' - ', c.descricao) as sede_c, concat(f.id, ' - ', f.descricao) as sede_f " + \
+          "from professor_livro_ponto " + \
+          "inner join sede_livro_ponto as c on c.id = professor_livro_ponto.sede_classificacao inner join sede_livro_ponto as f on f.id = professor_livro_ponto.sede_controle_freq " + \
+          "left join disciplinas on disciplinas.codigo_disciplina = professor_livro_ponto.disciplina " + \
+          "inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto ON afastamento_livro_ponto.id = professor_livro_ponto.afastamento inner join jornada_livro_ponto on jornada_livro_ponto.id = professor_livro_ponto.jornada where ativo = 1 order by rg"
+
+    professores = banco.executarConsulta(sql)
 
     pos_inicial = 30
 
+    # ---------------------------------------------------------------------------
+    # processar as informações de cada professor
     for professor in professores:
         professor['pos'] = pos_inicial
 
@@ -183,8 +202,76 @@ def render_livro_ponto():
         professor['cpf'] = aux[:3] + "." + aux[3:6] + "." + aux[6:9] + "-" + aux[9:]               
 
         pos_inicial += 1124
+        
+        professor['txt_carga'] = 'Carga Horária:'
+        professor['txt_sit'] = 'Afast.:'
+        professor['class_afast'] = ''
 
-    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano))
+        if professor['afastamento'] == '':
+            professor['txt_sit'] = 'Qtd. Aulas:'
+            if professor['total_aulas'] > 0:
+                professor['carga'] = "%s aula(s) nesta UE." % professor['total_aulas']
+        else:
+            professor['class_afast'] = 'red'
+
+        if professor['jornada'] != '-': # quer dizer que é jornada preciso calcular a jornada caso o professor não esteja afastado ou designado
+            professor['txt_carga'] = "Carga Suplementar:"
+
+            if professor['afastamento'] == '': # quer dizer que o professor não está afastado
+
+                total = int(professor['total_aulas'])
+                resto = total - professor['qtd_jornada']
+
+                professor['jornada'] = professor['jornada'] + ' - ' + str(professor['qtd_jornada']) + ' aulas'
+                
+                if resto > 0:
+                    professor['carga'] = "%s aula(s)" % resto
+                else:
+                    professor['carga'] = "Não Possui"
+        else:
+            professor['jornada'] = 'Não Possui'
+
+        # após processar as informações do professor, ainda preciso criar uma tulpa com a quantidade de aulas por dia da semana
+        professor['qtd_aulas_semanais'] = banco.executarConsulta('select count(seg) as seg, count(ter) as ter, count(qua) as qua, count(qui) as qui, count(sex) as sex, count(sab) as sáb, count(dom) as dom from horario_livro_ponto where cpf_professor = %s' % aux)[0]
+
+        # criar o campo observações do professor
+        print(professor['obs'])
+
+
+    # ---------------------------------------------------------------------------
+    # pegar os dias do mes
+    qtd_dias = qtd_dias = calendar.monthrange(ano, mes)[1]
+
+    dias = []
+
+    for i in range(1, qtd_dias + 1):
+        date_aux = datetime(ano, mes, i)
+
+        if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb': # dias de semana
+            evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
+        
+            if len(evento) > 0: # existe um evento
+                if evento[0]['qtd_letivo'] < 1: # significa que é feriado ou dia não letivo
+                    dias.append({'dia':'%02d' % i, 'Assinatura':evento[0]['descricao'], 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'black'})
+                else:
+                    dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'black'})
+            else:
+                dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'black'})
+        else: # sábado e domingo
+            evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
+
+            if len(evento) > 0: # existe um evento, talvez seja reposição
+                if evento[0]['qtd_letivo'] > 0: # significa que é reposição de dia letivo
+                    dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'red'})
+                else:
+                    dias.append({'dia':'%02d' % i, 'Assinatura':evento[0]['descricao'], 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'red'})
+            else:
+                dias.append({'dia':'%02d' % i, 'Assinatura':date_aux.strftime("%A").title(), 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'red'})    
+
+
+    # ---------------------------------------------------------------------------
+    # renderizar template
+    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias)
 
 
 
