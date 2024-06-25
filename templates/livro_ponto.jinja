@@ -252,6 +252,27 @@
                                 </div>
                             </div>
 
+                            <div class="col-sm-4">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_atpc">Qtd ATPC:</label>
+                                    <input type="number" class="form-control" id="txt_atpc" name="atpc">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_atpl">Qtd ATPL:</label>
+                                    <input type="number" class="form-control" id="txt_atpl" name="atpl">
+                                </div>
+                            </div>  
+
+                            <div class="col-sm-4">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_aulas">Qtd Aulas outra UE:</label>
+                                    <input type="number" class="form-control" id="txt_aulas" name="aulas">
+                                </div>
+                            </div>                                                        
+
                             <div class="col-sm-6">
                                 <div class="mb-3">
                                     <label class="form-label" for="cb_sede_classificacao">Sede de Classificação:</label>
@@ -339,12 +360,30 @@
 
         <hr>
         <div class="row">
-            <div class="col-sm-12">
+            <div class="col-sm-6">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_cadastro_professor">Cadastrar Novo Professor</button>
                 {% if desativados|length > 0 %}
                 <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_lista_desativados">Professores Desativados</button>
                 {% endif %}
-                <button class="btn btn-danger" id="btn_gerar_livro_completo">Gerar Livro Completo</button>
+            </div>
+            <div class="col-sm-6">
+                <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-text" id="basic-addon1">Selecione o mês: </span>
+                        <select class="form-control" id="cb_mes">
+                            {% for mes in meses %}
+                            {% if mes['atual'] %}
+                            <option value="{{mes['valor']}}" selected>{{mes['desc']}}</option>
+                            {% else %}
+                            <option value="{{mes['valor']}}">{{mes['desc']}}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        <span class="input-group-text" id="basic-addon2">Ano: </span>
+                        <input id="txt_ano" type="number" class="form-control" value="{{ano}}">
+                        <button class="btn btn-danger" id="btn_gerar_livro_completo">Gerar Livro Completo</button>
+                    </div>
+                </div>            
             </div>
         </div>     
         <hr>
@@ -453,7 +492,7 @@
             $(this).attr('disabled');
             $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
 
-            info = {'destino':7, 'mes':6, 'ano':2024}
+            info = {'destino':7, 'mes':$("#cb_mes").val(), 'ano':$("#txt_ano").val()}
 
             $.ajax({
                 type: "POST",
@@ -515,8 +554,18 @@
 
                     $("#body-detalhes").append("<div class='col-sm-4'><b>Disciplina: </b>" + response['detalhes']['disciplina'] + "</div>");
                     $("#body-detalhes").append("<div class='col-sm-8'><b>Sede de Classificação: </b>" + response['detalhes']['sede_classificacao'] + "</div>");
+
                     $("#body-detalhes").append("<div class='col-sm-4'><b>Assina Livro Ponto: </b>" + response['detalhes']['assina_livro'] + "</div>");
                     $("#body-detalhes").append("<div class='col-sm-8'><b>Sede de Frequência: </b>" + response['detalhes']['sede_controle_freq'] + "</div>");
+
+                    if (response['detalhes']['aulas_outra_ue'] != '') {
+                        $("#body-detalhes").append("<div class='col-sm-4'><b>Aulas em outra UE: </b>" + response['detalhes']['aulas_outra_ue'] + "</div>");
+                    }                    
+
+                    if (response['detalhes']['atpc'] != '') {
+                        $("#body-detalhes").append("<div class='col-sm-4'><b>" + response['detalhes']['atpc'] + "</b></div>");
+                    }                    
+
                     $("#body-detalhes").append("<div class='col-sm-12'><b>Afastamento: </b>" + response['detalhes']['afastamento'] + "</div>");
                     $("#body-detalhes").append("<div class='col-sm-12'><b>OBS no Rodapé: </b>" + response['detalhes']['obs'] + "</div>");
 
@@ -689,6 +738,9 @@
                     $("#cb_disciplina").val(response['disciplina']);
                     $("#cb_afastamento").val(response['afastamento']);
                     $("#txt_obs").val(response['obs']);
+                    $("#txt_atpl").val(response['atpl']);
+                    $("#txt_atpc").val(response['atpc']);
+                    $("#txt_aulas").val(response['aulas_outra_ue']);
 
                     if (response['assina_livro'] == 1) {
                         $("#assina").attr('checked', '');

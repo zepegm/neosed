@@ -62,7 +62,7 @@
             }
 
             .head {
-                border: black solid 1px;
+                border-right: black solid 1px;
                 position: absolute;
                 top: -1px;
                 left: -1px;
@@ -83,8 +83,8 @@
                 border-collapse: collapse;
 
                 position: relative;
-                left: -1px;
-                width: 482px;
+                left: 0px;
+                width: 481px;
                 /*table-layout: fixed;*/
             }
 
@@ -164,6 +164,58 @@
                 background-color: #E7E7E7;
             }
 
+            .lb_secretario {
+                position: absolute;
+                width: 120px;
+                border-top: solid 1px black;
+                line-height: 1.4;
+                left:50px;
+            }
+
+            .lb_diretor {
+                position: absolute;
+                width: 120px;
+                border-top: solid 1px black;
+                line-height: 1.4;    
+                left:300px;            
+            }
+
+            .side_final {
+                position: absolute;
+                border: solid 1px black;
+                top:0px;
+                left: 480px;
+                width: 220px;
+                height: 1058px;
+            }
+
+            .head_side {
+                margin-top:10px;
+            }
+
+            .txt_head_side {
+                text-align: center;
+                color:gray;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 14px;
+                font-weight: bold;
+            }
+
+            .number_pag {
+                font-family:'BebasKai', sans-serif;
+                font-size: 30px;
+                position: absolute;
+                top: 0px;
+                right: 8px;
+            }
+
+            .tb_side {
+                border: solid 1px black;
+                width: 221px;
+                position: absolute;
+                left: -1px;
+                top:50px;
+            }
 
         </style>
     </head>
@@ -188,7 +240,7 @@
                             <td class="right"><b>Cat:</b></td><td colspan="2"><u>{{professor['categoria']}}</u></td>
                         </tr>
                         <tr>
-                            <td class="right"><b>{{professor['txt_sit']}}</b></td><td colspan="5"><u><span class="{{professor['class_afast']}}">{{professor['situacao']}}</span></u></td>
+                            <td class="right"><b>{{professor['txt_sit']}}</b></td><td colspan="6"><u><span class="{{professor['class_afast']}}">{{professor['situacao']}}{{professor['atpc']}}</span></u></td>
                         </tr>
                         <tr>
                             <td class="right"><b>Jornada:</b></td><td colspan="2"><u>{{professor['jornada']}}</u></td>
@@ -211,7 +263,7 @@
                 <table class="tb_calendar">
                     <thead>
                         <tr>
-                            <td rowspan="3" class="center">
+                            <td rowspan="3" class="center" style="width: 84.38px;">
                                 <div class="identificador">2</div>
                                 ASSINATURAS
                             </td>
@@ -300,10 +352,75 @@
                             </td>
                         </tr>
                         <tr>
-                            
+                            {% if professor['obs'] != '' %}
+                            <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{professor['obs']}}</td>
+                            {% else %}
+                            <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos}}</td>
+                            {% endif %}
                         </tr>
+                        <tr>
+                            {% if professor['obs'] != '' %}
+                            <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos}}</td>
+                            {% else %}
+                            <td colspan="23" style="height: 16px;">&nbsp;</td>
+                            {% endif %}
+                        </tr> 
+
+                        <!-- Preencher o resto das lacunas do campo observação -->
+                        {% for n in range(linhas) %}
+                        <tr><td style="height: 16px;" colspan="23"></td></tr>
+                        {% endfor %}
+
+                        {% for n in range(4) %}
+                            {% if professor['quadro']|length > 0 %}
+                            <tr class="center">
+                                <td colspan="11"></td>
+                                <td class="gray" colspan="6" style="height: 16px;">{{professor['quadro'][n]['col1']}}</td>
+                                {% if n == 0 %}
+                                <td class="gray" colspan="3" style="height: 16px;">{{professor['quadro'][n]['col2']}}</td>
+                                <td class="gray" colspan="4" style="height: 16px;">{{professor['quadro'][n]['col3']}}</td>
+                                {% else %}
+                                <td colspan="3" style="height: 16px;">{{professor['quadro'][n]['col2']}}</td>
+                                <td colspan="4" style="height: 16px;">{{professor['quadro'][n]['col3']}}</td>
+                                {% endif %}
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="23" style="height: 16px;">&nbsp;</td></tr>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Campo Assinatura Final -->
+                        <tr>
+                            <td colspan="23" class="center basic-col" style="height: 116.1px; border-bottom: none">
+                                <div class="identificador">7</div>
+                                <div class="lb_secretario">
+                                    {{info_assinatura['secretario']}}<br>
+                                    RG: {{info_assinatura['rg_secretario']}}<br>
+                                    {{info_assinatura['cargo_secretario']}}
+                                </div>
+                                <div class="lb_diretor">
+                                    {{info_assinatura['diretor']}}<br>
+                                    RG: {{info_assinatura['rg_diretor']}}<br>
+                                    Diretor de Escola
+                                </div>                                
+                            </td>
+                        </tr>                        
                     </tfoot>
                 </table>
+
+                <div class="side_final">
+                    <div class="head_side">
+                        <div class="txt_head_side">ORDEM POR RG</div>
+                        <div class="number_pag">{{ '%02d' % loop.index}}</div>                    
+                    </div>
+                    <table class="tb_side">
+                        <thead>
+                            <tr>
+                                <th class="center">HORÁRIO</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
 
             </div>
         </div>
