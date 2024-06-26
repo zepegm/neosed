@@ -331,7 +331,7 @@ class db:
             return False
         
 
-    def inserirQuadro(self, cpf, quadro):
+    def inserirQuadro(self, cpf, quadro, outras_ue):
         try:
 
             database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
@@ -355,9 +355,14 @@ class db:
                 sab = "'" + item['sab'] + "'" if item['sab'] != '' else 'null'
                 dom = "'" + item['dom'] + "'" if item['dom'] != '' else 'null'
 
-                print(seg)
-
                 cur.execute("INSERT INTO horario_livro_ponto VALUES(%s, %s, '%s', '%s', %s, %s, %s, %s, %s, %s, %s)" % (cpf, item['periodo'], item['inicio'], item['fim'], seg, ter, qua, qui, sex, sab, dom))
+
+
+            if outras_ue:
+                # remover dados conflitantes
+                cur.execute('SET SQL_SAFE_UPDATES = 0')
+                cur.execute("DELETE FROM horario_livro_ponto WHERE cpf_professor = %s" % cpf)
+                cur.execute('SET SQL_SAFE_UPDATES = 1')
 
             database.commit()
 

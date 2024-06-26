@@ -61,6 +61,10 @@
                 color:#DC3545;
             }
 
+            .green {
+                color:#28A745;
+            }
+
             .head {
                 border-right: black solid 1px;
                 position: absolute;
@@ -190,7 +194,7 @@
             }
 
             .head_side {
-                margin-top:10px;
+                margin-top:15px;
             }
 
             .txt_head_side {
@@ -205,16 +209,23 @@
                 font-family:'BebasKai', sans-serif;
                 font-size: 30px;
                 position: absolute;
-                top: 0px;
+                top: 5px;
                 right: 8px;
             }
 
             .tb_side {
                 border: solid 1px black;
-                width: 221px;
+                border-collapse: collapse;
                 position: absolute;
                 left: -1px;
-                top:50px;
+                top:49px;
+                /*width: 221px;
+                table-layout: fixed;*/
+            }
+
+            .tb_side td, th {
+                border: solid 1px black;
+                border-collapse: collapse;
             }
 
         </style>
@@ -408,6 +419,7 @@
                     </tfoot>
                 </table>
 
+                <!-- Basta agora apenas inserir as informações no lado direito da folha onde consta o quadro de aulas -->
                 <div class="side_final">
                     <div class="head_side">
                         <div class="txt_head_side">ORDEM POR RG</div>
@@ -416,9 +428,90 @@
                     <table class="tb_side">
                         <thead>
                             <tr>
-                                <th class="center">HORÁRIO</th>
+                                <th style="border-bottom:2px solid black;border-top:2px solid black;" colspan="9" class="center">
+                                    <div class="identificador">8</div>
+                                    <span>HORÁRIO</span>
+                                </th>
+                            </tr>
+                            <tr class="center" style="font-size:8px;border-bottom:2px solid black;">
+                                <td>Períodos e Aulas</td>
+                                <td style="width: 47px;min-width:47px;max-width:47px;border-right: 2px solid black;">Início e Término</td>
+                                <td style="width: 16px;min-width:16px;max-width:16px">Seg</td>
+                                <td style="width: 16px;min-width:16px;max-width:16px">Ter</td>
+                                <td style="width: 16px;min-width:16px;max-width:16px">Qua</td>
+                                <td style="width: 16px;min-width:16px;max-width:16px">Qui</td>
+                                <td style="width: 16px;min-width:16px;max-width:16px;border-right: 2px solid black;">Sex</td>
+                                <td style="width: 16px;min-width:16px;max-width:16px">Sab</td>
+                                <td style="width: 16px;min-width:16px;max-width:16px">Dom</td>
                             </tr>
                         </thead>
+                        <tbody>
+                        {% for n in range(51) %}
+                        <tr style="font-size:7px;height: 16px;">
+                            {% if n < professor['quadro_aula']|length %}
+                                <td class="center">{{professor['quadro_aula'][n]['periodo']}}</td>
+                                <td style="border-right: 2px solid black;" class="center">{{professor['quadro_aula'][n]['inicio']}} - {{professor['quadro_aula'][n]['fim']}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['seg']}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['ter']}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['qua']}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['qui']}}</td>
+                                <td style="border-right: 2px solid black;" class="center green">{{professor['quadro_aula'][n]['sex']}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['sab']}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['dom']}}</td>
+                            {% else %}
+                                <td></td>
+                                <td style="border-right: 2px solid black;"></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td style="border-right: 2px solid black;"></td>
+                                <td></td>
+                                <td></td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Colocar o total geral -->
+                        <tr style="font-size:8px;" class="gray center">
+                            <td style="height: 16px;border-right: 2px solid black;" colspan="2" class="gray"></td>
+                            <td>Seg</td><td>Ter</td><td>Qua</td><td>Qui</td><td style="border-right: 2px solid black;">Sex</td><td>Sáb</td><td>Dom</td>
+                        </tr>
+
+                        <tr style="font-size:8px;text-align: right;">
+                            <td style="height: 16px;border-right: 2px solid black;" colspan="2" class="gray"><b>Total:</b></td>
+
+                            {% for dia in dias_semana %}
+                                {% if professor['qtd_aulas_semanais'][dia] > 0 %}
+                                    {% if dia == 'sex' %}
+                                    <td class="center gray" style="font-size:10px;border-right: 2px solid black;">{{professor['qtd_aulas_semanais'][dia]}}</td>
+                                    {% else %}
+                                    <td class="center gray" style="font-size:10px;">{{professor['qtd_aulas_semanais'][dia]}}</td>
+                                    {% endif %}
+                                {% else %}
+                                    {% if dia == 'sex' %}
+                                    <td class="gray" style="border-right: 2px solid black;"></td>
+                                    {% else %}
+                                    <td class="gray"></td>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+      
+                        </tr>
+
+                        </tbody>
+                        <tfoot>
+                            <tr><td colspan="10" style="height: 16px;"></td></tr>
+                            <tr>
+                                <th style="border-bottom:2px solid black;border-top:2px solid black;position: relative;" colspan="9" class="center">
+                                    <div class="identificador">9</div>
+                                    <span>CARGA OUTRAS UEs</span>
+                                </th>
+                            </tr>
+                            <tr style="font-size:8px;text-align:right;font-weight: bold;">
+                                <td colspan="2" style="height: 16px;">Qtd. de Aulas:</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 

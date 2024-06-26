@@ -666,6 +666,27 @@
                         $("#tb-quadro-principal").append(basic_row)
                     }
 
+                    $("#body-quadro").append('<hr>');
+                    $("#body-quadro").append('<div class="row">' +
+                                                '<div class="col-sm-12 mb-3">' +
+                                                    '<label class="form-label" for="txt_aulas">Qtd Aulas outras UEs:</label>' +
+                                                    '<div class="form-group">' +
+                                                        '<div class="input-group">' + 
+                                                            '<span class="input-group-text">Seg</span>' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="seg">' +
+                                                            '<span class="input-group-text">Ter</span>' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="ter">' +
+                                                            '<span class="input-group-text">Qua</span>' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="qua">' +
+                                                            '<span class="input-group-text">Qui</span>' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="qui">' +
+                                                            '<span class="input-group-text">Sex</span>' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="sex">' +
+                                                        '</div>' +
+                                                    '</div>' +
+                                                '</div>' +
+                                            '</div>')
+
                     $("#modal_quadro_aula").modal('show');
                 },
                 error: function(err) {
@@ -696,7 +717,16 @@
                 
             });
 
-            $("#quadro_aula").val(JSON.stringify(lista_final));
+            // pegar as aulas da outra ue
+            aulas_outra_ue = {};
+
+            $(".txt_aulas_outra_ue").each(function(index) {
+                if ($(this).val() > 0) {
+                    aulas_outra_ue[$(this).attr('data-sem')] = $(this).val();
+                }
+            });
+
+            $("#quadro_aula").val(JSON.stringify({'lista_final':lista_final, 'aulas_ue':aulas_outra_ue}));
             $("#form_quadro_aula").submit();
 
         });

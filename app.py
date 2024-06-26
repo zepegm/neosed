@@ -168,7 +168,7 @@ def render_livro_ponto():
     sql = "select " + \
           "nome, ifnull(di, '-') as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
           "cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
-          "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuídas ', (select count(seg) + count(ter) + count(qua) + count(qui) + count(sex) + count(sab) + count(dom) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf), ' aulas nesta UE'), 'Atribuídas 0 aulas nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
+          "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuída(s) ', (select count(seg) + count(ter) + count(qua) + count(qui) + count(sex) + count(sab) + count(dom) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf), ' aula(s) nesta UE'), 'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
           "ifnull(FNREF, '') as FNREF, jornada_livro_ponto.descricao as jornada, jornada_livro_ponto.qtd as qtd_jornada, " + \
           "(select count(seg) + count(ter) + count(qua) + count(qui) + count(sex) + count(sab) + count(dom) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) as total_aulas, " + \
           "ifnull(professor_livro_ponto.afastamento, '') as afastamento, " + \
@@ -239,7 +239,7 @@ def render_livro_ponto():
         else:
             professor['jornada'] = 'Não Possui'
 
-        # criar quadro de hora do professor
+        # criar quadro de carga horária do professor
         quadro = []
         if int(professor['sede_c'][:5]) == int(ua_padrao): # quadro estará visível somente para professores com sede aqui
             if professor['afastamento'] == '': # quadro estará visível somente para professores que não estão designados ou afastados
@@ -265,6 +265,9 @@ def render_livro_ponto():
 
 
         professor['quadro'] = quadro
+
+        # criar quadro de aulas do professor
+        professor['quadro_aula'] = banco.executarConsulta(r"select periodo_livro_ponto.descricao as periodo, DATE_FORMAT(inicio, '%H:%i') as inicio, DATE_FORMAT(fim, '%H:%i') as fim, ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sab, ifnull(dom, '') as dom from horario_livro_ponto inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo where cpf_professor = " + aux + ' ORDER BY inicio')
 
         # após processar as informações do professor, ainda preciso criar uma tulpa com a quantidade de aulas por dia da semana
         professor['qtd_aulas_semanais'] = banco.executarConsulta('select count(seg) as seg, count(ter) as ter, count(qua) as qua, count(qui) as qui, count(sex) as sex, count(sab) as sáb, count(dom) as dom from horario_livro_ponto where cpf_professor = %s' % aux)[0]
@@ -319,12 +322,13 @@ def render_livro_ponto():
 
 
     linhas = 3 + (30 - len(dias))
+    dias_semana = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
 
     info_assinatura = banco.executarConsulta("select (select valor from config where id_config = 'diretor_ponto') as diretor, (select valor from config where id_config = 'rg_diretor_ponto') as rg_diretor, (select valor from config where id_config = 'secretario_ponto') as secretario, (select valor from config where id_config = 'rg_secretario_ponto') as rg_secretario, (select valor from config where id_config = 'cargo_secretario_ponto') as cargo_secretario")[0]
 
     # ---------------------------------------------------------------------------
     # renderizar template
-    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=txt_eventos[:-2], linhas=linhas, info_assinatura=info_assinatura)
+    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=txt_eventos[:-2], linhas=linhas, info_assinatura=info_assinatura, dias_semana=dias_semana)
 
 
 
@@ -2049,14 +2053,15 @@ def ponto():
             
         if 'quadro' in request.form: # é pra cadastrar o quadro de aulas do professor
             id = request.form['cpf']
-            quadro = json.loads(request.form.getlist('quadro')[0])
+            quadro = json.loads(request.form.getlist('quadro')[0])['lista_final']
+            outras_ue = json.loads(request.form.getlist('quadro')[0])['aulas_ue']
 
-
-            if banco.inserirQuadro(id, quadro):
+            if banco.inserirQuadro(id, quadro, outras_ue):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
                         '<strong>Operação realizada com sucesso!</strong> Quadro de aulas do professor registrado com sucesso!' \
                         '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
                         '</div>'    
+
             else:
                 msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
                         '<strong>Atenção!</strong> Erro ao tentar inserir dados do professor no banco de dados! Por favor quando for descrever a aula ou APTC, use no máximo 4 caracteres.' \
