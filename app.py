@@ -162,6 +162,7 @@ def render_livro_ponto():
     ano = int(request.args.getlist('ano')[0])
     mes = int(request.args.getlist('mes')[0])
     ua_padrao = banco.executarConsulta("select valor from config where id_config = 'ua_sede'")[0]['valor']
+    dias_semana = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
 
     # ---------------------------------------------------------------------------
     # pegar a lista de professores
@@ -176,6 +177,7 @@ def render_livro_ponto():
           'ifnull(aulas_outra_ue, 0) as aulas_outra_ue, ' + \
           "case when atpc > 0 or atpl > 0 then concat(' + ', atpc, ' ATPC(s) + ', atpl, ' ATPL(s)') else '' end as atpc, " + \
           "ifnull(atpc + atpl, 0) as soma_atpc, " + \
+          'assina_livro, ' + \
           "concat(c.id, ' - ', c.descricao) as sede_c, concat(f.id, ' - ', f.descricao) as sede_f " + \
           "from professor_livro_ponto " + \
           "inner join sede_livro_ponto as c on c.id = professor_livro_ponto.sede_classificacao inner join sede_livro_ponto as f on f.id = professor_livro_ponto.sede_controle_freq " + \
@@ -184,11 +186,17 @@ def render_livro_ponto():
 
     professores = banco.executarConsulta(sql)
 
-    pos_inicial = 30
+    pos_inicial = 2278
 
+    sumario = []
+    cont_pag = 1
     # ---------------------------------------------------------------------------
     # processar as informações de cada professor
     for professor in professores:
+
+        sumario.append({'professor':professor['nome'], 'pag':cont_pag})
+        cont_pag += 1
+
         professor['pos'] = pos_inicial
 
         aux_rg = '%08d' % int(professor['rg'])
@@ -272,6 +280,31 @@ def render_livro_ponto():
         # após processar as informações do professor, ainda preciso criar uma tulpa com a quantidade de aulas por dia da semana
         professor['qtd_aulas_semanais'] = banco.executarConsulta('select count(seg) as seg, count(ter) as ter, count(qua) as qua, count(qui) as qui, count(sex) as sex, count(sab) as sáb, count(dom) as dom from horario_livro_ponto where cpf_professor = %s' % aux)[0]
 
+        aulas_ue = banco.executarConsulta('select * from aulas_outra_ue_livro_ponto where cpf_professor = %s' % aux)
+        aulas_outra_ue = {}
+
+        for aula in aulas_ue:
+            aulas_outra_ue[aula['semana']] = aula['qtd']
+
+        professor['aulas_ue'] = aulas_outra_ue
+
+        total_aulas_geral = {}
+
+        # finalizar fazendo a soma total
+        for dia in dias_semana:
+
+            if dia in aulas_outra_ue:
+                total = int(professor['qtd_aulas_semanais'][dia]) + int(aulas_outra_ue[dia])
+            else:
+                total = int(professor['qtd_aulas_semanais'][dia])
+
+            if total < 1:
+                total_aulas_geral[dia] = ''
+            else: 
+                total_aulas_geral[dia] = total
+
+        professor['total_geral'] = total_aulas_geral
+
 
     # ---------------------------------------------------------------------------
     # pegar os dias do mes
@@ -308,6 +341,8 @@ def render_livro_ponto():
     eventos = banco.executarConsulta('select data_inicial, data_final, cat_letivo.descricao as cat, eventos_calendario.descricao from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where MONTH(data_inicial) = %s order by data_inicial' % mes)
     txt_eventos = ''
 
+    lst_final_eventos = []
+
     for evento in eventos:
 
         txt_descricao = evento['cat']
@@ -320,15 +355,22 @@ def render_livro_ponto():
         else: # evento de período
             txt_eventos += 'De %s até %s: %s, ' % (evento['data_inicial'].strftime('%d'), evento['data_final'].strftime('%d'), txt_descricao)
 
+        if len(txt_eventos) > 100:
+            lst_final_eventos.append(txt_eventos[:-2])
+            txt_eventos = ''
+
+    lst_final_eventos.append(txt_eventos[:-2])
+
 
     linhas = 3 + (30 - len(dias))
-    dias_semana = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
 
     info_assinatura = banco.executarConsulta("select (select valor from config where id_config = 'diretor_ponto') as diretor, (select valor from config where id_config = 'rg_diretor_ponto') as rg_diretor, (select valor from config where id_config = 'secretario_ponto') as secretario, (select valor from config where id_config = 'rg_secretario_ponto') as rg_secretario, (select valor from config where id_config = 'cargo_secretario_ponto') as cargo_secretario")[0]
 
+    sumario.sort(key=lambda t: (locale.strxfrm(t['professor'])))
+
     # ---------------------------------------------------------------------------
     # renderizar template
-    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=txt_eventos[:-2], linhas=linhas, info_assinatura=info_assinatura, dias_semana=dias_semana)
+    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=lst_final_eventos, linhas=linhas, info_assinatura=info_assinatura, dias_semana=dias_semana, sumario=sumario)
 
 
 
@@ -2011,8 +2053,14 @@ def ponto():
             
             elif info['destino'] == 1: # pegar quadro aula
                 quadro = banco.executarConsulta(r"select periodo,  DATE_FORMAT(inicio, '%H:%i') as inicio, DATE_FORMAT(fim, '%H:%i') as fim, ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sab, ifnull(dom, '') as dom from horario_livro_ponto where cpf_professor = " + info['cpf'] + ' ORDER BY inicio')
-                
-                return jsonify(quadro)
+
+                aulas_ue = banco.executarConsulta('select * from aulas_outra_ue_livro_ponto where cpf_professor = %s' % info['cpf'])
+                aulas = {}
+
+                for aula in aulas_ue:
+                    aulas[aula['semana']] = aula['qtd']
+
+                return jsonify({'quadro':quadro, 'aulas_ue':aulas})
             
             elif info['destino'] == 2: # pegar os dado do professor para exibir no formulário
 

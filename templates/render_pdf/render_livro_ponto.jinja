@@ -42,7 +42,24 @@
                 left: 60px;
             }
 
+            .capa {
+                border-width: 5px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                top:30px;              
+            }
 
+            .capa:before {
+                content: " ";
+                position: absolute;
+                z-index: -1;
+                top: 5px;
+                left: 5px;
+                right: 5px;
+                bottom: 5px;
+                border: 1px solid black;
+            } 
 
             .titulo {
                 font-family:'BebasKai', sans-serif;
@@ -228,9 +245,163 @@
                 border-collapse: collapse;
             }
 
+            .cap-tit1 {
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                text-align: center;
+                margin-top: 30px;
+                font-size: 100px;
+            }
+
+            .cap-tit2 {
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                text-align: center;
+                font-size: 140px;
+            }
+
+            .logo {
+                text-align: center;
+                width: 100%;
+                position: relative;
+                top:-80px;
+            }
+
+            .cap-foot {
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                text-align: center;
+                font-size: 80px;
+                position: relative;
+                top: -140px;       
+            }
+
+            .sumario {
+                position: absolute;
+                top: 1154px;
+            }
+
+            .sum-tit1 {
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                text-align: center;
+                font-size: 80px;
+                margin-top:20px;
+            }
+
+            .sum-tit2 {
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                text-align: center;
+                font-size: 20px;   
+                margin-bottom: 20px;             
+            }
+
+            .sum-col1 {
+                /*border: solid 1px black;*/
+                position: absolute;
+                font-family: Arial, Helvetica, sans-serif;
+                width: 300px;
+                left: 10px;
+                line-height: 11.5px;
+                top: 155px;
+            }
+
+            .sum-col1 table,
+            .sum-col2 table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .row-sum {
+                font-size: 12px;
+                height: 22px;
+                border-bottom: 1px solid black;
+            }
+
+            .sum-col2 {
+                position: absolute;
+                top: 155px;
+                left: 380px;
+                width: 300px;
+            }
+          
+            .red-line {
+                /*border:1px solid green;*/
+                position:absolute;
+                top: 303px;
+                width:480px;
+                height: 300px;
+
+                background: 
+                    linear-gradient(to top right,
+                        rgba(220,53,69,0) 0%,
+                        rgba(220,53,69,0) calc(50% - 0.8px),
+                        rgba(220,53,69,1) 50%,
+                        rgba(220,53,69,0) calc(50% + 0.8px),
+                        rgba(220,53,69,0) 100%);
+             
+            }
+          
+
         </style>
     </head>
     <body>
+
+        <!-- Aqui será feita a Capa -->
+        <div class="pag capa">
+            <div class="cap-tit1">LIVRO PONTO</div>
+            <div class="cap-tit2">DOCENTE</div>
+            <img class="logo" src="../static/images/Logo Neo Sed White (HQ).png">
+            <div class="cap-foot red">{{data}}</div>
+        </div>
+
+        <!-- Fazer a Paginação -->
+        <div class="pag sumario">
+            <div class="sum-tit1">ÍNDICE</div>
+            <div class="sum-tit2">ESTE LIVRO ESTÁ EM ORDEM DE RG</div>
+
+            <div class="sum-col1">
+                <table>
+                    <tbody>
+                        {% for n in range(0, 40) %}
+
+                        {% if n < sumario|length %}
+                        <tr style="border-bottom: 1px solid black">
+                            <td class="row-sum">{{sumario[n]['professor']}}</td>
+                            <td class="row-sum"><b>{{ '%02d' % sumario[n]['pag']}}</b></td>
+                        </tr>
+                        {% else %}
+                        <tr style="border-bottom: 1px solid black">
+                            <td class="row-sum">&nbsp;</td>
+                            <td class="row-sum"><b>{{ '%02d' % loop.index }}</b></td>
+                        </tr>
+                        {% endif %}
+
+
+                        {% endfor %}                
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sum-col2">
+                <table>
+                    <tbody>
+                        {% for n in range(40, 80) %}
+                        {% if n < sumario|length %}
+                        <tr style="border-bottom: 1px solid black">
+                            <td class="row-sum">{{sumario[n]['professor']}}</td>
+                            <td class="row-sum"><b>{{ '%02d' % sumario[n]['pag']}}</b></td>
+                        </tr>
+                        {% else %}
+                        <tr style="border-bottom: 1px solid black">
+                            <td class="row-sum">&nbsp;</td>
+                            <td class="row-sum"><b>{{ '%02d' % (n + 1) }}</b></td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}                
+                    </tbody>
+                </table>
+            </div>            
+
+        </div>
+
+        <!-- Aqui o Ponto será criado pegando professor por professor -->
         {% for professor in professores %}
         <div class="pag" style="top:{{professor['pos']}}px;">
             <div class="identificador">1</div>
@@ -323,8 +494,16 @@
                     </thead>
                     <tbody>
                         {% for dia in dias %}
+                        {% if professor['assina_livro'] == 1 %}
                         <tr class="center {{dia['class-bg']}}" style="height: 16px;">
+                        {% else %}
+                        <tr class="center gray" style="height: 16px;">
+                        {% endif %}
+                            {% if professor['assina_livro'] == 1 %}
                             <td class="red txt-assinatura">{{dia['Assinatura']}}</td>
+                            {% else %}
+                            <td class="red txt-assinatura"></td>
+                            {% endif %}
                             <td class="{{dia['class-txt']}}">{{dia['dia']}}</td>
                             <td class="{{dia['class-txt']}}">{{dia['semana']}}</td>
 
@@ -366,12 +545,20 @@
                             {% if professor['obs'] != '' %}
                             <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{professor['obs']}}</td>
                             {% else %}
-                            <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos}}</td>
+                                {% if professor['assina_livro'] == 1 %}
+                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos[0]}}</td>
+                                {% else %}
+                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">NÃO ASSINA ESSE LIVRO PONTO</td>
+                                {% endif %}
                             {% endif %}
                         </tr>
                         <tr>
                             {% if professor['obs'] != '' %}
-                            <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos}}</td>
+                                {% if professor['assina_livro'] == 1 %}
+                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos[0]}}</td>
+                                {% else %}
+                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">NÃO ASSINA ESSE LIVRO PONTO</td>
+                                {% endif %}
                             {% else %}
                             <td colspan="23" style="height: 16px;">&nbsp;</td>
                             {% endif %}
@@ -379,7 +566,7 @@
 
                         <!-- Preencher o resto das lacunas do campo observação -->
                         {% for n in range(linhas) %}
-                        <tr><td style="height: 16px;" colspan="23"></td></tr>
+                        <tr><td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos[n + 1]}}</td></tr>
                         {% endfor %}
 
                         {% for n in range(4) %}
@@ -419,6 +606,12 @@
                     </tfoot>
                 </table>
 
+
+                <!-- Verificar se o professor assina o livro -->
+                {% if professor['assina_livro'] == 0 %}
+                <div class="red-line"></div>
+                {% endif %}
+
                 <!-- Basta agora apenas inserir as informações no lado direito da folha onde consta o quadro de aulas -->
                 <div class="side_final">
                     <div class="head_side">
@@ -446,7 +639,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for n in range(51) %}
+                        {% for n in range(48) %}
                         <tr style="font-size:7px;height: 16px;">
                             {% if n < professor['quadro_aula']|length %}
                                 <td class="center">{{professor['quadro_aula'][n]['periodo']}}</td>
@@ -473,7 +666,7 @@
                         {% endfor %}
 
                         <!-- Colocar o total geral -->
-                        <tr style="font-size:8px;" class="gray center">
+                        <tr style="font-size:7px;" class="gray center">
                             <td style="height: 16px;border-right: 2px solid black;" colspan="2" class="gray"></td>
                             <td>Seg</td><td>Ter</td><td>Qua</td><td>Qui</td><td style="border-right: 2px solid black;">Sex</td><td>Sáb</td><td>Dom</td>
                         </tr>
@@ -508,9 +701,44 @@
                                     <span>CARGA OUTRAS UEs</span>
                                 </th>
                             </tr>
-                            <tr style="font-size:8px;text-align:right;font-weight: bold;">
-                                <td colspan="2" style="height: 16px;">Qtd. de Aulas:</td>
+                            <tr style="font-size:7px;" class="center">
+                                <td style="height: 16px;border-right: 2px solid black;" colspan="2"></td>
+                                <td>Seg</td><td>Ter</td><td>Qua</td><td>Qui</td><td style="border-right: 2px solid black;">Sex</td><td>Sáb</td><td>Dom</td>
                             </tr>
+                            <tr style="font-size:10px;border-bottom: solid black 2px;">
+                                <td colspan="2" style="height: 16px;font-size:8px;text-align:right;font-weight: bold;border-right: 2px solid black;">Qtd. de Aulas:</td>
+                                <td class="center">{{professor['aulas_ue']['seg']}}</td>
+                                <td class="center">{{professor['aulas_ue']['ter']}}</td>
+                                <td class="center">{{professor['aulas_ue']['qua']}}</td>
+                                <td class="center">{{professor['aulas_ue']['qui']}}</td>
+                                <td class="center" style="border-right: 2px solid black;">{{professor['aulas_ue']['sex']}}</td>
+                                <td class="center">{{professor['aulas_ue']['sáb']}}</td>
+                                <td class="center">{{professor['aulas_ue']['dom']}}</td>
+                            </tr>
+
+                            <!-- TOTAL GERAL, para finalizar isso de uma vez por todas -->
+                            <tr><td colspan="10" style="height: 16px;"></td></tr>
+                            <tr>
+                                <th style="border-bottom:2px solid black;border-top:2px solid black;position: relative;" colspan="9" class="center">
+                                    <div class="identificador">10</div>
+                                    <span>TOTAL GERAL</span>
+                                </th>
+                            </tr>
+                            <tr style="font-size:7px;" class="center">
+                                <td style="height: 16px;border-right: 2px solid black;" colspan="2"></td>
+                                <td>Seg</td><td>Ter</td><td>Qua</td><td>Qui</td><td style="border-right: 2px solid black;">Sex</td><td>Sáb</td><td>Dom</td>
+                            </tr>
+                            <tr style="font-size:10px;border-bottom: solid black 2px;">
+                                <td colspan="2" style="height: 16px;font-size:8px;text-align:right;font-weight: bold;border-right: 2px solid black;">Qtd. de Aulas:</td>
+                                <td class="center">{{professor['total_geral']['seg']}}</td>
+                                <td class="center">{{professor['total_geral']['ter']}}</td>
+                                <td class="center">{{professor['total_geral']['qua']}}</td>
+                                <td class="center">{{professor['total_geral']['qui']}}</td>
+                                <td class="center" style="border-right: 2px solid black;">{{professor['total_geral']['sex']}}</td>
+                                <td class="center">{{professor['total_geral']['sáb']}}</td>
+                                <td class="center">{{professor['total_geral']['dom']}}</td>
+                            </tr>
+
                         </tfoot>
                     </table>
                 </div>
@@ -522,6 +750,10 @@
 
     <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
     <script>
+
+    var total_dias = {{dias|length}};
+
+    $(".red-line").css('height', (total_dias * 16) + 'px')
 
     </script>
 </html>

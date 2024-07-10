@@ -626,15 +626,15 @@
                     $("#body-quadro").empty();
                     $("#body-quadro").append('<table class="table table-striped"><thead class="table-dark"><tr><th>Período</th><th>Início</th><th>Fim</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sab</th><th>Dom</th><td><button class="btn btn-success btn-add-row"><i class="fa-sharp fa-solid fa-plus"></i></button></td></tr></thead><tbody id="tb-quadro-principal"></tbody></table>');
 
-                    if (response.length > 0) {
+                    if (response['quadro'].length > 0) {
 
-                        for (let i = 0; i < response.length; i++) {
+                        for (let i = 0; i < response['quadro'].length; i++) {
                             
                             periodo_aux = '<select class="form-control cb_periodo">';
         
                             for (let j = 0; j < periodos.length; j++) {
 
-                                if (response[i]['periodo'] == periodos[j]['id']) {
+                                if (response['quadro'][i]['periodo'] == periodos[j]['id']) {
                                     periodo_aux += '<option value="' + periodos[j]['id'] + '" selected>' + periodos[j]['descricao'] + '</option>'
                                 } else {
                                     periodo_aux += '<option value="' + periodos[j]['id'] + '">' + periodos[j]['descricao'] + '</option>'
@@ -647,15 +647,15 @@
                             
                             
                             row = '<tr><td>' + periodo_aux + '</td>' +
-                            '<td><input type="time" class="form-control txt_inicio_quadro" value="' + response[i]['inicio'] + '"></td>' + 
-                            '<td><input type="time" class="form-control txt_fim_quadro" value="' + response[i]['fim'] + '"></td>' + 
-                            '<td contenteditable="true" class="seg">' + response[i]['seg'] + '</td>' + 
-                            '<td contenteditable="true" class="ter">' + response[i]['ter'] + '</td>' + 
-                            '<td contenteditable="true" class="qua">' + response[i]['qua'] + '</td>' + 
-                            '<td contenteditable="true" class="qui">' + response[i]['qui'] + '</td>' + 
-                            '<td contenteditable="true" class="sex">' + response[i]['sex'] + '</td>' + 
-                            '<td contenteditable="true" class="sab">' + response[i]['sab'] + '</td>' + 
-                            '<td contenteditable="true" class="dom">' + response[i]['dom'] + '</td>' + 
+                            '<td><input type="time" class="form-control txt_inicio_quadro" value="' + response['quadro'][i]['inicio'] + '"></td>' + 
+                            '<td><input type="time" class="form-control txt_fim_quadro" value="' + response['quadro'][i]['fim'] + '"></td>' + 
+                            '<td contenteditable="true" class="seg">' + response['quadro'][i]['seg'] + '</td>' + 
+                            '<td contenteditable="true" class="ter">' + response['quadro'][i]['ter'] + '</td>' + 
+                            '<td contenteditable="true" class="qua">' + response['quadro'][i]['qua'] + '</td>' + 
+                            '<td contenteditable="true" class="qui">' + response['quadro'][i]['qui'] + '</td>' + 
+                            '<td contenteditable="true" class="sex">' + response['quadro'][i]['sex'] + '</td>' + 
+                            '<td contenteditable="true" class="sab">' + response['quadro'][i]['sab'] + '</td>' + 
+                            '<td contenteditable="true" class="dom">' + response['quadro'][i]['dom'] + '</td>' + 
                             '<td><button class="btn btn-danger btn-remove-row"><i class="fa-sharp fa-solid fa-minus"></i></button></td></tr>'
                             
                             $("#tb-quadro-principal").append(row)
@@ -666,6 +666,8 @@
                         $("#tb-quadro-principal").append(basic_row)
                     }
 
+                    aulas = response['aulas_ue'];
+
                     $("#body-quadro").append('<hr>');
                     $("#body-quadro").append('<div class="row">' +
                                                 '<div class="col-sm-12 mb-3">' +
@@ -673,15 +675,15 @@
                                                     '<div class="form-group">' +
                                                         '<div class="input-group">' + 
                                                             '<span class="input-group-text">Seg</span>' +
-                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="seg">' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="seg" value="' + aulas['seg'] + '">' +
                                                             '<span class="input-group-text">Ter</span>' +
-                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="ter">' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="ter" value="' + aulas['ter'] + '">' +
                                                             '<span class="input-group-text">Qua</span>' +
-                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="qua">' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="qua" value="' + aulas['qua'] + '">' +
                                                             '<span class="input-group-text">Qui</span>' +
-                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="qui">' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="qui" value="' + aulas['qui'] + '">' +
                                                             '<span class="input-group-text">Sex</span>' +
-                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="sex">' +
+                                                            '<input type="number" class="form-control txt_aulas_outra_ue" data-sem="sex" value="' + aulas['sex'] + '">' +
                                                         '</div>' +
                                                     '</div>' +
                                                 '</div>' +

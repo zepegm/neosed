@@ -361,8 +361,11 @@ class db:
             if outras_ue:
                 # remover dados conflitantes
                 cur.execute('SET SQL_SAFE_UPDATES = 0')
-                cur.execute("DELETE FROM horario_livro_ponto WHERE cpf_professor = %s" % cpf)
+                cur.execute("DELETE FROM aulas_outra_ue_livro_ponto WHERE cpf_professor = %s" % cpf)
                 cur.execute('SET SQL_SAFE_UPDATES = 1')
+
+                for key in outras_ue:
+                    cur.execute("INSERT INTO aulas_outra_ue_livro_ponto VALUES(%s, '%s', %s)" % (cpf, key, outras_ue[key]))
 
             database.commit()
 
