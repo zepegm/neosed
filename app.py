@@ -1569,7 +1569,7 @@ def uploadTurma():
                             sit = 8
                         elif situacao == "APROVADO":
                             sit = 6
-                        elif situacao == "RETIDO FREQ.":
+                        elif situacao == "RETIDO FREQ." or situacao == 'RETIDO REND.':
                             sit = 10
                         elif situacao == 'RECL':
                             sit = 15
