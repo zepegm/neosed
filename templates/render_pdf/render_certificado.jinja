@@ -1,0 +1,66 @@
+<html lang="pt-BR">
+    <title>Render Certificado</title>
+    <style>
+        .pagina {
+            width: 1106px;
+            height: 768px;
+            border: solid 1px white;
+            background-image: url("static/images/Certificado.png");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: relative;
+            top:12px;
+            margin-bottom: 30px;
+        }
+
+        .pagina:nth-of-type(1)
+        {
+            top:3px;
+        }
+
+        .texto {
+            position: relative;
+            top: 460px;
+            left: 100px;
+            width: 900px;
+            text-align: justify;
+            text-justify: inter-word;
+            font-size: 20px;
+            line-height: 35px;
+        }
+
+        .assinatura {
+            text-align: center;
+            position: relative;
+            top: 495px;
+            left: 100px;
+            width: 900px;
+        }
+
+        .data {
+            font-size: 20px;
+            font-style: italic;
+            text-align: right;
+            position: relative;
+            top: 460px;
+            right: 110px;
+        }
+
+    </style>
+    <body>
+        {% for aluno in alunos %}
+        <div class="pagina">
+            <div class="texto">{{aluno['texto_final']}}</div>
+            <div class="data">Canas, {{aluno['fim']}}</div>
+            <table class="assinatura">
+                <tr>
+                    <td>______________________________<br>Concluinte<br>{{aluno['nome_assinatura']}}<br>{{aluno['rg']}}</td>
+                    <td>______________________________<br>Vice-Diretor de Escola<br>{{nome_vice}}<br>{{rg_vice}}</td>
+                    <td>______________________________<br>Diretor de Escola<br>{{nome_diretor}}<br>{{rg_diretor}}</td>
+                </tr>
+            </table>
+        </div>
+        {% endfor %}
+    </body>
+</html>

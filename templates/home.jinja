@@ -435,7 +435,7 @@
         <div class="modal-dialog" style="max-width: 90%;" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button> 
+                    <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button>&nbsp;<button id="btnGerarCertificado" class="btn btn-success" style="display: none;">Gerar Certificados</button>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>                  
                 </div>
                 <div class="modal-body">
@@ -576,6 +576,9 @@
     <script>
 
 
+
+
+
         $("#cbAno").on('change', function() {
             $("#mudarAno").submit();
         });
@@ -615,6 +618,26 @@
             });
 
             
+        });
+
+        $("#btnGerarCertificado").on('click', function() {
+            $("#btnGerarCertificado").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            $("#btnGerarCertificado").attr('disabled', '');
+
+            info = {'destino':8, 'classe':$("#numClasse").text()}
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $("#btnGerarCertificado").html('Gerar Certificados');
+                $("#btnGerarCertificado").removeAttr('disabled');
+                },
+            });            
         });
 
         $("#btnExportarIf").on('click', function(e) {
@@ -789,7 +812,15 @@
                                     "next": "Próximo"
                                 }
                             }                    
-                        });                    
+                        });   
+
+                    if (response['certificado']) {
+                        $("#btnGerarCertificado").show();
+                    } else {
+                        $("#btnGerarCertificado").hide();
+                    }
+
+                    $("#modal_lista_turmas").modal('show');                    
 
                 },
                 error: function(err) {
@@ -797,7 +828,6 @@
                 }
             });
 
-            $("#modal_lista_turmas").modal('show');
         }
 
         function editar(id, nome, ensino, periodo, duracao) {

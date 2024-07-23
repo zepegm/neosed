@@ -373,6 +373,46 @@ def render_livro_ponto():
     return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=lst_final_eventos, linhas=linhas, info_assinatura=info_assinatura, dias_semana=dias_semana, sumario=sumario)
 
 
+@app.route('/render_certificados_conclusao',  methods=['GET', 'POST'])
+def render_certificados_conclusao():
+    if request.method == 'GET':
+        classe = request.args.getlist('classe')[0]
+
+        tipo_ensino = banco.executarConsulta('select tipo_ensino from turma where num_classe = %s' % classe)[0]['tipo_ensino']
+
+        if  tipo_ensino > 1: # eja
+            nome_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-eja-nome"')[0]
+            rg_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-eja-rg"')[0]
+        else: # regular
+            nome_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-regular-nome"')[0]
+            rg_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-regular-rg"')[0]  
+
+
+        if tipo_ensino == 3:
+            modalidade = "Ensino Fundamental"
+        else:
+            modalidade = 'Ensino Médio'
+
+        alunos = banco.executarConsulta(r"select aluno.nome, aluno.rg, serie, aluno.sexo, DATE_FORMAT (aluno.nascimento,'%d/%m/%Y') as nascimento, DATE_FORMAT (vinculo_alunos_turmas.fim_mat,'%d/%m/%Y') as fim from vinculo_alunos_turmas  inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = " + classe + " and situacao = 6 and (serie = 3 or serie = 4 or serie = 12) order by nome")
+
+        for aluno in alunos:
+            aluno['nome_assinatura'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+            aluno['nascimento'] = aluno['nascimento'][0:2] + ' de ' + getMes(aluno['nascimento'][3:5]).lower() + ' de ' + aluno['nascimento'][6:10]
+            aluno['fim'] = aluno['fim'][0:2] + ' de ' + getMes(aluno['fim'][3:5]).lower() + ' de ' + aluno['fim'][6:10]
+            if aluno['sexo'] == 'M':
+                aluno['texto_final'] = 'O Diretor da Escola confere, nos termos do inciso VII, artigo 24 da Lei 9394/96, a <b>%s</b>, nascido em %s, o presente CERTIFICADO por haver concluído o %s, em %s.' % (aluno['nome'], aluno['nascimento'], modalidade, aluno['fim'])
+            else:
+                aluno['texto_final'] = 'O Diretor da Escola confere, nos termos do inciso VII, artigo 24 da Lei 9394/96, a <b>%s</b>, nascida em %s, o presente CERTIFICADO por haver concluído o %s, em %s.' % (aluno['nome'], aluno['nascimento'], modalidade, aluno['fim'])
+
+
+
+
+
+    nome_diretor = banco.executarConsultaVetor('select valor from config where id_config = "diretor_ponto"')[0]
+    rg_diretor = banco.executarConsultaVetor('select valor from config where id_config = "rg_diretor_ponto"')[0]
+
+    return render_template('render_pdf/render_certificado.jinja', alunos=alunos, nome_vice=nome_vice, nome_diretor=nome_diretor, rg_diretor=rg_diretor, rg_vice=rg_vice)
+
 
 @app.route('/render_conselho_bimestre_all',  methods=['GET', 'POST'])
 def render_conselho_bimestre_all():
@@ -1018,6 +1058,22 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
+        return jsonify(pdf_path)
+    
+    elif info['destino'] == 8: # certificados
+        pdf_path = 'static/docs/certificados.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_certificados_conclusao?classe=%s' % info['classe'], {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
+        await browser.close()
+
         return jsonify(pdf_path)        
 
 
@@ -1445,7 +1501,12 @@ def getAlunosTurma():
 
             turma = banco.executarConsulta(sql)
 
-            #print(turma)
+            total_habilitados_certificado = banco.executarConsultaVetor('select count(*) as total from vinculo_alunos_turmas where num_classe = %s and situacao = 6 and (serie = 3 or serie = 4 or serie = 12)' % num_classe)[0]
+            
+            if (total_habilitados_certificado > 0):
+                certificado = True
+            else:
+                certificado = False
             
             sql =   r"select CASE WHEN turma.duracao < 3 THEN DATE_FORMAT(1bim_inicio,'%d/%m/%Y') ELSE DATE_FORMAT(3bim_inicio,'%d/%m/%Y') END as inicio, " + \
 	                r"CASE WHEN turma.duracao = 1 OR turma.duracao = 3 THEN DATE_FORMAT(4bim_fim,'%d/%m/%Y') ELSE DATE_FORMAT(2bim_fim,'%d/%m/%Y') END as fim " + \
@@ -1457,7 +1518,7 @@ def getAlunosTurma():
 
             total = banco.executarConsulta(sql)[0]
 
-            return jsonify({'duracao':duracao, 'turma':turma, 'total':total})
+            return jsonify({'duracao':duracao, 'turma':turma, 'total':total, 'certificado':certificado})
             
 
 @app.route('/pesquisarPlan', methods=['GET', 'POST'])
