@@ -596,7 +596,34 @@
                     }
 
 
+                    // Acrescentar botão para gerar folha de ponto extra
+                    $("#body-detalhes").append("<div class='col-sm-12'><hr></div>");
 
+                    let form_adicional = '<div class="col-sm-9"><div class="form-group">';
+                    form_adicional += '<div class="input-group">';
+                    form_adicional += '<span class="input-group-text">Selecione o mês: </span>';
+
+                    form_adicional += '<select class="form-control" id="cb_mes_extra">';
+                            {% for mes in meses %}
+                            {% if mes['atual'] %}
+                            form_adicional += '<option value="{{mes["valor"]}}" selected>{{mes["desc"]}}</option>';
+                            {% else %}
+                            form_adicional += '<option value="{{mes["valor"]}}">{{mes["desc"]}}</option>'
+                            {% endif %}
+                            {% endfor %}
+                    form_adicional += '</select>';
+                    form_adicional += '<span class="input-group-text">Ano: </span>';
+                    form_adicional += '<input id="txt_ano_extra" type="number" class="form-control" value="{{ano}}">'
+
+                    form_adicional += '<span class="input-group-text">Folha: </span>';
+                    form_adicional += '<input id="folha_extra" type="number" class="form-control" value="0">';
+                    form_adicional += '<button class="btn_extra btn btn-danger">Gerar Folha Extra</button>';
+                    form_adicional += '<input type="hidden" id="cpf_prof_extra" value="' + response['detalhes']['cpf'] + '">';
+
+                    form_adicional += '</div></div></div>';
+
+
+                    $("#body-detalhes").append(form_adicional);
 
                     $("#modal_visualizar").modal('show');
                 },
@@ -731,6 +758,26 @@
             $("#quadro_aula").val(JSON.stringify({'lista_final':lista_final, 'aulas_ue':aulas_outra_ue}));
             $("#form_quadro_aula").submit();
 
+        });
+
+        $("#modal_visualizar").on('click', '.btn_extra', function() {
+            $(this).attr('disabled');
+            $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+
+            info = {'destino':9, 'mes':$("#cb_mes_extra").val(), 'ano':$("#txt_ano_extra").val(), 'professor':$("#cpf_prof_extra").val(), 'number':$("#folha_extra").val()}
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $(".btn_extra").html('Gerar Folha Extra');
+                $(".btn_extra").removeAttr('disabled');
+                },
+            });
         });
 
         $("#body-quadro").on('click', '.btn-add-row', function() {

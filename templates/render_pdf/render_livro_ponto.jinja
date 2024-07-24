@@ -616,7 +616,11 @@
                 <div class="side_final">
                     <div class="head_side">
                         <div class="txt_head_side">ORDEM POR RG</div>
-                        <div class="number_pag">{{ '%02d' % loop.index}}</div>                    
+                        {% if folha_extra > 0 %}
+                        <div class="number_pag">{{ '%02d' % folha_extra}}</div>
+                        {% else %}
+                        <div class="number_pag">{{ '%02d' % loop.index}}</div>
+                        {% endif %}
                     </div>
                     <table class="tb_side">
                         <thead>

@@ -164,6 +164,20 @@ def render_livro_ponto():
     ua_padrao = banco.executarConsulta("select valor from config where id_config = 'ua_sede'")[0]['valor']
     dias_semana = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
 
+    professor_individual = request.args.getlist('professor')
+    
+    condicao_extra = ''
+
+    if len(professor_individual) > 0:
+        condicao_extra = 'and cpf = %s' % professor_individual[0].replace('.', '').replace('-', '')
+
+
+    folha_extra = 0
+
+    if len(request.args.getlist('number')) > 0:
+        folha_extra = int(request.args.getlist('number')[0])
+
+
     # ---------------------------------------------------------------------------
     # pegar a lista de professores
     sql = "select " + \
@@ -182,7 +196,7 @@ def render_livro_ponto():
           "from professor_livro_ponto " + \
           "inner join sede_livro_ponto as c on c.id = professor_livro_ponto.sede_classificacao inner join sede_livro_ponto as f on f.id = professor_livro_ponto.sede_controle_freq " + \
           "left join disciplinas on disciplinas.codigo_disciplina = professor_livro_ponto.disciplina " + \
-          "inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto ON afastamento_livro_ponto.id = professor_livro_ponto.afastamento inner join jornada_livro_ponto on jornada_livro_ponto.id = professor_livro_ponto.jornada where ativo = 1 order by rg"
+          "inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto ON afastamento_livro_ponto.id = professor_livro_ponto.afastamento inner join jornada_livro_ponto on jornada_livro_ponto.id = professor_livro_ponto.jornada where ativo = 1 " + condicao_extra + " order by rg"
 
     professores = banco.executarConsulta(sql)
 
@@ -370,7 +384,7 @@ def render_livro_ponto():
 
     # ---------------------------------------------------------------------------
     # renderizar template
-    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=lst_final_eventos, linhas=linhas, info_assinatura=info_assinatura, dias_semana=dias_semana, sumario=sumario)
+    return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=lst_final_eventos, linhas=linhas, info_assinatura=info_assinatura, dias_semana=dias_semana, sumario=sumario, folha_extra=folha_extra)
 
 
 @app.route('/render_certificados_conclusao',  methods=['GET', 'POST'])
@@ -1074,7 +1088,23 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
         await browser.close()
 
-        return jsonify(pdf_path)        
+        return jsonify(pdf_path)
+    
+    elif info['destino'] == 9: # livro ponto individual
+        pdf_path = 'static/docs/certificados.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s' % (info['mes'], info['ano'], info['professor'], info['number']), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)      
 
 
 @app.route('/save_dificuldades', methods=['GET', 'POST'])
