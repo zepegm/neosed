@@ -34,6 +34,7 @@ botao = driver.find_element(By.ID, 'btnPesquisar')
 
 for ra in lista:
     aluno = banco.executarConsulta('select nome, rg from aluno where ra = %s' % ra)[0]
+    print(aluno)
     rg = aluno['rg'].replace('.', '')[:-2]
 
     driver.execute_script("arguments[0].innerText = '%s, RG: %s'" % (aluno['nome'], aluno['rg']), label)
