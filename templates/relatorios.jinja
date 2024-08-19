@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-br">
+
+    <head>
+    
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Relatórios</title>
+        <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+        <!-- Custom styles for this template -->
+        <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+        <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='datatable/datatables.min.css') }}" rel="stylesheet">
+        <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">    
+    
+    </head>
+
+    <body style="background-color: rgba(244, 244, 244);">
+    
+        {% block menu_superior %}
+            {% include 'menu.jinja' %}
+        {% endblock %}
+
+        <main class="container-xxl">
+        
+            <form action="relatorios" method="POST">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h1>Escolha o Relatório:</h1>               
+                    </div>
+                    <div class="col-sm-6">
+                        <select class="form-select" id="cb_relatorio" name="cb_relatorio">
+                            {% for item in combo_final %}
+                            {{item}}
+                            {% endfor %}
+                        </select>                 
+                    </div>
+                    <div class="col-sm-6">
+                        <input class="btn btn-primary" type="submit" value="Confirmar">
+                    </div>
+                </div>
+            </form>
+
+            {% if opcao == 0 or opcao == 1 or opcao == 2 %}
+
+                {% for turma in turmas %}
+
+                    {% if turma['alunos']|length > 0 %}
+                    <hr>
+                    <h3 class="text-danger">{{turma['nome_turma']}}</h3>
+                        <ul>
+                        {% for aluno in turma['alunos'] %}
+                            
+                        <li>{{aluno['nome']}} - <span class="text-primary">{{aluno['descricao']}}</span></li>
+
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                {% endfor %}
+
+                <hr>
+                <p><b>Resultado: </b>Um total de <b>{{soma}}</b> alunos estão devendo {{text_final}}</p>
+
+            {% endif %}
+
+        </main>
+
+    </body>
+
+</html>

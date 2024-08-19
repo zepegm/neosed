@@ -156,6 +156,69 @@ def index():
 
     return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos)
 
+@app.route('/relatorios', methods=['GET', 'POST'])
+def relatorios():
+
+    if request.method == 'POST':
+        if 'cb_relatorio' in request.form:
+            opcao = int(request.form['cb_relatorio'])
+
+            # lista combo
+            combo_final = ['<option value="0">Lista de Alunos Ativos Faltando RG ou CPF</option>']
+            
+            if (opcao == 1):
+                combo_final.append('<option value="1" selected>Lista de Alunos Ativos Faltando RG</option>')
+            else:
+                combo_final.append('<option value="1">Lista de Alunos Ativos Faltando RG</option>')
+
+            if (opcao == 2):
+                combo_final.append('<option value="2" selected>Lista de Alunos Ativos Faltando CPF</option>')
+            else:
+                combo_final.append('<option value="2">Lista de Alunos Ativos Faltando CPF</option>')                
+
+
+            if (opcao == 0 or opcao == 1 or opcao == 2): # alunos faltando Documentação
+                turmas = banco.executarConsulta('select num_classe, nome_turma from turma where ano = year(now()) order by tipo_ensino, nome_turma')
+                
+                soma = 0
+
+                if (opcao == 0):
+                    where = '(rg is null or cpf is null)'
+                    text_final = 'algum documento.'
+                elif (opcao == 1):
+                    where = 'rg is null'
+                    text_final = 'RG.'
+                elif (opcao == 2):
+                    where = 'cpf is null'
+                    text_final = 'CPF.'                    
+
+                for turma in turmas:
+                    alunos = banco.executarConsulta('select ' + \
+	                                                'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                                                    'aluno.nome, ' + \
+	                                                'CASE ' + \
+		                                            'WHEN rg is null and cpf is null THEN "Deve <b>RG</b> e <b>CPF</b>." ' + \
+                                                    'WHEN rg is null and cpf is not null THEN "Deve <b>RG</b>." ' + \
+                                                    'WHEN rg is not null and cpf is null THEN "Deve <b>CPF</b>." END as descricao ' + \
+                                                    'from vinculo_alunos_turmas ' + \
+                                                    'inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
+                                                    'where num_classe = %s and situacao = 1 and %s ' % (turma['num_classe'], where) + \
+                                                    'order by nome')
+                    
+                    soma += len(alunos)
+
+                    for aluno in alunos:
+                        aluno['nome'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+                    
+                    turma['alunos'] = alunos
+
+                return render_template('relatorios.jinja', opcao=opcao, turmas=turmas, soma=soma, text_final=text_final, combo_final=combo_final)
+
+
+    combo_final = ['<option value="0">Lista de Alunos Ativos Faltando RG ou CPF</option>', '<option value="1">Lista de Alunos Ativos Faltando RG</option>', '<option value="2">Lista de Alunos Ativos Faltando CPF</option>']
+
+    return render_template('relatorios.jinja', opcao = -1, combo_final=combo_final)
+
 @app.route('/render_livro_ponto',  methods=['GET', 'POST'])
 def render_livro_ponto():
 

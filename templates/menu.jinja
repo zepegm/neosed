@@ -70,6 +70,17 @@
                 </li>
                 {% endif %}  
 
+
+                {% if url_for(request.endpoint) == '/relatorios' %}
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Relatórios</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="../relatorios">Relatórios</a>
+                </li>
+                {% endif %}                 
+
             </ul>
         </div>
     </div>
