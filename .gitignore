@@ -13,3 +13,4 @@ staticFiles/uploads/import.csv
 static/docs/lista.pdf
 static/docs/conselho.pdf
 /static/docs
+/__pycache__
