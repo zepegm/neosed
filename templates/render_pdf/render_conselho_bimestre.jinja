@@ -114,6 +114,21 @@
                 left: 30px;                
             }
 
+            #pag9 {
+                width: 699px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: white;
+                position: absolute;
+                {% if turmas_if|length > 0 %}
+                top:9022px;
+                {% else %}
+                top:6774px;
+                {% endif %}
+                left: 60px;
+            }            
+
             #logo {
                 width: 270px;
                 height: 270px;
@@ -418,7 +433,7 @@
                             <td class="center">{{alunos[n]['serie']}}</td>
                             <td>&nbsp;{{alunos[n]['nome']}}</td>
                             <td class="center">{{alunos[n]['ra']}}</td>
-                            {% if alunos[n]['fim_mat'] != '' %}
+                            {% if alunos[n]['fim_mat'] != '' and alunos[n]['mat'] != 'APROV' %}
                             <td class="center"><b>{{alunos[n]['mat']}}</b></td>
                             {% else %}
                             <td class="center blue"><b>{{alunos[n]['mat']}}</b></td>
@@ -511,7 +526,7 @@
             <table id="verso">
                 <thead>
                     <tr>
-                        <th class="upright_text"><span class="num_bim_verso">1º</span>&nbsp;BIMESTRE</th>
+                        <th class="upright_text"><span class="num_bim_verso">{{bimestre}}º</span>&nbsp;BIMESTRE</th>
                         {% for disc in disciplinas %}
                         <td class="vertical_text head_verso" rowspan="2">&nbsp;&nbsp;{{disc['completo']}}</td>
                         {% endfor %}
@@ -609,9 +624,9 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
             </table>
         </div>
 
-        {% if turmas_if|length > 0 %}
-
         <div id="pag6" class="blank_pag"></div>
+
+        {% if turmas_if|length > 0 %}
 
         <div id="pag7">
             <table id="mapao_if">
@@ -870,6 +885,71 @@ Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</
             </table>
 
         </div>
+
+        {% endif %}
+
+
+        {% if lista_conceito_final|length > 0 %}
+
+        <div id="pag9">
+            <img id="logo" src="../static/images/Logo Neo Sed White.png">
+            <div id="titulo">Lista Geral - <span class="red">{{turma['nome_turma']}}</span> - {{turma['tipo_ensino']}} - {{turma['desc_duracao']}}</div>
+            <div id="head">
+                <p><b>Número da Classe: </b>{{turma['num_classe']}}</p>
+                <p><b>Período:</b> {{turma['periodo']}}</p>
+                <p><b>Duração:</b> {{turma['inicio']}} até {{turma['fim']}}</p>
+                <p><b>Total:</b> {{total['total_ativos']}} ativos ({{total['total']}} no total)</p>
+            </div>
+            <div id="sub1" class="subtitulo">
+                RESULTADO FINAL
+            </div>           
+            <table id="dados_matricula">
+                <thead>
+                    <tr>
+                        <th style="width:25px">Nº</th>
+                        <th style="width:33px">RM</th>
+                        <th>SÉRIE</th>
+                        <th style="width:360px;text-align:left;">&nbsp;NOME</th>
+                        <th style="width:85px">RA</th>
+                        <th style="width:85px">MATR.</th>
+                        <th style="width:85px">FIM MATR.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for n in range(0, 50) %}
+                    {% if loop.index <= alunos|length %}
+                        {% if alunos[n]['fim_mat'] != '' %}
+                        <tr class="red"> 
+                        {% else %}
+                        <tr>
+                        {% endif %}
+                            <td class="center">{{'%02d' % alunos[n]['num']}}</td>
+                            <td class="center">{{alunos[n]['rm']}}</td>
+                            <td class="center">{{alunos[n]['serie']}}</td>
+                            <td>&nbsp;{{alunos[n]['nome']}}</td>
+                            <td class="center">{{alunos[n]['ra']}}</td>
+                            {% if alunos[n]['fim_mat'] != '' and alunos[n]['mat'] != 'APROV' %}
+                            <td class="center"><b>{{alunos[n]['mat']}}</b></td>
+                            {% else %}
+                            <td class="center blue"><b>{{alunos[n]['mat']}}</b></td>
+                            {% endif %}
+                            <td class="center"><b>{{alunos[n]['fim_mat']}}</b></td>
+                        </tr>
+                    {% else %}
+                    <tr>
+                        <td class="center">{{'%02d' % loop.index}}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>        
 
         {% endif %}
 

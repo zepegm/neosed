@@ -532,8 +532,8 @@ def render_conselho_bimestre_all():
                 "num_chamada as num, ifnull(aluno.rm, '-') as rm, serie, aluno.nome, " + \
                 'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
                 "ra_aluno as ra_bruto, " + \
-                "if(fim_mat <= '" + fim  + "', situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
-                "if(fim_mat <= '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
+                "if(fim_mat <= '" + fim  + "' and situacao <> 6 and situacao <> 10, situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                "if(fim_mat < '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
                 "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe = %s and bimestre = %s and ra = aluno.ra), '') as dificuldade, " % (turma['num_classe'], bimestre) + \
                 '(select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = %s and num_classe = %s) as total_faltas, ' % (bimestre, turma['num_classe']) + \
                 'round(100 - ((select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = %s and num_classe = %s) * 100 / (select sum(aulas_dadas) from  vinculo_prof_disc where bimestre = %s and num_classe = %s)), 0) as freq, ' % (bimestre, turma['num_classe'], bimestre, turma['num_classe']) + \
@@ -677,8 +677,8 @@ def render_conselho_bimestre():
                 "num_chamada as num, ifnull(aluno.rm, '-') as rm, serie, aluno.nome, " + \
                 'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
                 "ra_aluno as ra_bruto, " + \
-                "if(fim_mat <= '" + fim  + "', situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
-                "if(fim_mat <= '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
+                "if(fim_mat <= '" + fim  + "' and situacao <> 6 and situacao <> 10, situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                "if(fim_mat < '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
                 "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe = " + num_classe + " and bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade, " + \
                 '(select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') as total_faltas, ' + \
                 'round(100 - ((select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') * 100 / (select sum(aulas_dadas) from  vinculo_prof_disc where bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ')), 0) as freq, ' + \
@@ -689,14 +689,14 @@ def render_conselho_bimestre():
                 "where num_classe = " + num_classe  + " and matricula <= '" + fim  + "' order by num_chamada"
 
         alunos = banco.executarConsulta(sql)
-        #print(alunos)
+        print(sql)
 
         if (len(alunos) < 1):
             sql = 'SELECT ' + \
                 "num_chamada as num, ifnull(aluno.rm, '-') as rm, aluno.nome, " + \
                 'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
                 "ra_aluno as ra_bruto, " + \
-                "if(fim_mat < '" + fim  + "', situacao.abv1, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                "if(fim_mat <= '" + fim  + "', situacao.abv1 and situacao <> 6 and situacao <> 10, if(matricula > '" + inicio  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
                 "if(fim_mat < '" + fim  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
                 "ifnull((SELECT group_concat(dificuldade) from alunos_dificuldades where num_classe_if = " + num_classe + " and bimestre = " + bimestre + " and ra = aluno.ra), '') as dificuldade, " + \
                 '(select sum(falta) from notas where ra_aluno = ra_bruto and bimestre = ' + bimestre + ' and num_classe = ' + num_classe + ') as total_faltas, ' + \
@@ -718,7 +718,8 @@ def render_conselho_bimestre():
         ativos = 0
         maximo = 0
         for aluno in alunos:
-            if aluno['fim_mat'] == '':
+            print(aluno)
+            if aluno['fim_mat'] == '' or aluno['mat'] == 'APROV' or aluno['mat'] == 'RETD':
                 ativos += 1
             maximo += 1
             if (aluno['dificuldade'] != ''):
@@ -729,8 +730,6 @@ def render_conselho_bimestre():
 
         total['total_ativos'] = ativos
         total['total'] = maximo
-
-        print(total)
 
         sql = 'SELECT ' + \
                 'num_classe, nome_turma, duracao.descricao as desc_duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, turma.ano, ' + \
@@ -873,7 +872,31 @@ def render_conselho_bimestre():
                 item['disciplinas'] = banco.executarConsulta(sql)
                 colspan_if += len(item['disciplinas'])
 
-        return render_template('render_pdf/render_conselho_bimestre.jinja', alunos=alunos, turma=turma, disciplinas=disciplinas, freq=freq, total=total, bimestre=bimestre, fim_bimestre=fim_bimestre, dificuldades=dificuldades, turmas_if=turmas_if, colspan_if=colspan_if)
+        # verificar se o bimestre é o último, se for será necessário também desenhar o quinto conceito
+        lista_conceito_final = []
+        conceito_final = False
+
+        if turma['desc_duracao'] != 'Anual' and bimestre == '2' or bimestre == '4': # significa que é o último bimestre
+            conceito_final = True
+
+        if conceito_final:
+            sql = "SELECT num_chamada as num, ifnull(aluno.rm, '-') as rm, serie, aluno.nome, " \
+                  'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' \
+                  r"ra_aluno as ra_bruto, situacao.abv1 as mat, DATE_FORMAT(fim_mat,'%d/%m/%Y') as fim_mat, " \
+                  '(select sum(falta) from notas where ra_aluno = ra_bruto and num_classe = ' + num_classe + ') as total_faltas, ' \
+                  'round(100 - ((select sum(falta) from notas where ra_aluno = ra_bruto and num_classe = ' + num_classe + ') * 100 / (select sum(aulas_dadas) from  vinculo_prof_disc where num_classe = ' + num_classe + ')), 0) as freq, ' \
+                  '(select sum(ac) from notas where ra_aluno = ra_bruto and num_classe = ' + num_classe + ') as ac ' \
+                  'from vinculo_alunos_turmas inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' \
+                  'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' \
+                  'where num_classe = ' + num_classe + ' order by num_chamada'
+            
+            lista_conceito_final = banco.executarConsulta(sql)
+
+            for aluno in lista_conceito_final:
+                aluno['nome'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+
+
+        return render_template('render_pdf/render_conselho_bimestre.jinja', alunos=alunos, turma=turma, disciplinas=disciplinas, freq=freq, total=total, bimestre=bimestre, fim_bimestre=fim_bimestre, dificuldades=dificuldades, turmas_if=turmas_if, colspan_if=colspan_if, lista_conceito_final=lista_conceito_final)
 
 @app.route('/render_lista', methods=['GET', 'POST'])
 def render_lista():
