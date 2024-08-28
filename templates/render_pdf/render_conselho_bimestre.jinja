@@ -121,13 +121,80 @@
                 border-style: solid;
                 border-color: white;
                 position: absolute;
+                left: 60px;                
                 {% if turmas_if|length > 0 %}
                 top:9022px;
                 {% else %}
                 top:6774px;
                 {% endif %}
+            }
+
+            #pag10 {
+                width: 699px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                left: 30px;
+                {% if turmas_if|length > 0 %}
+                top:10146px;
+                {% else %}
+                top:7898px;
+                {% endif %}                
+            }   
+
+            #pag11 {
+                width: 699px;
+                height: 1057px;
+                left: 60px;                
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                {% if turmas_if|length > 0 %}
+                top:11270px;
+                {% else %}
+                top:9022px;
+                {% endif %}                   
+            }     
+
+            #pag12 {
+                {% if turmas_if|length > 0 %}
+                top:12394px;
+                {% else %}
+                top:10146px;
+                {% endif %} 
+            }
+
+            #pag13 {
+                width: 699px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
                 left: 60px;
-            }            
+                {% if turmas_if|length > 0 %}
+                top:13518px;
+                {% else %}
+                top:11270px;
+                {% endif %}                  
+            }  
+
+            #pag14 {
+                width: 699px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                left: 30px;
+                {% if turmas_if|length > 0 %}
+                top:14642px;
+                {% else %}
+                top:12394px;
+                {% endif %}                  
+            }                                       
 
             #logo {
                 width: 270px;
@@ -154,6 +221,10 @@
                 color:red;
             }
 
+            .white {
+                color: rgb(255, 255, 255);
+            }
+
             #head {
                 font-family: 'Helvetica', 'sans-serif';
                 position: absolute;
@@ -167,11 +238,17 @@
                 font-size: 25px;
                 position: absolute;
                 top: 100px;
+                color:rgb(12, 146, 255);
+                left: 516px;                
             }
 
-            #sub1 {
+            .subtitulo2 {
+                font-family:'BebasKai', sans-serif;
+                font-size: 25px;
+                position: absolute;
+                top: 100px;       
                 color:rgb(12, 146, 255);
-                left: 516px;
+                left: 550px;                         
             }
 
             #sub2 {
@@ -255,8 +332,8 @@
                 color:red;              
             }
 
-            #mapao,
-            #mapao_if {
+            .mapao,
+            .mapao_if {
                 position: absolute;
                 width: 100%;
                 height: 100%;
@@ -264,8 +341,8 @@
                 table-layout: fixed;
             }
 
-            #verso,
-            #verso_if {
+            .verso,
+            .verso_if {
                 position: absolute;
                 width: 501px;
                 height: 1059px;
@@ -302,13 +379,13 @@
                 width: 5px;             
             }
 
-            #mapao_line1 {
+            .mapao_line1 {
                 font-family: 'Times New Roman', Times, serif;
                 font-size: 20px;
                 border-bottom: solid 1px rgb(0,0,0,0);
             }
 
-            #mapao_line2 {
+            .mapao_line2 {
                 padding-top: 10px;
                 padding-bottom: 10px;
             }
@@ -316,6 +393,11 @@
             .nota {
                 font-size: 9px;
                 text-align: center;
+            }
+
+            .nota_final {
+                font-size: 12px;
+                text-align: center;                
             }
 
             .nota_if {
@@ -456,13 +538,13 @@
             </table>
         </div>
         <div id="pag4">
-            <table id="mapao">
+            <table class="mapao">
                 <thead>
                     <tr>
-                        <th id="mapao_line1" colspan="{{disciplinas|length * 3 + 2}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
+                        <th class="mapao_line1" colspan="{{disciplinas|length * 3 + 2}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
                     </tr>
                     <tr>
-                        <th id="mapao_line2" colspan="{{disciplinas|length * 3 + 2}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;BIMESTRE: <span class="red">{{bimestre}}º</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{turma['tipo_ensino']}}</p></th></tr>
+                        <th class="mapao_line2" colspan="{{disciplinas|length * 3 + 2}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;BIMESTRE: <span class="red">{{bimestre}}º</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{turma['tipo_ensino']}}</p></th></tr>
                     <tr>
                         <th style="border-top:solid 2px;border-bottom:solid 2px;border-right:solid 2px;" rowspan="2" colspan="2">Nº</th>
                         {% for item in disciplinas %}
@@ -523,7 +605,7 @@
             </table>
         </div>
         <div id="pag5">
-            <table id="verso">
+            <table class="verso">
                 <thead>
                     <tr>
                         <th class="upright_text"><span class="num_bim_verso">{{bimestre}}º</span>&nbsp;BIMESTRE</th>
@@ -629,13 +711,13 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
         {% if turmas_if|length > 0 %}
 
         <div id="pag7">
-            <table id="mapao_if">
+            <table class="mapao_if">
                 <thead>
                     <tr>
-                        <th id="mapao_line1" colspan="{{colspan_if * 3 + 2}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
+                        <th class="mapao_line1" colspan="{{colspan_if * 3 + 2}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
                     </tr>
                     <tr>
-                        <th id="mapao_line2" colspan="{{colspan_if * 3 + 2}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;BIMESTRE: <span class="red">{{bimestre}}º</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;Itinerário Formativo</p></th>
+                        <th class="mapao_line2" colspan="{{colspan_if * 3 + 2}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;BIMESTRE: <span class="red">{{bimestre}}º</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;Itinerário Formativo</p></th>
                     </tr>
                     <tr>
                         {% for item in turmas_if %}
@@ -764,10 +846,10 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
         </div>
 
         <div id="pag8">
-            <table id="verso_if">
+            <table class="verso_if">
                 <thead>
                     <tr>
-                        <th class="upright_text"><span class="num_bim_verso">1º</span>&nbsp;BIMESTRE</th>
+                        <th class="upright_text"><span class="num_bim_verso">{{bimestre}}º</span>&nbsp;BIMESTRE</th>
                         {% for item in turmas_if %}
                             {% set indice = loop.index %}
                             {% for disc in item['disciplinas'] %}
@@ -898,9 +980,9 @@ Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</
                 <p><b>Número da Classe: </b>{{turma['num_classe']}}</p>
                 <p><b>Período:</b> {{turma['periodo']}}</p>
                 <p><b>Duração:</b> {{turma['inicio']}} até {{turma['fim']}}</p>
-                <p><b>Total:</b> {{total['total_ativos']}} ativos ({{total['total']}} no total)</p>
+                <p><b>Total:</b> <span class="blue">Aprovados: {{situacao_final['aprovados']}}</span>, <span class="red">Retidos: {{situacao_final['reprovados']}}, Outros: {{situacao_final['outros']}}</span></p>
             </div>
-            <div id="sub1" class="subtitulo">
+            <div id="sub1" class="subtitulo2">
                 RESULTADO FINAL
             </div>           
             <table id="dados_matricula">
@@ -917,23 +999,23 @@ Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</
                 </thead>
                 <tbody>
                 {% for n in range(0, 50) %}
-                    {% if loop.index <= alunos|length %}
-                        {% if alunos[n]['fim_mat'] != '' %}
+                    {% if loop.index <= lista_conceito_final|length %}
+                        {% if lista_conceito_final[n]['mat'] != 'APROV' %}
                         <tr class="red"> 
                         {% else %}
-                        <tr>
+                        <tr class="blue">
                         {% endif %}
-                            <td class="center">{{'%02d' % alunos[n]['num']}}</td>
-                            <td class="center">{{alunos[n]['rm']}}</td>
-                            <td class="center">{{alunos[n]['serie']}}</td>
-                            <td>&nbsp;{{alunos[n]['nome']}}</td>
-                            <td class="center">{{alunos[n]['ra']}}</td>
-                            {% if alunos[n]['fim_mat'] != '' and alunos[n]['mat'] != 'APROV' %}
-                            <td class="center"><b>{{alunos[n]['mat']}}</b></td>
+                            <td class="center">{{'%02d' % lista_conceito_final[n]['num']}}</td>
+                            <td class="center">{{lista_conceito_final[n]['rm']}}</td>
+                            <td class="center">{{lista_conceito_final[n]['serie']}}</td>
+                            <td>&nbsp;{{lista_conceito_final[n]['nome']}}</td>
+                            <td class="center">{{lista_conceito_final[n]['ra']}}</td>
+                            {% if lista_conceito_final[n]['fim_mat'] != '' and lista_conceito_final[n]['mat'] != 'APROV' %}
+                            <td class="center"><b>{{lista_conceito_final[n]['desc_ata']}}</b></td>
                             {% else %}
-                            <td class="center blue"><b>{{alunos[n]['mat']}}</b></td>
+                            <td class="center blue"><b>{{lista_conceito_final[n]['desc_ata']}}</b></td>
                             {% endif %}
-                            <td class="center"><b>{{alunos[n]['fim_mat']}}</b></td>
+                            <td class="center"><b>{{lista_conceito_final[n]['fim_mat']}}</b></td>
                         </tr>
                     {% else %}
                     <tr>
@@ -951,6 +1033,393 @@ Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</
             </table>
         </div>        
 
+        <div id="pag10">
+            <table class="mapao">
+                <thead>
+                    <tr>
+                        <th class="mapao_line1" colspan="{{disciplinas|length + 1}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
+                    </tr>
+                    <tr>
+                        <th class="mapao_line2" colspan="{{disciplinas|length + 1}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{turma['tipo_ensino']}}&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">CONCEITO FINAL</span></p></th></tr>
+                    <tr>
+                        <th style="border-top:solid 2px;border-bottom:solid 2px;border-right:solid 2px;">Nº</th>
+                        {% for item in disciplinas %}
+                            <td style="border-top:solid 2px;border-right:solid 2px;border-bottom:solid 2px;" class="center">{{item['desc_disc']}}</td>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in range(0, 50) %}
+                        <tr>
+                        {% if loop.index <= alunos|length %}
+                            <th style="border-right:solid 2px;">{{'%02d' % alunos[n]['num']}}</th>
+                            {% for disc in disciplinas %}
+                                {% if alunos[n]['fim_mat'] == '' %}
+                                    {% if disc['conceito_final'][alunos[n]['ra_bruto']]['media']|int < 5 %}
+                                    <td style="border-right:solid 2px rgb(0,0,0);" class="center nota_final red" style="width: 100%;">{{disc['conceito_final'][alunos[n]['ra_bruto']]['media']}}</td>
+                                    {% else %}
+                                    <td style="border-right:solid 2px rgb(0,0,0);" class="center nota_final" style="width: 100%;">{{disc['conceito_final'][alunos[n]['ra_bruto']]['media']}}</td>
+                                    {% endif %}
+                                {% else %}
+                                    <td style="border-right:solid 2px rgb(0,0,0);" class="red center nota_final">{{alunos[n]['mat']}}</td>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <th style="border-right:solid 2px;">{{'%02d' % loop.index}}</th>
+                            {% for disc in disciplinas %}
+                                <td style="border-right:solid 2px;"></td>
+                            {% endfor %}
+                        {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th style="border-top:solid 2px;border-right:solid 2px;" class="nota_final" rowspan="2">Prof</th>
+                        {% for disc in disciplinas %}
+                            <td style="border-top:solid 2px;border-right:solid 2px;" class="nota_final">{{disc['nome_ata']}}</td>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>        
+
+        <div id="pag11">
+            <table class="verso">
+                <thead>
+                    <tr>
+                        <th class="upright_text"><span class="num_bim_verso">5º</span>&nbsp;CONCEITO</th>
+                        {% for disc in disciplinas %}
+                        <td class="vertical_text head_verso" rowspan="2">&nbsp;&nbsp;{{disc['completo']}}</td>
+                        {% endfor %}
+                        <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;border-left:solid 2px;">&nbsp;&nbsp;FALTAS</td>
+                        <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;AUSÊNCIAS COMPENSADAS</td>
+                        <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;% FREQUÊNCIA FINAL</td>
+                        <td class="vertical_text" rowspan="2" colspan="4" style="font-weight: bold;border-left:solid 2px black;border-right:solid 2px black;">&nbsp;&nbsp;RESULTADO FINAL</td>
+                    </tr>
+                    <tr><th>Nº</th></tr>
+                </thead>
+                <tbody>
+                {% for n in range(0, 50) %}
+                    <tr>
+                        {% if loop.index <= lista_conceito_final|length %}
+                            <th>{{'%02d' % lista_conceito_final[n]['num']}}</th>
+                            {% for disc in disciplinas %}
+                                {% if alunos[n]['fim_mat'] == '' %}
+                                    {% if disc['conceito_final'][lista_conceito_final[n]['ra_bruto']]['media']|int < 5 %}
+                                    <td class="center nota_verso red" style="width: 100%;">{{disc['conceito_final'][lista_conceito_final[n]['ra_bruto']]['media']}}</td>
+                                    {% else %}
+                                    <td class="center nota_verso" style="width: 100%;">{{disc['conceito_final'][lista_conceito_final[n]['ra_bruto']]['media']}}</td>
+                                    {% endif %}
+                                {% else %}
+                                    <td class="center nota_verso">-</td>
+                                {% endif %}
+                            {% endfor %}
+                            {% if alunos[n]['fim_mat'] == '' %}
+                            <th class="nota_verso" style="border-left:solid 2px;">{{lista_conceito_final[n]['total_faltas']}}</th>
+                            <th class="nota_verso">{{lista_conceito_final[n]['ac']}}</th>
+                                {% if lista_conceito_final[n]['freq']|int < 75 %}
+                                <th class="red nota_verso">{{lista_conceito_final[n]['freq']}}</th>
+                                {% else %}
+                                <th class="nota_verso">{{lista_conceito_final[n]['freq']}}</th>
+                                {% endif %}
+
+                                {% if lista_conceito_final[n]['mat'] == 'APROV' %}
+                                <td colspan="4" class="dificuldade blue" style="border-left:solid 2px black;border-right:solid 2px black;"><span class="dificuldade_label">{{lista_conceito_final[n]['desc_ata']}}</span></td>
+                                {% else %}
+                                <td colspan="4" class="dificuldade red" style="border-left:solid 2px black;border-right:solid 2px black;"><span class="dificuldade_label">{{lista_conceito_final[n]['desc_ata']}}</span></td>
+                                {% endif %}
+
+                            {% else %}
+                            <th style="border-left:solid 2px;">-</th>
+                            <th>-</th>
+                            <th>-</th>
+                            <th class="red" style="text-align:center;border-left:solid 2px black;border-right:solid 2px black;" colspan="4">{{lista_conceito_final[n]['desc_ata']}}</th>
+                            {% endif %}
+                        {% else %}
+                            <th>{{'%02d' % loop.index}}</th>
+                            {% for disc in disciplinas %}
+                            <td></td>
+                            {% endfor %}
+                            <td style="border-left:solid 2px black;"></td>
+                            <td></td>
+                            <td></td>
+                            <td colspan="4" style="border-left:solid 2px black;border-right:solid 2px black;"></td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="intermediario"></div>
+
+            <table id="ata_verso">
+                <thead>
+                    <tr><th colspan="4" style="border:none">CONSELHO DE CLASSE</th></tr>
+                    <tr>
+                        <td colspan="4" id="head_ata" style="border:none;padding-top:10px;">
+                            Aos <span class="destaque_ata">{{fim_bimestre.strftime('%d')}}</span> dias do mês de <span class="destaque_ata">{{fim_bimestre.strftime("%B")}}</span> de <span class="destaque_ata">{{fim_bimestre.strftime("%Y")}}</span> realizou-se o Conselho de
+Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{turma['nome_turma']}}</span> do <b>{{turma['tipo_ensino']}}</b> da EE Profª Alice Vilela Galvão.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="font-size:12px;text-align:right;border:none;padding-bottom: 10px;">Canas, {{fim_bimestre.strftime("%d/%m/%Y")}}</td>
+                    </tr>
+                </thead>
+                <tbody style="padding-bot:30px">
+                    <tr style="font-size:9px;">
+                        <td style="border-right:solid 1px white;border-bottom:solid 1px white;border-left:none;">Matéria</td>
+                        <td style="border-right:solid 1px white;border-bottom:solid 1px white;">Professor</td>
+                        <td colspan="2" style="border-bottom:solid 1px white;border-right:none;">Assinatura</td>
+                    </tr>
+                    {% for disc in disciplinas %}
+                    <tr style="font-size:11px;font-weight: bold;">
+                        <td style="border-right:solid 1px white;border-left:none;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['desc_disc']}}</td>
+                        <td style="border-right:solid 1px white;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['nome_ata']}}</td>
+                        <td colspan="2" style="border-right: none;border-bottom: solid 1px rgba(0,0,0,0.2);"></td>
+                    </tr>
+                    {% endfor %}
+                    <tr><td colspan="4" style="font-weight: bold;border-left: none;border-right: none;border-bottom:none;padding-top:10px;">OBSERVAÇÕES</td></tr>
+                    {% for dif in dificuldades %}
+                    <tr><td class="white" colspan="4" style="font-size:7px;border:none;border-bottom: solid 1px rgba(0,0,0,0.2);"><b>{{dif['id']}}</b> - {{dif['descricao']}}</td></tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="4" style="padding-bottom:30px;border:none"></td></tr>
+                    <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Coordenador Pedagógico</td></tr>
+                    <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Diretor de Escola</td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        {% if turmas_if|length > 0 %}
+
+        <div id="pag12" class="blank_pag"></div>
+
+        <div id="pag13">
+            <table class="mapao_if">
+                <thead>
+                    <tr>
+                        <th class="mapao_line1" colspan="{{colspan_if + 1}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
+                    </tr>
+                    <tr>
+                        <th class="mapao_line2" colspan="{{colspan_if + 1}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;Itinerário Formativo&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">CONCEITO FINAL</span></p></th>
+                    </tr>
+                    <tr>
+                        {% for item in turmas_if %}
+                            {% if loop.index == 1 %}
+                                <th class="if_background_{{loop.index}}" style="border-top: solid 2px black;{{'border-right: solid 4px black;' if turmas_if|length > 1 else ''}}" colspan="{{item['disciplinas']|length + 1}}">{{item['nome']}}</th>
+                            {% else %}
+                                <th class="if_background_{{loop.index}}" style="border-top: solid 2px black;" colspan="{{item['disciplinas']|length}}">{{item['nome']}}</th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <th style="border-top:solid 2px;border-bottom:solid 2px;border-right:solid 2px;">Nº</th>
+                        {% for item in turmas_if %}
+                            {% set indice = loop.index %}
+                            {% for disc in item['disciplinas'] %}
+                                {% if loop.index == item['disciplinas']|length and indice == 1 and turmas_if|length > 1 %}
+                                <td class="if_background_{{indice}}" style="border-bottom:solid 2px black;border-top:solid 2px black;border-right:solid 4px black;text-align:center;" class="center">{{disc['abv']}}</td>
+                                {% else %}
+                                <td  class="if_background_{{indice}}" style="border-bottom:solid 2px black;border-top:solid 2px black;border-right:solid 2px black;text-align:center;" class="center">{{disc['abv']}}</td>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for n in range(0, 50) %}
+                    <tr>
+                    {% if loop.index <= alunos|length %}
+                        <th style="border-right:solid 2px;">{{'%02d' % alunos[n]['num']}}</th>
+                        {% for item in turmas_if %}
+                            {% set indice = loop.index %}
+                            {% for disc in item['disciplinas'] %}
+
+                                {% if alunos[n]['fim_mat'] != '' %}
+                                    {% if loop.index == item['disciplinas']|length and indice == 1 and turmas_if|length > 1 %}
+                                    <td class="nota_if red" style="border-right: solid 4px black;">{{alunos[n]['mat']}}</td>
+                                    {% else %}
+                                    <td class="nota_if red" style="border-right: solid 2px black;">{{alunos[n]['mat']}}</td>
+                                    {% endif %}
+                                {% else %}
+                                    {% if alunos[n]['if'][disc['disciplina']] is defined %}
+                                        {% if alunos[n]['if'][disc['disciplina']]['media']|int < 5 %}
+                                        <td style="border-right: solid 2px black;" class="nota_if red">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
+                                        {% else %}
+                                        <td style="border-right: solid 2px black;" class="nota_if">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
+                                        {% endif %}
+                                    {% else %}
+                                            {% if loop.index == disciplinas|length and indice == 1 and turmas_if|length > 1 %}
+                                            <td class="nota_if" style="border-right: solid 4px black;">-</td>
+                                            {% else %}
+                                            <td class="nota_if" style="border-right: solid 2px black;">-</td>
+                                            {% endif %}
+                                    {% endif %}                                
+                                {% endif %}
+
+                            {% endfor %}
+                        {% endfor %}
+
+                    {% else %}
+                        <th style="border-right:solid 2px;">{{'%02d' % loop.index}}</th>
+                        {% for item in turmas_if %}
+                            {% set indice = loop.index %}
+                            {% for disc in item['disciplinas'] %}
+                                {% if loop.index == item['disciplinas']|length and indice == 1 and turmas_if|length > 1 %}
+                                <td style="border-right: solid 4px black;"></td>
+                                {% else %}
+                                <td style="border-right: solid 2px black;"></td>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}                                               
+                    {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th class="nota_final" style="border-top: solid 2px black;border-right: solid 2px black;">Prof</th>
+                        {% for item in turmas_if %}
+                            {% set indice = loop.index %}
+                            {% for disc in item['disciplinas'] %}
+                                {% if loop.index == item['disciplinas']|length and indice == 1 and turmas_if|length > 1 %}
+                                <td class="nota_final" style="border-top: solid 2px black;border-right: solid 4px black;">{{disc['professor']}}</td>
+                                {% else %}
+                                <td class="nota_final" style="border-top: solid 2px black;border-right: solid 2px black;">{{disc['professor']}}</td>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    </tr>                   
+                </tfoot>
+            </table>
+        </div>
+
+        <div id="pag14">
+            <table class="verso_if">
+                <thead>
+                    <tr>
+                        <th class="upright_text"><span class="num_bim_verso">5º</span>&nbsp;CONCEITO</th>
+                        {% for item in turmas_if %}
+                            {% set indice = loop.index %}
+                            {% for disc in item['disciplinas'] %}
+                                <td class="vertical_text head_verso if_background_{{indice}}" style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else 'border-right: solid 1px black;' }}" rowspan="2">&nbsp;&nbsp;{{disc['descricao']}}</td>
+                            {% endfor %}
+                        
+                        {% endfor %}
+                        <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;border-left:solid 2px;">&nbsp;&nbsp;FALTAS</td>
+                        <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;AUSÊNCIAS COMPENSADAS</td>                        
+                        <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;% FREQUÊNCIA FINAL</td>
+                        <td class="vertical_text" rowspan="2" colspan="4" style="font-weight: bold;border-left:solid 2px black;border-right:solid 2px black;">&nbsp;&nbsp;RESULTADO FINAL</td>
+                    </tr>
+                    <tr><th>Nº</th></tr>
+                </thead>
+                <tbody>
+                {% for n in range(0, 50) %}
+                    <tr>
+                        {% if loop.index <= alunos|length %}
+                            <th>{{'%02d' % alunos[n]['num']}}</th>
+                            {% for item in turmas_if %}
+                                {% set indice = loop.index %}
+                                {% for disc in item['disciplinas'] %}
+                                    {% if alunos[n]['fim_mat'] == '' %}
+                                        {% if alunos[n]['if'][disc['disciplina']] is defined %}
+                                            {% if alunos[n]['if'][disc['disciplina']]['media']|int < 5 %}
+                                            <td class="center nota_verso red" style="width: 100%;{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
+                                            {% else %}
+                                            <td class="center nota_verso" style="width: 100%;{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
+                                            {% endif %}
+                                        {% else %}
+                                        <td class="center nota_verso" style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">-</td>
+                                        {% endif %}
+                                    {% else %}
+                                        <td class="center nota_verso" style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">-</td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% if alunos[n]['fim_mat'] == '' and alunos[n]['freq_if_final']['total_faltas_if'] is not none %}
+                            <th class="nota_verso" style="border-left:solid 2px;">{{alunos[n]['freq_if_final']['total_faltas_if']}}</th>
+                                {% if alunos[n]['freq_if_final']['freq_if']|int < 75 %}
+                                <th class="red nota_verso">{{alunos[n]['freq_if_final']['freq_if']}}</th>
+                                {% else %}
+                                <th class="nota_verso">{{alunos[n]['freq_if_final']['freq_if']}}</th>
+                                {% endif %}
+                            <th class="nota_verso">{{alunos[n]['freq_if_final']['total_ac_if']}}</th>
+                            <th class="{{ 'blue' if lista_conceito_final[n]['mat'] == 'APROV' else 'red'}}" colspan="4" style="border-left:solid 2px black;border-right:solid 2px black;">{{lista_conceito_final[n]['desc_ata']}}</th>
+                            {% else %}
+                            <th style="border-left:solid 2px;">-</th>
+                            <th>-</th>
+                            <th>-</th>
+                                {% if alunos[n]['fim_mat'] == '' %}
+                                <th style="text-align:center;border-left:solid 2px black;border-right:solid 2px black;" colspan="4">{{lista_conceito_final[n]["desc_ata"]}}</th>
+                                {% else %}
+                                <th class="red" style="text-align:center;border-left:solid 2px black;border-right:solid 2px black;" colspan="4">{{lista_conceito_final[n]["desc_ata"]}}</th>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <th>{{'%02d' % loop.index}}</th>
+                            {% for item in turmas_if %}
+                                {% set indice = loop.index %}
+                                {% for disc in item['disciplinas'] %}
+                                <td style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}"></td>
+                                {% endfor %}
+                            {% endfor %}
+                            <td style="border-left:solid 2px black;"></td>
+                            <td></td>
+                            <td></td>
+                            <td colspan="4" style="border-left:solid 2px black;border-right:solid 2px black;"></td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>           
+            </table>
+
+            <div class="intermediario"></div>
+
+            <table id="ata_verso_if">
+                <thead>
+                    <tr><th colspan="4" style="border:none">CONSELHO DE CLASSE</th></tr>
+                    <tr>
+                        <td colspan="4" id="head_ata" style="border:none;padding-top:10px;">
+                            Aos <span class="destaque_ata">{{fim_bimestre.strftime('%d')}}</span> dias do mês de <span class="destaque_ata">{{fim_bimestre.strftime("%B")}}</span> de <span class="destaque_ata">{{fim_bimestre.strftime("%Y")}}</span> realizou-se o Conselho de
+Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</span> da <span class="red" style="font-weight: bold;">{{turma['nome_turma']}}</span> do <b>{{turma['tipo_ensino']}}</b> da EE Profª Alice Vilela Galvão.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="font-size:12px;text-align:right;border:none;padding-bottom: 10px;">Canas, {{fim_bimestre.strftime("%d/%m/%Y")}}</td>
+                    </tr>
+                </thead>
+                <tbody style="padding-bot:30px">
+                    <tr style="font-size:9px;">
+                        <td style="border-right:solid 1px white;border-bottom:solid 1px white;border-left:none;">Matéria</td>
+                        <td style="border-right:solid 1px white;border-bottom:solid 1px white;">Professor</td>
+                        <td colspan="2" style="border-bottom:solid 1px white;border-right:none;">Assinatura</td>
+                    </tr>
+                    {% for item in turmas_if %}
+                        {% for disc in item['disciplinas'] %}
+                        <tr style="font-size:11px;font-weight: bold;">
+                            <td style="border-right:solid 1px white;border-left:none;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['abv']}}</td>
+                            <td style="border-right:solid 1px white;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['professor']}}</td>
+                            <td colspan="2" style="border-right: none;border-bottom: solid 1px rgba(0,0,0,0.2);"></td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    <tr><td colspan="4" style="font-weight: bold;border-left: none;border-right: none;border-bottom:none;padding-top:10px;">OBSERVAÇÕES</td></tr>
+                    {% for dif in dificuldades %}
+                    <tr><td class="white" colspan="4" style="font-size:7px;border:none;border-bottom: solid 1px rgba(0,0,0,0.2);"><b>{{dif['id']}}</b> - {{dif['descricao']}}</td></tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="4" style="padding-bottom:30px;border:none"></td></tr>
+                    <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Coordenador Pedagógico</td></tr>
+                    <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Diretor de Escola</td></tr>
+                </tfoot>
+            </table>
+
+        </div>        
+
+        {% endif %}
         {% endif %}
 
     </body>

@@ -139,6 +139,10 @@
                 color:red;
             }
 
+            .white {
+                color: white;
+            }
+
             .head {
                 font-family: 'Helvetica', 'sans-serif';
                 position: absolute;
@@ -301,6 +305,11 @@
             .nota {
                 font-size: 9px;
                 text-align: center;
+            }
+
+            .nota_final {
+                font-size: 12px;
+                text-align: center;                
             }
 
             .nota_if {
@@ -756,7 +765,7 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
                 <table class="verso_if">
                     <thead>
                         <tr>
-                            <th class="upright_text"><span class="num_bim_verso">1º</span>&nbsp;BIMESTRE</th>
+                            <th class="upright_text"><span class="num_bim_verso">{{bimestre}}º</span>&nbsp;BIMESTRE</th>
                             {% for item in turma['turmas_if'] %}
                                 {% set indice = loop.index %}
                                 {% for disc in item['disciplinas'] %}
@@ -839,7 +848,7 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
                         <tr>
                             <td colspan="4" class="head_ata" style="border:none;padding-top:10px;">
                                 Aos <span class="destaque_ata">{{turma['fim_bimestre'].strftime('%d')}}</span> dias do mês de <span class="destaque_ata">{{turma['fim_bimestre'].strftime("%B")}}</span> de <span class="destaque_ata">{{turma['fim_bimestre'].strftime("%Y")}}</span> realizou-se o Conselho de
-    Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</span> da <span class="red" style="font-weight: bold;">{{turma['nome_turma']}}</span> do <b>{{turma['tipo_ensino']}}</b> da EE Profª Alice Vilela Galvão.
+    Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</span> da <span class="red" style="font-weight: bold;">{{turma['nome_turma']}}</span> do <b>{{turma['tipo_ensino_desc']}}</b> da EE Profª Alice Vilela Galvão.
                             </td>
                         </tr>
                         <tr>
@@ -874,6 +883,463 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
                 </table>
 
             </div>
+
+            {% endif %}
+
+            {% if turma['conceito_final'] %}
+
+
+            <div class="lista-piloto" style="top:{{turma['top_lista_conselho_final']}}px" >
+                <img class="logo" src="../static/images/Logo Neo Sed White.png">
+                <div class="titulo">Lista Geral - <span class="red">{{turma['nome_turma']}}</span> - {{turma['tipo_ensino_desc']}} - {{turma['desc_duracao']}}</div>
+                <div class="head">
+                    <p><b>Número da Classe: </b>{{turma['num_classe']}}</p>
+                    <p><b>Período:</b> {{turma['periodo']}}</p>
+                    <p><b>Duração:</b> {{turma['inicio']}} até {{turma['fim']}}</p>
+                    <p><b>Total:</b> <span class="blue">Aprovados: {{turma['situacao_final']['aprovados']}}</span>, <span class="red">Retidos: {{turma['situacao_final']['reprovados']}}, Outros: {{turma['situacao_final']['outros']}}</span></p>
+                </div>
+                <div class="sub1 subtitulo" style="left: 550px;">
+                    RESULTADO FINAL
+                </div>           
+                <table class="dados_matricula">
+                    <thead>
+                        <tr>
+                            <th style="width:25px">Nº</th>
+                            <th style="width:33px">RM</th>
+                            <th>SÉRIE</th>
+                            <th style="width:360px;text-align:left;">&nbsp;NOME</th>
+                            <th style="width:85px">RA</th>
+                            <th style="width:85px">MATR.</th>
+                            <th style="width:85px">FIM MATR.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for n in range(0, 50) %}
+                        {% if loop.index <= turma['lista_conceito_final']|length %}
+                            {% if turma['lista_conceito_final'][n]['mat'] != 'APROV' %}
+                            <tr class="red"> 
+                            {% else %}
+                            <tr class="blue">
+                            {% endif %}
+                                <td class="center">{{'%02d' % turma['lista_conceito_final'][n]['num']}}</td>
+                                <td class="center">{{turma['lista_conceito_final'][n]['rm']}}</td>
+                                <td class="center">{{turma['lista_conceito_final'][n]['serie']}}</td>
+                                <td>&nbsp;{{turma['lista_conceito_final'][n]['nome']}}</td>
+                                <td class="center">{{turma['lista_conceito_final'][n]['ra']}}</td>
+                                {% if turma['lista_conceito_final'][n]['fim_mat'] != '' %}
+                                <td class="center"><b>{{turma['lista_conceito_final'][n]['desc_ata']}}</b></td>
+                                {% else %}
+                                <td class="center blue"><b>{{turma['lista_conceito_final'][n]['desc_ata']}}</b></td>
+                                {% endif %}
+                                <td class="center"><b>{{turma['lista_conceito_final'][n]['fim_mat']}}</b></td>
+                            </tr>
+                        {% else %}
+                        <tr>
+                            <td class="center">{{'%02d' % loop.index}}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="pag-mapao" style="top:{{turma['top_mapao_conselho_final']}}px">
+                <table class="mapao">
+                    <thead>
+                        <tr>
+                            <th class="mapao_line1" colspan="{{turma['disciplinas']|length + 1}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
+                        </tr>
+                        <tr>
+                            <th class="mapao_line2" colspan="{{turma['disciplinas']|length + 1}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;{{turma['tipo_ensino_desc']}}&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">CONCEITO FINAL</span></p></th></tr>
+                        <tr>
+                            <th style="border-top:solid 2px;border-bottom:solid 2px;border-right:solid 2px;">Nº</th>
+                            {% for item in turma['disciplinas'] %}
+                                <td style="border-top:solid 2px;border-right:solid 2px;border-bottom:solid 2px;" class="center">{{item['desc_disc']}}</td>    
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for n in range(0, 50) %}
+                            <tr>
+                            {% if loop.index <= turma['alunos']|length %}
+                                <th style="border-right:solid 2px;">{{'%02d' % turma['alunos'][n]['num']}}</th>
+                                {% for disc in turma['disciplinas'] %}
+                                    {% if turma['alunos'][n]['fim_mat'] == '' %}
+                                        {% if disc['conceito_final'][turma['alunos'][n]['ra_bruto']]['media']|int < 5 %}
+                                        <td style="border-right:solid 2px rgb(0,0,0);" class="center nota_final red" style="width: 100%;">{{disc['conceito_final'][turma['alunos'][n]['ra_bruto']]['media']}}</td>
+                                        {% else %}
+                                        <td style="border-right:solid 2px rgb(0,0,0);" class="center nota_final" style="width: 100%;">{{disc['conceito_final'][turma['alunos'][n]['ra_bruto']]['media']}}</td>
+                                        {% endif %}
+                                    {% else %}
+                                        <td style="border-right:solid 2px rgb(0,0,0);" class="red center nota_final">{{turma['alunos'][n]['mat']}}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <th style="border-right:solid 2px;">{{'%02d' % loop.index}}</th>
+                                {% for disc in turma['disciplinas'] %}
+                                    <td style="border-right:solid 2px;"></td>
+                                {% endfor %}
+                            {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th style="border-top:solid 2px;border-right:solid 2px;" class="center nota_final">Prof</th>
+                            {% for disc in turma['disciplinas'] %}
+                                <td style="border-top:solid 2px;border-right:solid 2px;" class="center nota_final">{{disc['nome_ata']}}</td>
+                            {% endfor %}
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="pag-verso" style="top:{{turma['top_verso_conselho_final']}}px">
+                <table class="verso">
+                    <thead>
+                        <tr>
+                            <th class="upright_text"><span class="num_bim_verso">5º</span>&nbsp;CONCEITO</th>
+                            {% for disc in turma['disciplinas'] %}
+                            <td class="vertical_text head_verso" rowspan="2">&nbsp;&nbsp;{{disc['completo']}}</td>
+                            {% endfor %}
+                            <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;border-left:solid 2px;">&nbsp;&nbsp;FALTAS</td>
+                            <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;AUSÊNCIAS COMPENSADAS</td>
+                            <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;% FREQUÊNCIA FINAL</td>
+                            <td class="vertical_text" rowspan="2" colspan="4" style="font-weight: bold;border-left:solid 2px black;border-right:solid 2px black;">&nbsp;&nbsp;RESULTADO FINAL</td>
+                        </tr>
+                        <tr><th>Nº</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for n in range(0, 50) %}
+                        <tr>
+                            {% if loop.index <= turma['lista_conceito_final']|length %}
+                                <th>{{'%02d' % turma['lista_conceito_final'][n]['num']}}</th>
+                                {% for disc in turma['disciplinas'] %}
+                                    {% if turma['alunos'][n]['fim_mat'] == '' %}
+                                        {% if disc['conceito_final'][turma['lista_conceito_final'][n]['ra_bruto']]['media']|int < 5 %}
+                                        <td class="center nota_verso red" style="width: 100%;">{{disc['conceito_final'][turma['lista_conceito_final'][n]['ra_bruto']]['media']}}</td>
+                                        {% else %}
+                                        <td class="center nota_verso" style="width: 100%;">{{disc['conceito_final'][turma['lista_conceito_final'][n]['ra_bruto']]['media']}}</td>
+                                        {% endif %}
+                                    {% else %}
+                                        <td class="center nota_verso">-</td>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if turma['alunos'][n]['fim_mat'] == '' %}
+                                <th class="nota_verso" style="border-left:solid 2px;">{{turma['lista_conceito_final'][n]['total_faltas']}}</th>
+                                <th class="nota_verso">{{turma['lista_conceito_final'][n]['ac']}}</th>
+                                    {% if turma['lista_conceito_final'][n]['freq']|int < 75 %}
+                                    <th class="red nota_verso">{{turma['lista_conceito_final'][n]['freq']}}</th>
+                                    {% else %}
+                                    <th class="nota_verso">{{turma['lista_conceito_final'][n]['freq']}}</th>
+                                    {% endif %}
+                                
+                                    {% if turma['lista_conceito_final'][n]['mat'] == 'APROV' %}
+                                    <td colspan="4" class="dificuldade blue" style="border-left:solid 2px black;border-right:solid 2px black;"><span class="dificuldade_label">{{turma['lista_conceito_final'][n]['desc_ata']}}</span></td>
+                                    {% else %}
+                                    <td colspan="4" class="dificuldade red" style="border-left:solid 2px black;border-right:solid 2px black;"><span class="dificuldade_label">{{turma['lista_conceito_final'][n]['desc_ata']}}</span></td>
+                                    {% endif %}
+
+                                {% else %}
+                                <th style="border-left:solid 2px;">-</th>
+                                <th>-</th>
+                                <th>-</th>
+                                <th class="red" style="text-align:center;border-left:solid 2px black;border-right:solid 2px black;" colspan="4">{{turma['lista_conceito_final'][n]['desc_ata']}}</th>
+                                {% endif %}
+                            {% else %}
+                                <th>{{'%02d' % loop.index}}</th>
+                                {% for disc in turma['disciplinas'] %}
+                                <td></td>
+                                {% endfor %}
+                                <td style="border-left:solid 2px black;"></td>
+                                <td></td>
+                                <td></td>
+                                <td colspan="4" style="border-left:solid 2px black;border-right:solid 2px black;"></td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="intermediario"></div>
+
+                <table class="ata_verso">
+                    <thead>
+                        <tr><th colspan="4" style="border:none">CONSELHO DE CLASSE</th></tr>
+                        <tr>
+                            <td colspan="4" class="head_ata" style="border:none;padding-top:10px;">
+                                Aos <span class="destaque_ata">{{turma['fim_bimestre'].strftime('%d')}}</span> dias do mês de <span class="destaque_ata">{{turma['fim_bimestre'].strftime("%B")}}</span> de <span class="destaque_ata">{{turma['fim_bimestre'].strftime("%Y")}}</span> realizou-se o Conselho de
+    Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{turma['nome_turma']}}</span> do <b>{{turma['tipo_ensino_desc']}}</b> da EE Profª Alice Vilela Galvão.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="font-size:12px;text-align:right;border:none;padding-bottom: 10px;">Canas, {{turma['fim_bimestre'].strftime("%d/%m/%Y")}}</td>
+                        </tr>
+                    </thead>
+                    <tbody style="padding-bot:30px">
+                        <tr style="font-size:9px;">
+                            <td style="border-right:solid 1px white;border-bottom:solid 1px white;border-left:none;">Matéria</td>
+                            <td style="border-right:solid 1px white;border-bottom:solid 1px white;">Professor</td>
+                            <td colspan="2" style="border-bottom:solid 1px white;border-right:none;">Assinatura</td>
+                        </tr>
+                        {% for disc in turma['disciplinas'] %}
+                        <tr style="font-size:11px;font-weight: bold;">
+                            <td style="border-right:solid 1px white;border-left:none;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['desc_disc']}}</td>
+                            <td style="border-right:solid 1px white;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['nome_ata']}}</td>
+                            <td colspan="2" style="border-right: none;border-bottom: solid 1px rgba(0,0,0,0.2);"></td>
+                        </tr>
+                        {% endfor %}
+                        <tr><td colspan="4" style="font-weight: bold;border-left: none;border-right: none;border-bottom:none;padding-top:10px;">OBSERVAÇÕES</td></tr>
+                        {% for dif in dificuldades %}
+                        <tr><td class="white" colspan="4" style="font-size:7px;border:none;border-bottom: solid 1px rgba(0,0,0,0.2);"><b>{{dif['id']}}</b> - {{dif['descricao']}}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="4" style="padding-bottom:30px;border:none"></td></tr>
+                        <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Coordenador Pedagógico</td></tr>
+                        <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Diretor de Escola</td></tr>
+                    </tfoot>
+                </table>
+            </div>            
+
+            <div class="blank_pag" style="top:{{turma['top_blank_if_final']}}px"></div>
+
+            {% if turma['turmas_if']|length > 0 %}
+
+
+            <div class="pag-mapao-if" style="top:{{turma['top_if_final']}}px">
+                <table class="mapao_if">
+                    <thead>
+                        <tr>
+                            <th class="mapao_line1" colspan="{{turma['colspan_if'] + 1}}">REGISTRO DE CONTROLE DO RENDIMENTO ESCOLAR</th>
+                        </tr>
+                        <tr>
+                            <th class="mapao_line2" colspan="{{turma['colspan_if'] + 1}}"><p>TURMA: <span class="red">{{turma['nome_turma']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;ANO: <span class="red">{{turma['ano']}}</span>&nbsp;&nbsp;&nbsp;&nbsp;Itinerário Formativo&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">CONCEITO FINAL</span></p></th>
+                        </tr>
+                        <tr>
+                            {% for item in turma['turmas_if'] %}
+                                {% if loop.index == 1 %}
+                                    <th class="if_background_{{loop.index}}" style="border-top: solid 2px black;{{'border-right: solid 4px black;' if turmas_if|length > 1 else ''}}" colspan="{{item['disciplinas']|length + 1}}">{{item['nome']}}</th>
+                                {% else %}
+                                    <th class="if_background_{{loop.index}}" style="border-top: solid 2px black;" colspan="{{item['disciplinas']|length}}">{{item['nome']}}</th>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <th style="border-top:solid 2px;border-bottom:solid 2px;border-right:solid 2px;">Nº</th>
+                            {% for item in turma['turmas_if'] %}
+                                {% set indice = loop.index %}
+                                {% for disc in item['disciplinas'] %}
+                                    {% if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 %}
+                                    <td class="if_background_{{indice}}" style="border-bottom:solid 2px black;border-top:solid 2px black;border-right:solid 4px black;text-align:center;" class="center">{{disc['abv']}}</td>
+                                    {% else %}
+                                    <td  class="if_background_{{indice}}" style="border-bottom:solid 2px black;border-top:solid 2px black;border-right:solid 2px black;text-align:center;" class="center">{{disc['abv']}}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for n in range(0, 50) %}
+                        <tr>
+                        {% if loop.index <= turma['alunos']|length %}
+                            <th style="border-right:solid 2px;">{{'%02d' % turma['alunos'][n]['num']}}</th>
+                            {% for item in turma['turmas_if'] %}
+                                {% set indice = loop.index %}
+                                {% for disc in item['disciplinas'] %}
+
+                                    {% if turma['alunos'][n]['fim_mat'] != '' %}
+                                        {% if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 %}
+                                        <td class="nota_if red" style="border-right: solid 4px black;">{{turma['alunos'][n]['mat']}}</td>
+                                        {% else %}
+                                        <td class="nota_if red" style="border-right: solid 2px black;">{{turma['alunos'][n]['mat']}}</td>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if turma['alunos'][n]['if'][disc['disciplina']] is defined %}
+                                            {% if turma['alunos'][n]['if'][disc['disciplina']]['media']|int < 5 %}
+                                            <td style="border-right: solid 2px black;" class="nota_if red">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
+                                            {% else %}
+                                            <td style="border-right: solid 2px black;" class="nota_if">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 %}
+                                            <td class="nota_if" style="border-right: solid 4px black;">-</td>
+                                            {% else %}
+                                            <td class="nota_if" style="border-right: solid 2px black;">-</td>
+                                            {% endif %}
+                                        {% endif %}                                
+                                    {% endif %}
+
+                                {% endfor %}
+                            {% endfor %}
+
+                        {% else %}
+                            <th style="border-right:solid 2px;" >{{'%02d' % loop.index}}</th>
+                            {% for item in turma['turmas_if'] %}
+                                {% set indice = loop.index %}
+                                {% for disc in item['disciplinas'] %}
+                                    {% if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 %}
+                                    <td style="border-right: solid 4px black;"></td>
+                                    {% else %}
+                                    <td style="border-right: solid 2px black;"></td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}                                               
+                        {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th class="nota_final" style="border-top: solid 2px black;border-right: solid 2px black;">Prof</th>
+                            {% for item in turma['turmas_if'] %}
+                                {% set indice = loop.index %}
+                                {% for disc in item['disciplinas'] %}
+                                    {% if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 %}
+                                    <td class="nota_final" style="border-top: solid 2px black;border-right: solid 4px black;">{{disc['professor']}}</td>
+                                    {% else %}
+                                    <td class="nota_final" style="border-top: solid 2px black;border-right: solid 2px black;">{{disc['professor']}}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        </tr>                   
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="pag-verso-if" style="top:{{turma['top_if_final_verso']}}px">
+                <table class="verso_if">
+                    <thead>
+                        <tr>
+                            <th class="upright_text"><span class="num_bim_verso">5º</span>&nbsp;BIMESTRE</th>
+                            {% for item in turma['turmas_if'] %}
+                                {% set indice = loop.index %}
+                                {% for disc in item['disciplinas'] %}
+                                    <td class="vertical_text head_verso if_background_{{indice}}" style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else 'border-right: solid 1px black;' }}" rowspan="2">&nbsp;&nbsp;{{disc['descricao']}}</td>
+                                {% endfor %}
+                            
+                            {% endfor %}
+                            <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;border-left:solid 2px;">&nbsp;&nbsp;FALTAS</td>
+                            <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;AUSÊNCIAS COMPENSADAS</td>                        
+                            <td class="vertical_text head_verso" rowspan="2" style="font-weight: bold;">&nbsp;&nbsp;% FREQUÊNCIA FINAL</td>
+                            <td class="vertical_text" rowspan="2" colspan="4" style="font-weight: bold;border-left:solid 2px black;border-right:solid 2px black;">&nbsp;&nbsp;RESULTADO FINAL</td>
+                        </tr>
+                        <tr><th>Nº</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for n in range(0, 50) %}
+                        <tr>
+                            {% if loop.index <= turma['alunos']|length %}
+                                <th>{{'%02d' % turma['alunos'][n]['num']}}</th>
+                                {% for item in turma['turmas_if'] %}
+                                    {% set indice = loop.index %}
+                                    {% for disc in item['disciplinas'] %}
+                                        {% if turma['alunos'][n]['fim_mat'] == '' %}
+                                            {% if turma['alunos'][n]['if'][disc['disciplina']] is defined %}
+                                                {% if turma['alunos'][n]['if'][disc['disciplina']]['media']|int < 5 %}
+                                                <td class="center nota_verso red" style="width: 100%;{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
+                                                {% else %}
+                                                <td class="center nota_verso" style="width: 100%;{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
+                                                {% endif %}
+                                            {% else %}
+                                            <td class="center nota_verso" style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">-</td>
+                                            {% endif %}
+                                        {% else %}
+                                            <td class="center nota_verso" style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}">-</td>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                                {% if turma['alunos'][n]['fim_mat'] == '' and turma['alunos'][n]['freq_if_final']['total_faltas_if'] is not none %}
+                                <th class="nota_verso" style="border-left:solid 2px;">{{turma['alunos'][n]['freq_if_final']['total_faltas_if']}}</th>
+                                    {% if turma['alunos'][n]['freq_if_final']['freq_if']|int < 75 %}
+                                    <th class="red nota_verso">{{turma['alunos'][n]['freq_if_final']['freq_if']}}</th>
+                                    {% else %}
+                                    <th class="nota_verso">{{turma['alunos'][n]['freq_if_final']['freq_if']}}</th>
+                                    {% endif %}
+                                <th class="nota_verso">{{turma['alunos'][n]['freq_if_final']['total_ac_if']}}</th>
+                                <script>console.log("{{turma['lista_conceito_final'][n]}}")</script>
+                                <th class="{{ 'blue' if turma['lista_conceito_final'][n]['mat'] == 'APROV' else 'red'}}" colspan="4" style="border-left:solid 2px black;border-right:solid 2px black;">{{ turma['lista_conceito_final'][n]['desc_ata'] }}</th>
+
+                                {% else %}
+                                <th style="border-left:solid 2px;">-</th>
+                                <th>-</th>
+                                <th>-</th>
+                                    {% if turma['alunos'][n]['fim_mat'] == '' %}
+                                    <th style="text-align:center;border-left:solid 2px black;border-right:solid 2px black;" colspan="4">{{turma['lista_conceito_final'][n]['desc_ata'] }}</th>
+                                    {% else %}
+                                    <th class="red" style="text-align:center;border-left:solid 2px black;border-right:solid 2px black;" colspan="4">{{turma['lista_conceito_final'][n]['desc_ata'] }}</th>
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                <th>{{'%02d' % loop.index}}</th>
+                                {% for item in turma['turmas_if'] %}
+                                    {% set indice = loop.index %}
+                                    {% for disc in item['disciplinas'] %}
+                                    <td style="{{ 'border-right: solid 2px black;' if loop.index == item['disciplinas']|length and indice == 1 else '' }}"></td>
+                                    {% endfor %}
+                                {% endfor %}
+                                <td style="border-left:solid 2px black;"></td>
+                                <td></td>
+                                <td></td>
+                                <td colspan="4" style="border-left:solid 2px black;border-right:solid 2px black;"></td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>           
+                </table>
+
+                <div class="intermediario"></div>
+
+                <table class="ata_verso_if">
+                    <thead>
+                        <tr><th colspan="4" style="border:none">CONSELHO DE CLASSE</th></tr>
+                        <tr>
+                            <td colspan="4" class="head_ata" style="border:none;padding-top:10px;">
+                                Aos <span class="destaque_ata">{{turma['fim_bimestre'].strftime('%d')}}</span> dias do mês de <span class="destaque_ata">{{turma['fim_bimestre'].strftime("%B")}}</span> de <span class="destaque_ata">{{turma['fim_bimestre'].strftime("%Y")}}</span> realizou-se o Conselho de
+    Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</span> da <span class="red" style="font-weight: bold;">{{turma['nome_turma']}}</span> do <b>{{turma['tipo_ensino_desc']}}</b> da EE Profª Alice Vilela Galvão.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="font-size:12px;text-align:right;border:none;padding-bottom: 10px;">Canas, {{turma['fim_bimestre'].strftime("%d/%m/%Y")}}</td>
+                        </tr>
+                    </thead>
+                    <tbody style="padding-bot:30px">
+                        <tr style="font-size:9px;">
+                            <td style="border-right:solid 1px white;border-bottom:solid 1px white;border-left:none;">Matéria</td>
+                            <td style="border-right:solid 1px white;border-bottom:solid 1px white;">Professor</td>
+                            <td colspan="2" style="border-bottom:solid 1px white;border-right:none;">Assinatura</td>
+                        </tr>
+                        {% for item in turma['turmas_if'] %}
+                            {% for disc in item['disciplinas'] %}
+                            <tr style="font-size:11px;font-weight: bold;">
+                                <td style="border-right:solid 1px white;border-left:none;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['abv']}}</td>
+                                <td style="border-right:solid 1px white;border-bottom: solid 1px rgba(0,0,0,0.2);">{{disc['professor']}}</td>
+                                <td colspan="2" style="border-right: none;border-bottom: solid 1px rgba(0,0,0,0.2);"></td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                        <tr><td colspan="4" style="font-weight: bold;border-left: none;border-right: none;border-bottom:none;padding-top:10px;">OBSERVAÇÕES</td></tr>
+                        {% for dif in dificuldades %}
+                        <tr><td class="white" colspan="4" style="font-size:7px;border:none;border-bottom: solid 1px rgba(0,0,0,0.2);"><b>{{dif['id']}}</b> - {{dif['descricao']}}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="4" style="padding-bottom:30px;border:none"></td></tr>
+                        <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Coordenador Pedagógico</td></tr>
+                        <tr><td colspan="4" style="font-size:12px;text-align:center;border-right: none;border-left:none;padding-bottom:30px;">Diretor de Escola</td></tr>
+                    </tfoot>
+                </table>
+
+            </div>
+
+            {% endif %}
 
             {% endif %}
 

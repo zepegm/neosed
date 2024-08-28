@@ -21,28 +21,32 @@ class open_xls:
         return cell_obj.value
 
 class xls:
-    def __init__(self, planilha):
+    def __init__(self, planilha=False):
         self.app = win32com.client.Dispatch("Excel.Application", pythoncom.CoInitialize())
-        self.wb = self.app.Workbooks(planilha)
+
+        if not planilha:
+            self.wb = self.app.ActiveWorkbook
+        else:
+            self.wb = self.app.Workbooks(planilha)
 
         #try :
             #self.objCOM = self.app.Workbooks(self.app.ActiveWorkbook.Name)
         #except:
             #self.objCOM = None
 
-    def getCountA(self, name, endereco):
+    def getCountA(self, endereco, name=1):
         return self.wb.WorksheetFunction.CountA(self.app.Worksheets(name).Range(endereco))
 
-    def getValCell(self, name, endereco):
+    def getValCell(self, endereco, name=1):
         return self.wb.Worksheets(name).Range(endereco).value
     
     def getValCellNumbes(self, name, endereco, row, col):
         return self.wb.Worksheets(name).Range(endereco).Cells(row, col).value
 
-    def setValCell(self, name, endereco, val):
+    def setValCell(self, endereco, val, name=1):
         self.wb.Worksheets(name).Range(endereco).value = val
 
-    def setValCellNumbers(self, name, endereco, val, row, col):
+    def setValCellNumbers(self, endereco, val, row, col, name=1):
         self.wb.Worksheets(name).Range(endereco).Cells(row, col).value = val
     
     def getActiveRow(self):
