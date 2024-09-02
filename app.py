@@ -1822,7 +1822,7 @@ def uploadTurma():
 
                         sit = 0
 
-                        if situacao == "ATIVO" or situacao == "ENCERRADA":
+                        if situacao == "ATIVO":
                             sit = 1
                         elif situacao == 'BXTR' or situacao == 'TRAN':
                             sit = 2
@@ -1838,6 +1838,8 @@ def uploadTurma():
                             sit = 10
                         elif situacao == 'RECL':
                             sit = 15
+                        elif situacao == 'ENCERRADA':
+                            sit = 16
 
 
                         serie = "-"
