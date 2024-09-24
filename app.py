@@ -6,7 +6,7 @@ from waitress import serve
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista, getMes
+from utilitarios import converterLista, getMes, hojePorExtenso
 import pandas as pd
 import os
 import csv
@@ -1137,6 +1137,42 @@ def render_lista():
             data_formatada = data_atual.strftime("%d de %B de %Y")
 
             return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe)
+        
+        elif tipo == 'ficha_mat':
+
+            rm = request.args.getlist('rm')[0]
+            ra = request.args.getlist('ra')[0]
+            rg = request.args.getlist('rg')[0]
+            if rg == '-':
+                rg = '&nbsp;'
+            cpf = request.args.getlist('cpf')[0]
+            if cpf == '-':
+                cpf = '&nbsp;'
+            sexo = request.args.getlist('sexo')[0]
+            nome = request.args.getlist('nome')[0]
+            pai = request.args.getlist('pai')[0]
+            mae = request.args.getlist('mae')[0]
+            cidade = request.args.getlist('cidade')[0]
+            estado = request.args.getlist('estado')[0]
+            nascimento = request.args.getlist('nascimento')[0]
+            endereco = request.args.getlist('endereco')[0]
+            telefone = request.args.getlist('telefone')[0]
+            email = request.args.getlist('email')[0]
+            serie_desc = request.args.getlist('serie_desc')[0]
+            serie_simples = request.args.getlist('serie_simples')[0]
+            fund = request.args.getlist('fund')[0]
+
+            if fund == '':
+                fund = '&nbsp;'
+
+            medio = request.args.getlist('medio')[0]
+
+            if medio == '':
+                medio = '&nbsp;'
+
+            # teste in http://localhost/render_lista?tipo=ficha_mat&num_classe=0&rm=5610&ra=109.789.948-2&rg=68.645.560-5&cpf=598.165.948-38&sexo=F&nome=GABRIELLA+GUIMAR%C3%83ES+PRADO&pai=DOUGLAS+PEREIRA+PRADO&mae=FERNANDA+DE+ALMEIDA+GUIMARAES&cidade=GUARATINGUET%C3%81&estado=SP&nascimento=29/07/2006&endereco=Rua+Dois,+65,+Compl.A,+Pit%C3%A9u,+Cachoeira+Paulista&telefone=(12)+99251-4094&email=leticiavictoria9035@gmail.com&serie=9%C2%BA+ANO&fund=X&medio=
+
+            return render_template('render_pdf/render_ficha_matricula.jinja', rm=rm, ra=ra, rg=rg, cpf=cpf, cor='white', sexo=sexo, nome=nome, pai=pai, mae=mae, cidade=cidade, estado=estado, nascimento=nascimento, endereco=endereco, telefone=telefone, email=email, serie=serie_desc, fund=fund, medio=medio, hoje=hojePorExtenso(), serie_simples=serie_simples)
 
 @app.route('/gerar_pdf', methods=['GET', 'POST'])
 async def gerar_pdf():
@@ -1278,7 +1314,107 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
-        return jsonify(pdf_path)      
+        return jsonify(pdf_path)
+    
+    elif info['destino'] == 10: # ficha de matrícula
+        pdf_path = 'static/docs/ficha.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+
+        # efetuar login na SED
+        await page.goto('https://sed.educacao.sp.gov.br/')
+        await page.waitForSelector('#name', {'visible': True}) 
+        await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
+        await page.evaluate('''(selector, value) => {
+            document.querySelector(selector).value = value;
+        }''', '#senha', 'BGarden@FF8')  
+        await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
+        await page.click("#botaoEntrar")
+        await page.waitForSelector('#ambientes-aprendizagem', {'visible': True})
+
+        # abrir a ficha do aluno e pegar informações
+        await page.goto("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index", {'timeout':60000, 'waitUntil':'domcontentloaded'})
+        await page.evaluate('''() => {
+            const element = document.querySelector('.blockOverlay');
+            if (element) {
+                element.remove();
+            }
+        }''')
+        await page.evaluate('''() => {
+            const element = document.querySelector('.blockPage');
+            if (element) {
+                element.remove();
+            }
+        }''')
+        await page.waitForSelector('#btnPesquisar', {'visible': True})
+        await page.evaluate("() => document.querySelector('#fieldSetRA').removeAttribute('style')")
+        await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#txtRa', info['ra']) 
+        await page.waitForSelector('.blockUI', {'hidden':True})
+        await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#TipoConsultaFichaAluno', 1) 
+        await page.click("#btnPesquisar")
+        await page.waitForSelector('#tabelaDados', {'visible': True})
+        script = await page.evaluate("document.getElementsByClassName('colVisualizar')[1].getElementsByTagName('a')[0].getAttribute('onclick')")
+        await page.evaluate(script)
+        await page.waitForSelector('#sedUiModalWrapper_1', {'visible': True})
+
+        # pegar dados do aluno para inserir na planilha
+        dados = await page.evaluate("document.getElementById('sedUiModalWrapper_1title').textContent")
+        lista = dados.split('-')
+
+        nome = lista[0][16:].strip()
+        ra = lista[1][7:10] + '.' + lista[1][10:13] + '.' + lista[1][13:16] + '-' + lista[2][0:1]
+        data_nascimento = lista[3][18:]
+        cidade_nascimento = await page.evaluate("document.getElementById('CidadeNascimento').value")
+        uf_nascimento = await page.evaluate("document.getElementById('UFNascimento').value")
+        rg = await page.evaluate("document.getElementById('RgAluno').value") + '-' + await page.evaluate("document.getElementById('DigRgAluno').value")
+        if rg != '':
+            rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
+        else:
+            rg = '-'
+        cpf = await page.evaluate("document.getElementById('CpfAluno').value")
+        if cpf == '':
+            cpf = '-'
+        print(cpf)
+        sexo = await page.evaluate("document.getElementById('Sexo').value")
+        sexo = sexo[0:1]
+        pai = await page.evaluate("document.getElementById('NomePai').value")
+        mae = await page.evaluate("document.getElementById('NomeMae').value")
+
+        endereco = await page.evaluate("document.getElementById('Endereco').value")
+        endereco = endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+        num_casa = await page.evaluate("document.getElementById('EnderecoNR').value")
+        endereco += ', %s' % num_casa
+        comp = await page.evaluate("document.getElementById('EnderecoComplemento').value")
+        if comp != '':
+            endereco += ', %s' % comp
+        bairro = await page.evaluate("document.getElementById('EnderecoBairro').value")
+        endereco += ', %s' % bairro.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+        cidade_endereco = await page.evaluate("document.getElementById('EnderecoCidade').value")
+        endereco += ', %s' % cidade_endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+        estado_endereco = await page.evaluate("document.getElementById('EnderecoUF').value")
+        endereco += '/%s' % estado_endereco
+
+
+        # montar url para inserir os dados no render
+        url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0'
+        url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], ra, rg, cpf, sexo)
+        url += '&nome=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
+        url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'])
+
+        #page = await browser.newPage()
+        await page.goto(url, {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)
+
+        
 
 
 @app.route('/save_dificuldades', methods=['GET', 'POST'])
@@ -1402,6 +1538,12 @@ def getPDFConselhoFinal():
 
             #print(disciplinas)
             return jsonify({'alunos':alunos, 'turma':turma, 'disciplinas':disciplinas, 'freq':lista_freq})
+
+@app.route('/ficha_matricula', methods=['GET', 'POST'])
+def ficha_matricula():
+
+    return render_template('ficha_de_matricula.jinja')
+
 
 
 @app.route('/declaracoes', methods=['GET', 'POST'])
@@ -2578,5 +2720,6 @@ def calendario():
     return render_template('calendario.jinja', calendario=calendario, letivos=letivos, ano=ano, eventos=eventos, status=status)
 
 if __name__ == '__main__':
-    app.run('0.0.0.0',port=80)
+    #app.run('0.0.0.0',port=80)
+    app.run(debug=True, use_reloader=False, port=80)
     #serve(app, host='0.0.0.0', port=80, threads=8)

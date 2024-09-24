@@ -1,3 +1,5 @@
+from datetime import datetime
+
 meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
 
 def converterLista(lista):
@@ -31,3 +33,9 @@ def converterLista(lista):
 def getMes(mes):
     id = int(mes) - 1
     return meses[id]
+
+
+def hojePorExtenso():
+    hoje = datetime.today()
+
+    return "%s de %s de %s" % (hoje.day, meses[hoje.month - 1].lower(), hoje.year)

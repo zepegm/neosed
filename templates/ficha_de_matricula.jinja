@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ficha de Matrícula</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+          
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    {% block menu_superior %}
+      {% include 'menu.jinja' %}
+    {% endblock %}   
+
+    <main class="container-xxl">
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="fs-2">Ficha de Matrícula</p>
+                <p>Digite o RA e os dados necessários abaixo para gerar automaticamente a ficha de matrícula <b>(Atenção para digitar RA correto!)</b></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                <label for="txt_ra">RA do aluno (Sem dígito):</label>
+                <input type="number" class="form-control" id="txt_ra" name="ra">    
+            </div>
+            <div class="col-sm-2">
+                <label for="txt_rm">RM:</label>
+                <input type="number" class="form-control" id="txt_rm" name="rm">    
+            </div>     
+            <div class="col-sm-3">
+                <label for="cb_ensino">Tipo de Ensino</label>
+                <select class="form-select" id="cb_ensino" name="cb_ensino">
+                    <option value="0">Ensino Médio</option>
+                    <option value="1">Ensino Médio EJA</option>
+                    <option value="2">Ensino Fundamental EJA</option>
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <label for="cb_serie">Série</label>
+                <select class="form-select" id="cb_serie" name="cb_serie">
+                    <option value="1">1ª série</option>
+                    <option value="2">2ª série</option>
+                    <option value="3">3ª série</option>
+                </select>
+            </div>             
+        </div>
+        <div class="row">
+            <div class="col-sm-3">
+                <label for="txt_email">E-mail:</label>
+                <input type="email" class="form-control" id="txt_email" name="email">    
+            </div>
+            <div class="col-sm-3">
+                <label for="txt_telefone">Telefone:</label>
+                <input type="telefone" class="form-control" id="txt_telefone" name="telefone">    
+            </div>
+            <div class="col-sm-3 d-flex align-items-end">
+                <button id="btn_gerar_pdf" class="btn btn-primary">Gerar PDF</button>
+            </div>
+        </div>
+        <div id="result"></div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+    <script>
+
+        $("#btn_gerar_pdf").on('click', function() {
+            $(this).attr('disabled', '');
+            $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+
+            info = {'destino':10};
+            info['ra'] = $("#txt_ra").val();
+            info['rm'] = $("#txt_rm").val();
+            info['email'] = $("#txt_email").val();
+            info['telefone'] = $("#txt_telefone").val();
+
+            if ($("#cb_ensino").val() == 0) {
+                info['fund'] = '';
+                info['medio'] = 'X'
+                info['serie_desc'] = 'NA <b>' + $("#cb_serie").val() + 'ª SÉRIE</b>'
+                info['serie_simples'] = $("#cb_serie").val() + 'ª Série'
+            } else if ($("#cb_ensino").val() == 1) {
+                info['fund'] = '';
+                info['medio'] = 'X'
+                info['serie_desc'] = 'NO <b>' + $("#cb_serie").val() + 'º TERMO</b>'
+                info['serie_simples'] = "T" + $("#cb_serie").val() + 'EM'
+            } else {
+                info['fund'] = 'X';
+                info['medio'] = ''
+                info['serie_desc'] = 'NO <b>' + $("#cb_serie").val() + 'º TERMO</b>'
+                info['serie_simples'] = "T" + $("#cb_serie").val() + 'EF'                
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                    window.open(data);
+                    $("#btn_gerar_pdf").html('Gerar PDF');
+                    $("#btn_gerar_pdf").removeAttr('disabled');
+                },
+            });             
+        });
+
+        $("#cb_ensino").on('change', function() {
+            val = $(this).val();
+            
+            switch (val) {
+                case '0':
+                    $("#cb_serie").empty();
+                    for (var i = 1; i < 4; i++) {
+                        $("#cb_serie").append('<option value="' + i + '">' + i + 'ª série</option>');
+                    }
+                    break;
+                case '1':
+                    $("#cb_serie").empty();
+                    for (var i = 1; i < 4; i++) {
+                        $("#cb_serie").append('<option value="' + i + '">' + i + 'º Termo</option>');
+                    }
+                    break;
+                case '2':
+                    $("#cb_serie").empty();
+                    for (var i = 1; i < 5; i++) {
+                        $("#cb_serie").append('<option value="' + i + '">' + i + 'º Termo</option>');
+                    }
+                    break;                    
+            }
+        });
+
+    </script>
+  </body>
+</html>

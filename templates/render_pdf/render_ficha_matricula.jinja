@@ -1,0 +1,339 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: {{cor}};
+                position: absolute;
+                top:30px;
+                left: 30px;
+                background-color: white;
+            }          
+
+            #logo {
+                width: 75px;
+                height: 75px;
+
+                position: relative;
+                top: 0px;
+                left: 0px;
+            }
+
+            #tb_head {
+                font-family: Arial, Helvetica, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            #idf_aluno,
+            #tb_filiacao,
+            #tb_nasc,
+            #tb_dados_pessoais,
+            #tb_matricula {
+                margin-top: 20px;
+                font-family: Arial, Helvetica, sans-serif;
+                border-collapse: collapse;
+                width: 100%;                
+            }
+
+            #tb_nasc {
+                font-size: 11px;
+                border: 2px solid black;
+                height: 50px;
+            }
+
+            #tb_dados_pessoais {
+                border: 2px solid black;
+            }
+
+            #idf_aluno td {
+                text-align: center;
+            }            
+
+            #tb_head td {
+                text-align: center;
+            }
+
+            .fw-bold {
+                font-weight: bold;
+            }
+
+            #rm {
+                font-weight: bold;
+                font-size: 35px;
+            }
+
+            #head_name {
+                font-family:'BebasKai', sans-serif;
+                font-size: 25px;
+            }
+
+            #ficha_text {
+                border: 1px solid black;
+                padding: 10px;
+            }
+
+            #filiacao {
+                border: 2px solid black;
+                writing-mode: vertical-rl;
+                text-orientation: mixed;
+                font-size: 11px;
+                padding-top:5px;
+                padding-bottom:5px;
+                width: 15px;
+            }
+
+            .text-center {
+                text-align: center;
+            }
+
+            .border-2px {
+                border: 2px solid black;
+            }
+
+            .border-left-2px {
+                border-left: 2px solid black;
+            }
+
+            .border-right {
+                border-right: 1px solid black;
+            }
+
+            .border-right-2px {
+                border-right: 2px solid black;
+            }
+
+            .border-bottom {
+                border-bottom: solid 1px black;
+            }
+
+            .border-bottom-2px {
+                border-bottom: solid 2px black;
+            }
+
+            .border-top-2px {
+                border-top: solid 2px black;
+            }
+
+            .p-2 {
+                padding: 2px;
+            }
+
+            .pl-10 {
+                padding-left: 10px;
+            }
+
+            .pt-10 {
+                padding-top: 10px;
+            }
+
+            .pt-20 {
+                padding-top: 20px;
+            }            
+
+            .pt-5 {
+                padding-top: 5px;
+            }
+
+            .pb-10 {
+                padding-bottom: 10px;
+            }
+
+            .pb-20 {
+                padding-bottom: 20px;
+            }            
+
+            .pb-5 {
+                padding-bottom: 5px;
+            }
+
+            .pr-10 {
+                padding-right: 10px;
+            }
+
+        </style>
+    </head> 
+    <body>
+        <div id="pagina">
+            <table id="tb_head">
+                <tbody>
+                    <tr>
+                        <td rowspan="4"><img id="logo" src="../static/images/brasao.svg"></td>
+                        <td style="line-height: 25px;" rowspan="4">SECRETARIA DA EDUCAÇÃO<br>DO ESTADO DE SÃO PAULO</td>
+                        <td rowspan="4">&nbsp;</td>
+                        <td class="border-2px" colspan="2" style="font-size:10px;">PARA USO DA ESCOLA</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold border-2px" colspan="2" style="font-size:13px;">CONTROLE DE ENTRADA DO ALUNO</td>
+                    </tr>
+                    <tr>
+                        <td class="border-left-2px border-right-2px border-bottom-2px" style="font-size:13px;">ESCOLA</td>
+                        <td class="border-right-2px border-bottom-2px" style="font-size:13px">SECRETARIA DIGITAL</td>
+                    </tr>
+                    <tr>
+                        <td class="border-left-2px border-right-2px border-bottom" style="font-size:11px">REGISTRO DE MATRÍCULA (RM)</td>
+                        <td class="border-left-2px border-right-2px border-bottom" style="font-size:11px">REGISTRO DO ALUNO (RA)</td>
+                    </tr>
+                    <tr>
+                        <td id="head_name" colspan="2">ESCOLA PROFª ALICE VILELA GALVÃO</td>
+                        <td>&nbsp;</td>
+                        <td class="border-left-2px border-right-2px border-bottom-2px" id="rm" rowspan="5">{{rm}}</td>
+                        <td class="border-right-2px border-bottom-2px" style="font-size:20px;">{{ra}}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" rowspan="4"><span id="ficha_text">FICHA CADASTRAL DO ALUNO</span></td>
+                        <td rowspan="4">&nbsp;</td>
+                        <td class="border-right-2px border-bottom" style="font-size:11px">REGISTRO GERAL (RG)</td>
+                    </tr>
+                    <tr>
+                        <td class="border-right-2px border-bottom-2px">{{rg}}</td>
+                    </tr>
+                    <tr>
+                        <td class="border-right-2px border-bottom" style="font-size:11px">CADASTRO DE PESSOA FÍSICA (CPF)</td>
+                    </tr>
+                    <tr>
+                        <td class="border-right-2px border-bottom-2px">{{cpf}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <table id="idf_aluno">
+                <tr>
+                    <td class="border-2px fw-bold p-2" colspan="3">IDENTIFICAÇÃO DO ALUNO</td>
+                </tr>
+                <tr>
+                    <td class="border-2px" rowspan="2" style="font-size:11px; width:62px !important;">NOME ALUNO</td>
+                    <td class="border-2px pl-10" rowspan="2" style="text-align: left;">{{nome}}</td>
+                    <td class="border-right-2px border-bottom" style="font-size:11px; width: 50px">SEXO</td>
+                </tr>
+                <tr>
+                    <td class="border-right-2px border-bottom-2px" style="font-size:11px;">{{sexo}}</td>
+                </tr>
+            </table>
+
+            <table id="tb_nasc">
+                <tr>
+                     <td class="text-center border-right-2px" rowspan="2" style="width:62px">NASC.</td>
+                     <td class="border-right-2px border-bottom pl-10">CIDADE</td>
+                     <td class="border-right-2px border-bottom text-center" style="width:60px">ESTADO</td>
+                     <td class="border-right-2px border-bottom text-center">NACIONALIDADE</td>
+                     <td class="border-right-2px border-bottom text-center" style="width: 50px">DIA</td>
+                     <td class="border-right-2px border-bottom text-center" style="width: 50px">MÊS</td>
+                     <td class="border-right-2px border-bottom text-center" style="width: 50px">ANO</td>
+                </tr>
+                <tr>
+                    <td class="border-right-2px pl-10">{{cidade}}</td>
+                    <td class="border-right-2px text-center">{{estado}}</td>
+                    <td class="border-right-2px text-center">BRASIL</td>
+                    <td class="border-right-2px text-center">{{nascimento[:2]}}</td>
+                    <td class="border-right-2px text-center">{{nascimento[3:5]}}</td>
+                    <td class="border-right-2px text-center">{{nascimento[6:10]}}</td>
+                </tr>
+            </table>
+
+            <table id="tb_filiacao">
+                <tr>
+                    <td id="filiacao" rowspan="2">FILIAÇÃO</td>
+                    <td class="border-right-2px border-top-2px border-bottom text-center" style="font-size:11px;width:35px;">PAI</td>
+                    <td class="border-top-2px border-bottom border-right-2px pl-10">{{pai}}</td>
+                </tr>
+                <tr>
+                    <td class="border-right-2px border-bottom-2px text-center" style="font-size:11px;">MÃE</td>
+                    <td class="border-bottom-2px border-right-2px pl-10">{{mae}}</td>
+                </tr>
+            </table>
+
+            <table id="tb_dados_pessoais">
+                <tr>
+                    <td class="fw-bold text-center border-bottom-2px" colspan="2">DADOS PESSOAIS</td>
+                </tr>
+                <tr>
+                    <td class="pt-5 pl-10" colspan="2" style="font-size:13px;"><span class="fw-bold">Endereço: </span>{{endereco}}</td>
+                </tr>
+                <tr>
+                    <td class="pt-5 pl-10" style="font-size:13px;"><span class="fw-bold">Telefone: </span>{{telefone}}</td>
+                    <td class="pt-5" style="font-size:13px;"><b>Cor/Raça:</b> Branca (&nbsp;&nbsp;) Preta (&nbsp;&nbsp;) Parda (&nbsp;&nbsp;) Amarela (&nbsp;&nbsp;) Indígena (&nbsp;&nbsp;)</td>
+                </tr>
+                <tr>
+                    <td class="pt-5 pl-10" style="font-size:13px;"><span class="fw-bold">E-mail: </span>{{email}}</td>
+                    <td class="pt-5" style="font-size:13px;"><b>Possui internet em casa? </b> Sim (&nbsp;&nbsp;) Não (&nbsp;&nbsp;)</td>
+                </tr>
+                <tr>
+                    <td class="pt-5 pl-10 pb-5" style="font-size:13px;"><span class="fw-bold">Participa do Bolsa Família? </span> Sim (&nbsp;&nbsp;) Não (&nbsp;&nbsp;)</td>
+                    <td class="pt-5 pb-5" style="font-size:13px;"><b>Possui smartphone? </b> Sim (&nbsp;&nbsp;) Não (&nbsp;&nbsp;)</td>
+                </tr>
+                <tr>
+                    <td class="text-center border-top-2px border-bottom" colspan="2">MUDANÇAS</td>
+                </tr>
+                {% for i in range(3) %}
+                <tr>
+                    <td colspan="2" class="border-bottom">&nbsp;</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <table id="tb_matricula">
+                <tr>
+                    <td class="fw-bold text-center border-2px" colspan="4">MATRÍCULA E RENOVAÇÕES DE MATRÍCULA</td>
+                </tr>
+                <tr>
+                    <td class="pt-10 pl-10 border-left-2px border-right-2px" style="font-size:13px;" colspan="4">SOLICITO MATRÍCULA {{serie}} DO ENSINO FUNDAMENTAL (&nbsp;{{fund}}&nbsp;) / MÉDIO (&nbsp;{{medio}}&nbsp;)</td>
+                </tr>
+                <tr>
+                    <td class="pt-5 pl-10 border-left-2px border-right-2px" style="font-size:13px;" colspan="4">DECLARO ACATAR AS NORMAS REGIMENTAIS DESSE ESTABELECIMENTO DE ENSINO</td>
+                </tr>
+                <tr>
+                    <td class="pt-5 pl-10 border-left-2px border-right-2px" style="font-size:13px;" colspan="4">AUTORIZO O USO DE IMAGEM E VOZ: SIM (&nbsp;&nbsp;) NÃO (&nbsp;&nbsp;)</td>
+                </tr>
+                <tr>
+                    <td class="pt-20 pr-10 pb-5 border-left-2px border-right-2px border-bottom-2px" style="font-size:13px; text-align:right;" colspan="4">Canas, {{hoje}}</td>
+                </tr>
+                <tr>
+                    <td class="text-center border-left-2px border-right-2px border-bottom" colspan="3" style="height: 52px;">MOVIMENTAÇÃO DO ALUNO</td>
+                    <td class="text-center border-right-2px border-bottom">RESPONSÁVEL</td>
+                </tr>
+                <tr>
+                    <td class="text-center border-left-2px border-right border-bottom" style="font-size:13px; width:80px">ANO</td>
+                    <td class="text-center border-right border-bottom" style="font-size:13px; width:90px">SÉRIE</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px; width:100px">GRAU</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px;">ASSINATURA</td>
+                </tr>
+                <tr>
+                    <td class="text-center border-left-2px border-right border-bottom" style="font-size:13px;">{{hoje[-4:]}}</td>
+                    <td class="text-center border-right border-bottom" style="font-size:13px;">{{serie_simples}}</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px;">EF ({{fund}}) / EM ({{medio}})</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px;">&nbsp;</td>
+                </tr>
+
+                {% for i in range(9) %}
+                <tr>
+                    <td class="text-center border-left-2px border-right border-bottom" style="font-size:13px; width:80px">&nbsp;</td>
+                    <td class="text-center border-right border-bottom" style="font-size:13px; width:90px">&nbsp;</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px; width:100px">&nbsp;</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px;">&nbsp;</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td class="text-center border-left-2px border-right border-bottom-2px" style="font-size:13px; width:80px">&nbsp;</td>
+                    <td class="text-center border-right border-bottom-2px" style="font-size:13px; width:90px">&nbsp;</td>
+                    <td class="text-center border-right-2px border-bottom-2px" style="font-size:13px; width:100px">&nbsp;</td>
+                    <td class="text-center border-right-2px border-bottom-2px" style="font-size:13px;">&nbsp;</td>
+                </tr>                
+            </table>
+
+        </div>
+    </body>
+</htmL>

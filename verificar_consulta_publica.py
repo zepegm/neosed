@@ -17,7 +17,7 @@ banco = db({'host':"localhost",    # your host, usually localhost
             'passwd':"Yasmin",  # your password
             'db':"neosed"})
 
-num_classe = 286442017
+num_classe = 286441977
 
 lista = banco.executarConsulta(r"select ra_aluno, aluno.digito_ra, aluno.nome, DATE_FORMAT(vinculo_alunos_turmas.matricula, '%d/%m/%Y') as matricula, DATE_FORMAT(aluno.nascimento, '%d/%m/%Y') as nasc from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = " +  str(num_classe) + " and situacao = 1 order by num_chamada")
 
