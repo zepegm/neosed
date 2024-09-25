@@ -14,7 +14,9 @@
     <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
 
     <style>
-          
+        #result {
+            margin-top: 3vh;;
+        }
     </style>
 
   </head>
@@ -77,7 +79,7 @@
     <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
     <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 
-    <script>
+    <script>   
 
         $("#btn_gerar_pdf").on('click', function() {
             $(this).attr('disabled', '');
@@ -113,9 +115,17 @@
                 data: JSON.stringify(info),
                 dataType: "json",
                 success: function(data) {
-                    window.open(data);
+                    if (data['status']) {
+                        window.open(data['path']);
+                    } else {
+                        $("#result").html('<div class="alert alert-danger" role="alert"><b>Atenção!</b> RA não encontrado!</div>');
+                        $("#result").fadeIn("slow");
+                        $("#result").delay(2000).fadeOut(1000);                
+                    }
+
                     $("#btn_gerar_pdf").html('Gerar PDF');
-                    $("#btn_gerar_pdf").removeAttr('disabled');
+                    $("#btn_gerar_pdf").removeAttr('disabled');                    
+
                 },
             });             
         });

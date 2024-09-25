@@ -1319,100 +1319,106 @@ async def gerar_pdf():
     elif info['destino'] == 10: # ficha de matrícula
         pdf_path = 'static/docs/ficha.pdf'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
+        try:
+            browser = await launch(
+                handleSIGINT=False,
+                handleSIGTERM=False,
+                handleSIGHUP=False
+            )
 
-        page = await browser.newPage()
+            page = await browser.newPage()
 
-        # efetuar login na SED
-        await page.goto('https://sed.educacao.sp.gov.br/')
-        await page.waitForSelector('#name', {'visible': True}) 
-        await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
-        await page.evaluate('''(selector, value) => {
-            document.querySelector(selector).value = value;
-        }''', '#senha', 'BGarden@FF8')  
-        await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
-        await page.click("#botaoEntrar")
-        await page.waitForSelector('#ambientes-aprendizagem', {'visible': True})
+            # efetuar login na SED
+            await page.goto('https://sed.educacao.sp.gov.br/')
+            await page.waitForSelector('#name', {'visible': True}) 
+            await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
+            await page.evaluate('''(selector, value) => {
+                document.querySelector(selector).value = value;
+            }''', '#senha', 'BGarden@FF8')  
+            await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
+            await page.click("#botaoEntrar")
+            await page.waitForSelector('#ambientes-aprendizagem', {'visible': True})
 
-        # abrir a ficha do aluno e pegar informações
-        await page.goto("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index", {'timeout':60000, 'waitUntil':'domcontentloaded'})
-        await page.evaluate('''() => {
-            const element = document.querySelector('.blockOverlay');
-            if (element) {
-                element.remove();
-            }
-        }''')
-        await page.evaluate('''() => {
-            const element = document.querySelector('.blockPage');
-            if (element) {
-                element.remove();
-            }
-        }''')
-        await page.waitForSelector('#btnPesquisar', {'visible': True})
-        await page.evaluate("() => document.querySelector('#fieldSetRA').removeAttribute('style')")
-        await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#txtRa', info['ra']) 
-        await page.waitForSelector('.blockUI', {'hidden':True})
-        await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#TipoConsultaFichaAluno', 1) 
-        await page.click("#btnPesquisar")
-        await page.waitForSelector('#tabelaDados', {'visible': True})
-        script = await page.evaluate("document.getElementsByClassName('colVisualizar')[1].getElementsByTagName('a')[0].getAttribute('onclick')")
-        await page.evaluate(script)
-        await page.waitForSelector('#sedUiModalWrapper_1', {'visible': True})
+            # abrir a ficha do aluno e pegar informações
+            await page.goto("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index", {'timeout':60000, 'waitUntil':'domcontentloaded'})
+            await page.evaluate('''() => {
+                const element = document.querySelector('.blockOverlay');
+                if (element) {
+                    element.remove();
+                }
+            }''')
+            await page.evaluate('''() => {
+                const element = document.querySelector('.blockPage');
+                if (element) {
+                    element.remove();
+                }
+            }''')
+            await page.waitForSelector('#btnPesquisar', {'visible': True})
+            await page.evaluate("() => document.querySelector('#fieldSetRA').removeAttribute('style')")
+            await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#txtRa', info['ra']) 
+            await page.waitForSelector('.blockUI', {'hidden':True})
+            await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#TipoConsultaFichaAluno', 1) 
+            await page.click("#btnPesquisar")
+            await page.waitForSelector('#tabelaDados', {'visible': True})
+            script = await page.evaluate("document.getElementsByClassName('colVisualizar')[1].getElementsByTagName('a')[0].getAttribute('onclick')")
+            await page.evaluate(script)
+            await page.waitForSelector('#sedUiModalWrapper_1', {'visible': True})
 
-        # pegar dados do aluno para inserir na planilha
-        dados = await page.evaluate("document.getElementById('sedUiModalWrapper_1title').textContent")
-        lista = dados.split('-')
+            # pegar dados do aluno para inserir na planilha
+            dados = await page.evaluate("document.getElementById('sedUiModalWrapper_1title').textContent")
+            lista = dados.split('-')
 
-        nome = lista[0][16:].strip()
-        ra = lista[1][7:10] + '.' + lista[1][10:13] + '.' + lista[1][13:16] + '-' + lista[2][0:1]
-        data_nascimento = lista[3][18:]
-        cidade_nascimento = await page.evaluate("document.getElementById('CidadeNascimento').value")
-        uf_nascimento = await page.evaluate("document.getElementById('UFNascimento').value")
-        rg = await page.evaluate("document.getElementById('RgAluno').value") + '-' + await page.evaluate("document.getElementById('DigRgAluno').value")
-        if rg != '':
-            rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
-        else:
-            rg = '-'
-        cpf = await page.evaluate("document.getElementById('CpfAluno').value")
-        if cpf == '':
-            cpf = '-'
-        print(cpf)
-        sexo = await page.evaluate("document.getElementById('Sexo').value")
-        sexo = sexo[0:1]
-        pai = await page.evaluate("document.getElementById('NomePai').value")
-        mae = await page.evaluate("document.getElementById('NomeMae').value")
+            nome = lista[0][16:].strip()
+            ra = lista[1][7:10] + '.' + lista[1][10:13] + '.' + lista[1][13:16] + '-' + lista[2][0:1]
+            data_nascimento = lista[3][18:]
+            cidade_nascimento = await page.evaluate("document.getElementById('CidadeNascimento').value")
+            uf_nascimento = await page.evaluate("document.getElementById('UFNascimento').value")
+            rg = await page.evaluate("document.getElementById('RgAluno').value") + '-' + await page.evaluate("document.getElementById('DigRgAluno').value")
+            if rg != '':
+                rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
+            else:
+                rg = '-'
+            cpf = await page.evaluate("document.getElementById('CpfAluno').value")
+            if cpf == '':
+                cpf = '-'
+            print(cpf)
+            sexo = await page.evaluate("document.getElementById('Sexo').value")
+            sexo = sexo[0:1]
+            pai = await page.evaluate("document.getElementById('NomePai').value")
+            mae = await page.evaluate("document.getElementById('NomeMae').value")
 
-        endereco = await page.evaluate("document.getElementById('Endereco').value")
-        endereco = endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-        num_casa = await page.evaluate("document.getElementById('EnderecoNR').value")
-        endereco += ', %s' % num_casa
-        comp = await page.evaluate("document.getElementById('EnderecoComplemento').value")
-        if comp != '':
-            endereco += ', %s' % comp
-        bairro = await page.evaluate("document.getElementById('EnderecoBairro').value")
-        endereco += ', %s' % bairro.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-        cidade_endereco = await page.evaluate("document.getElementById('EnderecoCidade').value")
-        endereco += ', %s' % cidade_endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-        estado_endereco = await page.evaluate("document.getElementById('EnderecoUF').value")
-        endereco += '/%s' % estado_endereco
+            endereco = await page.evaluate("document.getElementById('Endereco').value")
+            endereco = endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+            num_casa = await page.evaluate("document.getElementById('EnderecoNR').value")
+            endereco += ', %s' % num_casa
+            comp = await page.evaluate("document.getElementById('EnderecoComplemento').value")
+            if comp != '':
+                endereco += ', %s' % comp.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+            bairro = await page.evaluate("document.getElementById('EnderecoBairro').value")
+            endereco += ', %s' % bairro.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+            cidade_endereco = await page.evaluate("document.getElementById('EnderecoCidade').value")
+            endereco += ', %s' % cidade_endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+            estado_endereco = await page.evaluate("document.getElementById('EnderecoUF').value")
+            endereco += '/%s' % estado_endereco
 
 
-        # montar url para inserir os dados no render
-        url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0'
-        url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], ra, rg, cpf, sexo)
-        url += '&nome=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
-        url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'])
+            # montar url para inserir os dados no render
+            url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0'
+            url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], ra, rg, cpf, sexo)
+            url += '&nome=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
+            url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'])
 
-        #page = await browser.newPage()
-        await page.goto(url, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+            #page = await browser.newPage()
+            await page.goto(url, {'waitUntil':'networkidle2'})
+            await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+            await browser.close()
 
-        return jsonify(pdf_path)
+            return jsonify({'status':True,'path':pdf_path})
+        
+        except Exception as error:
+            print("An exception occurred:", error)
+            return jsonify({'status':False, 'error':"An exception occurred: %s" % error, 'msg':'RA localizado!'})
+
 
         
 
