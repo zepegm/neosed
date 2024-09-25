@@ -1387,19 +1387,22 @@ async def gerar_pdf():
             pai = await page.evaluate("document.getElementById('NomePai').value")
             mae = await page.evaluate("document.getElementById('NomeMae').value")
 
-            endereco = await page.evaluate("document.getElementById('Endereco').value")
-            endereco = endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-            num_casa = await page.evaluate("document.getElementById('EnderecoNR').value")
-            endereco += ', %s' % num_casa
-            comp = await page.evaluate("document.getElementById('EnderecoComplemento').value")
-            if comp != '':
-                endereco += ', %s' % comp.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-            bairro = await page.evaluate("document.getElementById('EnderecoBairro').value")
-            endereco += ', %s' % bairro.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-            cidade_endereco = await page.evaluate("document.getElementById('EnderecoCidade').value")
-            endereco += ', %s' % cidade_endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-            estado_endereco = await page.evaluate("document.getElementById('EnderecoUF').value")
-            endereco += '/%s' % estado_endereco
+            if int(info['tipo_endereco']) == 1:
+                endereco = info['endereco_manual']
+            else:
+                endereco = await page.evaluate("document.getElementById('Endereco').value")
+                endereco = endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+                num_casa = await page.evaluate("document.getElementById('EnderecoNR').value")
+                endereco += ', %s' % num_casa
+                comp = await page.evaluate("document.getElementById('EnderecoComplemento').value")
+                if comp != '':
+                    endereco += ', %s' % comp.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+                bairro = await page.evaluate("document.getElementById('EnderecoBairro').value")
+                endereco += ', %s' % bairro.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+                cidade_endereco = await page.evaluate("document.getElementById('EnderecoCidade').value")
+                endereco += ', %s' % cidade_endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
+                estado_endereco = await page.evaluate("document.getElementById('EnderecoUF').value")
+                endereco += '/%s' % estado_endereco
 
 
             # montar url para inserir os dados no render

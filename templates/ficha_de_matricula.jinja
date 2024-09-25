@@ -68,10 +68,25 @@
                 <label for="txt_telefone">Telefone:</label>
                 <input type="telefone" class="form-control" id="txt_telefone" name="telefone">    
             </div>
+
+        </div>
+
+        <div class="row">
+            <div class="col-sm-2">
+                <label for="cb_endereco">Endereço:</label>
+                <select class="form-select" id="cb_endereco" name="cb_endereco">
+                    <option value="0">SED</option>
+                    <option value="1">Manual</option>
+                </select>
+            </div>
+            <div class="col-sm-4 d-flex align-items-end">
+                <input type="text" class="form-control" id="txt_endereco" name="endereco" disabled>            
+            </div>
             <div class="col-sm-3 d-flex align-items-end">
                 <button id="btn_gerar_pdf" class="btn btn-primary">Gerar PDF</button>
-            </div>
+            </div>            
         </div>
+
         <div id="result"></div>
     </main>
 
@@ -107,6 +122,9 @@
                 info['serie_desc'] = 'NO <b>' + $("#cb_serie").val() + 'º TERMO</b>'
                 info['serie_simples'] = "T" + $("#cb_serie").val() + 'EF'                
             }
+
+            info['tipo_endereco'] = $("#cb_endereco").val();
+            info['endereco_manual'] = $("#txt_endereco").val();
 
             $.ajax({
                 type: "POST",
@@ -152,6 +170,15 @@
                         $("#cb_serie").append('<option value="' + i + '">' + i + 'º Termo</option>');
                     }
                     break;                    
+            }
+        });
+
+        $("#cb_endereco").on('change', function() {
+            if ($("#cb_endereco").val() == 0) {
+                $("#txt_endereco").val('');
+                $("#txt_endereco").attr('disabled', '');
+            } else {
+                $("#txt_endereco").removeAttr('disabled');                
             }
         });
 
