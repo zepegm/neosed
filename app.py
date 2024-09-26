@@ -1423,6 +1423,10 @@ async def gerar_pdf():
             return jsonify({'status':False, 'error':"An exception occurred: %s" % error, 'msg':'RA localizado!'})
 
 
+@app.route('/teste', methods=['GET', 'POST'])
+def teste():
+
+    return render_template('teste.jinja')
         
 
 
