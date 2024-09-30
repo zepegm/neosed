@@ -1143,6 +1143,7 @@ def render_lista():
             rm = request.args.getlist('rm')[0]
             ra = request.args.getlist('ra')[0]
             rg = request.args.getlist('rg')[0]
+            ano = request.args.getlist('ano')[0]
             if rg == '-':
                 rg = '&nbsp;'
             cpf = request.args.getlist('cpf')[0]
@@ -1171,8 +1172,9 @@ def render_lista():
                 medio = '&nbsp;'
 
             # teste in http://localhost/render_lista?tipo=ficha_mat&num_classe=0&rm=5610&ra=109.789.948-2&rg=68.645.560-5&cpf=598.165.948-38&sexo=F&nome=GABRIELLA+GUIMAR%C3%83ES+PRADO&pai=DOUGLAS+PEREIRA+PRADO&mae=FERNANDA+DE+ALMEIDA+GUIMARAES&cidade=GUARATINGUET%C3%81&estado=SP&nascimento=29/07/2006&endereco=Rua+Dois,+65,+Compl.A,+Pit%C3%A9u,+Cachoeira+Paulista&telefone=(12)+99251-4094&email=leticiavictoria9035@gmail.com&serie=9%C2%BA+ANO&fund=X&medio=
+            print(ano)
 
-            return render_template('render_pdf/render_ficha_matricula.jinja', rm=rm, ra=ra, rg=rg, cpf=cpf, cor='white', sexo=sexo, nome=nome, pai=pai, mae=mae, cidade=cidade, estado=estado, nascimento=nascimento, endereco=endereco, telefone=telefone, email=email, serie=serie_desc, fund=fund, medio=medio, hoje=hojePorExtenso(), serie_simples=serie_simples)
+            return render_template('render_pdf/render_ficha_matricula.jinja', rm=rm, ra=ra, rg=rg, cpf=cpf, cor='white', sexo=sexo, nome=nome, pai=pai, mae=mae, cidade=cidade, estado=estado, nascimento=nascimento, endereco=endereco, telefone=telefone, email=email, serie=serie_desc, fund=fund, medio=medio, hoje=hojePorExtenso(), serie_simples=serie_simples, ano=ano)
 
 @app.route('/gerar_pdf', methods=['GET', 'POST'])
 async def gerar_pdf():
@@ -1409,7 +1411,9 @@ async def gerar_pdf():
             url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0'
             url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], ra, rg, cpf, sexo)
             url += '&nome=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
-            url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'])
+            url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s&ano=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'], info['ano'])
+
+            print(url)
 
             #page = await browser.newPage()
             await page.goto(url, {'waitUntil':'networkidle2'})

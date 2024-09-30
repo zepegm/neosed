@@ -64,11 +64,14 @@
                 <label for="txt_email">E-mail:</label>
                 <input type="email" class="form-control" id="txt_email" name="email">    
             </div>
-            <div class="col-sm-3">
+            <div class="col-sm-2">
                 <label for="txt_telefone">Telefone:</label>
                 <input type="telefone" class="form-control" id="txt_telefone" name="telefone">    
             </div>
-
+            <div class="col-sm-2">
+                <label for="txt_telefone">Ano de Matrícula:</label>
+                <input type="number" class="form-control" id="txt_ano" name="telefone">    
+            </div>
         </div>
 
         <div class="row">
@@ -105,6 +108,7 @@
             info['rm'] = $("#txt_rm").val();
             info['email'] = $("#txt_email").val();
             info['telefone'] = $("#txt_telefone").val();
+            info['ano'] = $("#txt_ano").val();
 
             if ($("#cb_ensino").val() == 0) {
                 info['fund'] = '';
