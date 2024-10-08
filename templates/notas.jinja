@@ -522,7 +522,7 @@
                                 array_nota.push({'ra':$(this).attr('data-ra'), 'disc':response['lista'][item]['disc'], 'M':response['lista'][item]['medias'][id]['M']});
 
 
-                                if (parseInt(response['lista'][item]['medias'][id]['M']) < 5 || response['lista'][item]['medias'][id]['M'] = '-') {
+                                if (parseInt(response['lista'][item]['medias'][id]['M']) < 5 || response['lista'][item]['medias'][id]['M'] == '-') {
                                     excessao = "table-danger";
                                 } else if(response['lista'][item]['medias'][id]['M'] == "EP") {
                                     excessao = "table-warning";
@@ -534,7 +534,7 @@
 
                                 var excessao = "";
 
-                                if (parseInt(response['lista'][item]['notas'][id]['N']) < 5 || response['lista'][item]['notas'][id]['N'] = '-') {
+                                if (parseInt(response['lista'][item]['notas'][id]['N']) < 5 || response['lista'][item]['notas'][id]['N'] == '-') {
                                     excessao = "table-danger";
                                 } else if(response['lista'][item]['notas'][id]['N'] == "EP") {
                                     excessao = "table-warning";
@@ -1012,7 +1012,7 @@
                     for (var item in response['notas']) {
                         for (var aluno in response['notas'][item]['notas']) {
 
-                            if (parseInt(response['notas'][item]['notas'][aluno]['N']) < 5 || response['notas'][item]['notas'][aluno]['N'] = '-') {
+                            if (parseInt(response['notas'][item]['notas'][aluno]['N']) < 5 || response['notas'][item]['notas'][aluno]['N'] == '-') {
                                 $("#tb-mapao-show tbody tr[data-ra='" + response['notas'][item]['notas'][aluno]['ra_aluno'] + "']").append("<td class='table-danger text-center'>" + response['notas'][item]['notas'][aluno]['N'] + "</td><td class='text-center'>" + response['notas'][item]['notas'][aluno]['F'] + "</td><td style='border-right-width:4px' class='text-center'>" + response['notas'][item]['notas'][aluno]['AC'] + "</td>");    
                             } else if (response['notas'][item]['notas'][aluno]['N'] == "EP") {
                                 $("#tb-mapao-show tbody tr[data-ra='" + response['notas'][item]['notas'][aluno]['ra_aluno'] + "']").append("<td class='table-wanger text-center'>" + response['notas'][item]['notas'][aluno]['N'] + "</td><td class='text-center'>" + response['notas'][item]['notas'][aluno]['F'] + "</td><td style='border-right-width:4px' class='text-center'>" + response['notas'][item]['notas'][aluno]['AC'] + "</td>");    
@@ -1030,7 +1030,7 @@
                     for (var item in response['medias']) {
                         for (var aluno in response['medias'][item]['medias']) {
 
-                            if (parseInt(response['medias'][item]['medias'][aluno]['M']) < 5 || response['medias'][item]['medias'][aluno]['M'] = '-') {
+                            if (parseInt(response['medias'][item]['medias'][aluno]['M']) < 5 || response['medias'][item]['medias'][aluno]['M'] == '-') {
                                 $("#tb-mapao-show tbody tr[data-ra='" + response['medias'][item]['medias'][aluno]['ra_aluno'] + "']").append("<td style='border-right-width:4px' class='table-danger text-center'>" + response['medias'][item]['medias'][aluno]['M'] + "</td>");
                             } else if (response['medias'][item]['medias'][aluno]['M'] == "EP") {
                                 $("#tb-mapao-show tbody tr[data-ra='" + response['medias'][item]['medias'][aluno]['ra_aluno'] + "']").append("<td style='border-right-width:4px' class='table-wanger text-center'>" + response['medias'][item]['medias'][aluno]['M'] + "</td>");    
