@@ -4,7 +4,7 @@ from MySQL import db
 from excel import xls
 import html_to_json
 
-ra_aluno = 49772486
+ra_aluno = 106516499
 
 planilha = xls() # formar conexão com a planilha
 banco = db({'host':"localhost",    # your host, usually localhost
@@ -73,13 +73,13 @@ async def main():
     rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
 
 
-    planilha.setValCell('D10', nome)
-    planilha.setValCell('N10', rg)
-    planilha.setValCell('R10', ra)
-    planilha.setValCell('F11', cidade_nascimento)
-    planilha.setValCell('N11', uf_nascimento)
-    planilha.setValCell('E12', alt)
-    planilha.setValCell('R11', 'BRASIL')
+    planilha.setValCell('D14', nome)
+    planilha.setValCell('N14', rg)
+    planilha.setValCell('R14', ra)
+    planilha.setValCell('F15', cidade_nascimento)
+    planilha.setValCell('N15', uf_nascimento)
+    planilha.setValCell('E16', alt)
+    planilha.setValCell('R15', 'BRASIL')
 
     #await page.waitFor(2000)
 
@@ -111,13 +111,13 @@ async def main():
                 match(serie):
                     case 1:
                         coluna = 'O'
-                        linha = 41
+                        linha = 44
                     case 2:
                         coluna = 'Q'
-                        linha = 42
+                        linha = 45
                     case 3:
                         coluna = 'S'
-                        linha = 43
+                        linha = 46
 
                 match(tipo_ensino):
                     case 2:
@@ -125,8 +125,8 @@ async def main():
                     case 5:
                         desc_serie = str(serie) + 'º Termo'
 
-                planilha.setValCell(coluna + '14', ano)
-                planilha.setValCell(coluna + '15', desc_serie)
+                planilha.setValCell(coluna + '18', ano)
+                planilha.setValCell(coluna + '19', desc_serie)
                 planilha.setValCell('H%s' % linha, escola)
                 planilha.setValCell('P%s' % linha, municipio)
                 planilha.setValCell('T%s' % linha, 'SP')

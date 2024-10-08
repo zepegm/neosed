@@ -3,15 +3,7 @@ __pycache__/excel.cpython-312.pyc
 __pycache__/getInfoSED.cpython-312.pyc
 __pycache__/MySQL.cpython-312.pyc
 __pycache__/utilitarios.cpython-312.pyc
-staticFiles/uploads/import.csv
-static/docs/lista.pdf
-static/docs/conselho.pdf
-staticFiles/uploads/import.csv
-static/docs/declaracao.pdf
-static/docs/conselho.pdf
-staticFiles/uploads/import.csv
-static/docs/lista.pdf
-static/docs/conselho.pdf
-/static/docs
+static/docs
 /__pycache__
 /static/images/etapas_navegacao
+/staticFiles/uploads

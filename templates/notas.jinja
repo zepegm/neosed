@@ -458,12 +458,21 @@
             array_nota.splice(0, array_nota.length);
             array_disc.splice(0, array_disc.length);
 
+            var form_data = new FormData();
+
+            form_data.append('mapao', $(this).prop('files')[0]);
+            form_data.append('num_classe', $("#lista_geral .active").attr("data-id"));
+            form_data.append('duracao', $("#lista_geral .active").attr("data-duracao"));
+            form_data.append('bimestre', $("#cbBimestre").val());
+
+
             $.ajax({
                 type: "POST",
                 url: "{{ url_for('notas') }}",
-                contentType: "application/json",
-                data: JSON.stringify({'action':1, 'file':document.getElementById("file").files[0].name, 'num_classe':$("#lista_geral .active").attr("data-id"), 'duracao':$("#lista_geral .active").attr("data-duracao"), 'bimestre':$("#cbBimestre").val()}),
-                dataType: "json",
+                data: form_data,
+                contentType: false,
+                cache: false,
+                processData: false,
                 success: function(response) {     
                     console.log(response);
                     $("#tb-mapao").empty();

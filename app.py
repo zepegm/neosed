@@ -2121,88 +2121,7 @@ def notas():
                     item['notas'] = notas
 
                 return jsonify({'alunos':alunos, 'notas':disciplinas, 'professores':profs, 'medias':[]})
-            
-            # significa que é pra importar o mapão da SED
-            elif info['action'] == 1:
-                file_dir = home_directory + r'\Downloads' + '\\' + info['file']
 
-                data = pd.read_html(file_dir)
-                print(data)
-                #df2 = data[0].sum()
-                
-                #coluna = 1
-                total = (len(data[0].axes[1]) - 1) / 5
-                total_r = (len(data[0].axes[0])) - 2
-                #print(len(data[0].axes[1]))
-                #print(total)
-                
-                coluna = 1
-                bimestre_final = 0
-
-                if info['duracao'] == '1º Semestre':
-                    bimestre_final = 2
-                else:
-                    bimestre_final = 4
-
-                lista = []
-
-                print(total)
-                for i in range(0, int(math.ceil(total))):
-                    item = {'disc':data[0][coluna][12]}
-                    print(item)
-                    
-                    if str(item['disc']).isnumeric():
-
-                        if data[0][31][6] == "Tipo de Fechamento: CONSELHO FINAL (QUINTO CONCEITO)":
-
-                            professor = item['professor'] = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (info['num_classe'], bimestre_final, item['disc']))
-
-                            if len(professor) > 0:
-                                item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
-                            
-                                medias = {}
-                                
-                                for j in range(15, total_r):
-                                    medias[data[0][coluna][j]] = {'M':data[0][coluna + 1][j]}
-
-                                item['medias'] = medias
-                                item['professor'] = professor[0]['nome']
-
-                                lista.append(item)
-
-                            coluna += 3
-                        else:
-                            ad = int(data[0][coluna][total_r].replace('Aulas Dadas: ', ''))
-
-                            if ad > 0:
-                                item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
-
-                                notas = {}
-
-                                for j in range(15, total_r):
-                                    notas[data[0][coluna][j]] = {'N':data[0][coluna + 1][j], 'F':data[0][coluna + 2][j], 'AC':data[0][coluna + 3][j]}
-
-                                #print(total_r + 1)
-
-                                item['AD'] = data[0][coluna][total_r].replace('Aulas Dadas: ', '')
-
-
-                                item['notas'] = notas
-                                lista.append(item)  
-
-                            coluna += 5
-        
-
-                professores = banco.executarConsulta('select rg, nome_ata from vinculo_turma_prof INNER JOIN professor ON professor.rg = vinculo_turma_prof.rg_prof where id_turma = %s order by nome_ata' % info['num_classe'])
-                #print(lista)
-
-                #verificar se já existe professores vinculados a disciplina e se existir criar uma lista
-                professores_atuais = banco.executarConsulta('select rg_prof, disciplina from vinculo_prof_disc where bimestre = %s and num_classe = %s' % (info['bimestre'], info['num_classe']))
-                dict_aux = {}
-                for item in professores_atuais:
-                    dict_aux[item['disciplina']] = item['rg_prof']
-
-                return jsonify({'lista':lista, 'professores':professores, 'professores_atuais':dict_aux})
             
             elif info['action'] == 2:
                 return jsonify(banco.salvarVinculoProfs(info))
@@ -2345,6 +2264,91 @@ def notas():
                         '<strong>Atenção!</strong> Erro ao tentar importar dificuldades, <strong>Favor revisar a tabela!</strong>. Verifique se os números são mesmo números.' \
                         '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
                         '</div>'
+                
+        elif bool(request.files.get('mapao', False)) == True:
+
+            isthisFile = request.files.get('mapao')
+            file_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'mapao.xls')
+            isthisFile.save(file_dir)
+
+            data = pd.read_html(file_dir)
+            print(data)
+            #df2 = data[0].sum()
+            
+            #coluna = 1
+            total = (len(data[0].axes[1]) - 1) / 5
+            total_r = (len(data[0].axes[0])) - 2
+            #print(len(data[0].axes[1]))
+            #print(total)
+            
+            coluna = 1
+            bimestre_final = 0
+
+            if request.form.getlist('duracao')[0] == '1º Semestre':
+                bimestre_final = 2
+            else:
+                bimestre_final = 4
+
+            lista = []
+
+            print(total)
+            for i in range(0, int(math.ceil(total))):
+                item = {'disc':data[0][coluna][12]}
+                print(item)
+                
+                if str(item['disc']).isnumeric():
+
+                    if data[0][31][6] == "Tipo de Fechamento: CONSELHO FINAL (QUINTO CONCEITO)":
+
+                        professor = item['professor'] = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+
+                        if len(professor) > 0:
+                            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                        
+                            medias = {}
+                            
+                            for j in range(15, total_r):
+                                medias[data[0][coluna][j]] = {'M':data[0][coluna + 1][j]}
+
+                            item['medias'] = medias
+                            item['professor'] = professor[0]['nome']
+
+                            lista.append(item)
+
+                        coluna += 3
+                    else:
+                        ad = int(data[0][coluna][total_r].replace('Aulas Dadas: ', ''))
+
+                        if ad > 0:
+                            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+
+                            notas = {}
+
+                            for j in range(15, total_r):
+                                notas[data[0][coluna][j]] = {'N':data[0][coluna + 1][j], 'F':data[0][coluna + 2][j], 'AC':data[0][coluna + 3][j]}
+
+                            #print(total_r + 1)
+
+                            item['AD'] = data[0][coluna][total_r].replace('Aulas Dadas: ', '')
+
+
+                            item['notas'] = notas
+                            lista.append(item)  
+
+                        coluna += 5
+
+
+            professores = banco.executarConsulta('select rg, nome_ata from vinculo_turma_prof INNER JOIN professor ON professor.rg = vinculo_turma_prof.rg_prof where id_turma = %s order by nome_ata' % request.form.getlist('num_classe')[0])
+            #print(lista)
+
+            #verificar se já existe professores vinculados a disciplina e se existir criar uma lista
+            professores_atuais = banco.executarConsulta('select rg_prof, disciplina from vinculo_prof_disc where bimestre = %s and num_classe = %s' % (request.form.getlist('bimestre')[0], request.form.getlist('num_classe')[0]))
+            dict_aux = {}
+            for item in professores_atuais:
+                dict_aux[item['disciplina']] = item['rg_prof']
+
+            return jsonify({'lista':lista, 'professores':professores, 'professores_atuais':dict_aux})
+
         
 
     disciplinas = banco.executarConsulta('select codigo_disciplina, disciplinas.descricao, disciplinas.abv, classificacao, classificacao.abv as classificacao_desc from disciplinas INNER JOIN classificacao ON classificacao.id = disciplinas.classificacao order by descricao')
