@@ -141,6 +141,7 @@
                         </div>
                         <div class="col-sm-12">
                             <button id="btn_declaracao_matricula" class="btn btn-primary" hidden>Declaração de Matrícula</button>
+                            <button id="btn_declaracao_matricula_freq" class="btn btn-success" hidden>Declaração de Matrícula com Freq (%)</button>
                             <button id="btn_declaracao_transferencia" class="btn btn-danger" hidden>Declaração de Transferência</button>
                         </div>
                     </div>
@@ -262,9 +263,11 @@
 
                     if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
                         $("#btn_declaracao_matricula").removeAttr('hidden');
+                        $("#btn_declaracao_matricula_freq").removeAttr('hidden');
                         $("#btn_declaracao_transferencia").removeAttr('hidden');
                     } else {
                         $("#btn_declaracao_matricula").attr('hidden', '');
+                        $("#btn_declaracao_matricula_freq").attr('hidden', '');
 
                         if ($("#alunos_dados_dinamicos tr .TRAN").length > 0) {
                             $("#btn_declaracao_transferencia").removeAttr('hidden');
@@ -304,6 +307,23 @@
             }
 
             declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino);
+        });
+
+        $("#btn_declaracao_matricula_freq").on('click', function() {
+            $("#btn_declaracao_matricula_freq").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            $("#btn_declaracao_matricula_freq").attr('disabled', '');            
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify({'destino':11, 'ra':$("#txtra").text()}),
+                dataType: "json",
+                success: function(data) {
+                    window.open(data);
+                    $("#btn_declaracao_matricula_freq").html('Declaração de Matrícula com Freq (%)');
+                    $("#btn_declaracao_matricula_freq").removeAttr('disabled');
+                },
+            });                        
         });
 
     </script>

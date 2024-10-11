@@ -1,6 +1,7 @@
 from datetime import datetime
 
 meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
+series_fund = {9:'6º ano', 10:'7º ano', 11:'8º ano', 12:'9º ano'}
 
 def converterLista(lista):
     texto = ""
@@ -39,3 +40,6 @@ def hojePorExtenso():
     hoje = datetime.today()
 
     return "%s de %s de %s" % (hoje.day, meses[hoje.month - 1].lower(), hoje.year)
+
+def getAnoFund(serie):
+    return series_fund[serie]

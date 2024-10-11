@@ -4,7 +4,7 @@ from MySQL import db
 from excel import xls
 import html_to_json
 
-ra_aluno = 106516499
+ra_aluno = 105251764
 
 planilha = xls() # formar conexão com a planilha
 banco = db({'host':"localhost",    # your host, usually localhost

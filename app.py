@@ -6,7 +6,7 @@ from waitress import serve
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista, getMes, hojePorExtenso
+from utilitarios import converterLista, getMes, hojePorExtenso, series_fund
 import pandas as pd
 import os
 import csv
@@ -1132,6 +1132,25 @@ def render_lista():
                     titulo = 'DECLARAÇÃO DE VAGA'
                     texto += ' solicitou vaga %s' % fim
 
+            elif aux_info['tipo'] == 4: # declaração de matrícula padrão com frequência
+
+                match (aux_info['info_classe']['tipo_ensino']):
+                    case 1:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 3:
+                        serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 4:
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+
+
+                titulo = 'DECLARAÇÃO DE MATRÍCULA'
+                if aux_info['bimestre'] > 0:
+                    texto += ' é alun%s regularmente matriculad%s %s com frequência de <b>%s%s</b> registrada até o final do <b>%sº bimestre.</b>' % (pronome, pronome, serie, aux_info['percent'], r'%', aux_info['bimestre'])
+                else:
+                    list_serie = list(serie)
+                    list_serie[-5] = '.'
+                    texto += ' é alun%s regularmente matriculad%s %s' % (pronome, pronome, "".join(list_serie))
+
                 
             data_atual = datetime.now()
             data_formatada = data_atual.strftime("%d de %B de %Y")
@@ -1179,6 +1198,7 @@ def render_lista():
 @app.route('/gerar_pdf', methods=['GET', 'POST'])
 async def gerar_pdf():
     info = request.json
+    global aux_info
 
     if info['destino'] == 1:
         pdf_path = 'static/docs/lista.pdf'
@@ -1214,7 +1234,7 @@ async def gerar_pdf():
         return jsonify(pdf_path)  
 
     elif info['destino'] == 3:
-        global aux_info
+
         aux_info = info
 
         return jsonify(True)
@@ -1425,6 +1445,44 @@ async def gerar_pdf():
         except Exception as error:
             print("An exception occurred:", error)
             return jsonify({'status':False, 'error':"An exception occurred: %s" % error, 'msg':'RA localizado!'})
+
+
+    elif info['destino'] == 11: # declaração com frequência
+
+        pdf_path = 'static/docs/declaracao_freq.pdf'
+        
+        aluno = banco.executarConsulta('select nome, rg, sexo from aluno where ra = %s' % info['ra'].replace('.', '')[:9])[0]
+        
+        info_classe = banco.executarConsulta('select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = %s and situacao = 1' % info['ra'].replace('.', '')[:9])[0]
+
+        sql = 'SELECT '
+        sql += '(select sum(falta) - sum(ac) from notas inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.situacao = 1 left join vinculo_alunos_if on vinculo_alunos_if.ra_aluno = notas.ra_aluno and vinculo_alunos_if.situacao = 1 where notas.ra_aluno = %s and (notas.num_classe = vinculo_alunos_turmas.num_classe or notas.num_classe = vinculo_alunos_if.num_classe_if)) as faltas,' % info['ra'].replace('.', '')[:9]
+        sql += '(select sum(aulas_dadas) from vinculo_prof_disc inner join vinculo_alunos_turmas on vinculo_alunos_turmas.situacao = 1 and vinculo_alunos_turmas.ra_aluno = %s left join vinculo_alunos_if on vinculo_alunos_if.situacao = 1 and vinculo_alunos_if.ra_aluno = %s where vinculo_prof_disc.num_classe = vinculo_alunos_turmas.num_classe or vinculo_prof_disc.num_classe = vinculo_alunos_if.num_classe_if) as aulas_dadas,' % (info['ra'].replace('.', '')[:9], info['ra'].replace('.', '')[:9])
+        sql += '(select max(bimestre) from notas inner join turma on turma.num_classe = notas.num_classe where ra_aluno = %s and turma.ano = YEAR(CURDATE())) as bimestre' % info['ra'].replace('.', '')[:9]
+
+        freq = banco.executarConsulta(sql)
+
+        if (freq[0]['faltas']):
+            freq_percent = round((freq[0]['aulas_dadas'] - freq[0]['faltas']) / freq[0]['aulas_dadas'] * 100, 2)
+            bimestre = freq[0]['bimestre']
+        else:
+            freq_percent = -1
+            bimestre = 0
+
+        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre}
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white', {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)
 
 
 @app.route('/teste', methods=['GET', 'POST'])
