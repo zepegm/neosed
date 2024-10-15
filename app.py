@@ -1194,6 +1194,36 @@ def render_lista():
             print(ano)
 
             return render_template('render_pdf/render_ficha_matricula.jinja', rm=rm, ra=ra, rg=rg, cpf=cpf, cor='white', sexo=sexo, nome=nome, pai=pai, mae=mae, cidade=cidade, estado=estado, nascimento=nascimento, endereco=endereco, telefone=telefone, email=email, serie=serie_desc, fund=fund, medio=medio, hoje=hojePorExtenso(), serie_simples=serie_simples, ano=ano)
+        
+        elif tipo == "ata_final":
+
+            info = []
+            ls_final = []
+            ls_keys = []
+
+            with open('staticFiles/uploads/info.json', 'r', encoding='utf-8-sig') as file:
+                info = json.load(file)
+
+            dados = []
+            with open('staticFiles/uploads/table.json', 'r', encoding='utf-8-sig') as file:
+                dados = json.load(file)
+
+            for item in dados:
+                dict = {'num':item['Nº'], 'nome':item['ALUNO'].title().replace('Da ', 'da ').replace('De ', 'de ').replace("Do ", "do ").replace("Dos ", "dos "), 'sit':item['RESULTADO FINAL'].replace("RetidoRendimento", "Retido").replace('RetidoFrequencia', 'Retido')}
+
+                ls_keys = []
+                key_list = item.keys()
+                for key in key_list:
+                    if key not in ('Nº', 'RA', 'ALUNO', 'SITUAÇÃO ALUNO', 'RESULTADO FINAL'):
+                        new_key = key.replace(". ", '').replace("L.", "").replace("LIN", "POR")[0:3].replace("PRO", 'PV')
+                        ls_keys.append(new_key)
+                        dict[new_key] = item[key].replace(',00', '')
+
+
+                ls_final.append(dict)
+            print(ls_final)
+
+            return render_template('render_pdf/render_ata_final.jinja', info=info, dados=ls_final, ls_keys=ls_keys)
 
 @app.route('/gerar_pdf', methods=['GET', 'POST'])
 async def gerar_pdf():
