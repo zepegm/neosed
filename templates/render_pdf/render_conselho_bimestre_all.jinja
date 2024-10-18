@@ -696,9 +696,9 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
                                             {% endif %}
                                         <td class="nota_if">{{turma['alunos'][n]['if'][disc['disciplina']]['falta']}}</td>
                                             {% if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 %}
-                                            <td class="nota_if" style="border-right: solid 4px black;">{{turma['alunos'][n]['if'][disc['disciplina']]['ac']}}</td>
+                                            <td class="nota_if" style="border-right: solid 4px black;">{{turma['alunos'][n]['if'][disc['disciplina']]['ac'] if turma['alunos'][n]['if'][disc['disciplina']]['ac'] != 0 else '-'}}</td>
                                             {% else %}
-                                            <td class="nota_if" style="border-right: solid 2px black;">{{turma['alunos'][n]['if'][disc['disciplina']]['ac']}}</td>
+                                            <td class="nota_if" style="border-right: solid 2px black;">{{turma['alunos'][n]['if'][disc['disciplina']]['ac'] if turma['alunos'][n]['if'][disc['disciplina']]['ac'] != 0 else '-'}}</td>
                                             {% endif %}
                                         {% else %}
                                         <td class="nota_if">-</td>
@@ -811,7 +811,7 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
                                     <th class="nota_verso">{{turma['alunos'][n]['freq_if']['freq_if']}}</th>
                                     {% endif %}
                                 <th class="nota_verso">{{turma['alunos'][n]['freq_if']['total_ac_if']}}</th>
-                                <td colspan="4" style="border-left:solid 2px black;border-right:solid 2px black;">{{turma['alunos'][n]['dificuldades']}}</td>
+                                <td colspan="4" class="dificuldade" style="border-left:solid 2px black;border-right:solid 2px black;">{{turma['alunos'][n]['dificuldade']}}</td>
                                 {% else %}
                                 <th style="border-left:solid 2px;">-</th>
                                 <th>-</th>

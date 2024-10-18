@@ -943,6 +943,7 @@ def render_conselho_bimestre():
         lista_conceito_final = []
         notas_conceito_final = {}
         conceito_final = False
+        situacao_final = None
 
         if turma['desc_duracao'] != 'Anual' and bimestre == '2' or bimestre == '4': # significa que é o último bimestre
             conceito_final = True
