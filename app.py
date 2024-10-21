@@ -2739,6 +2739,48 @@ def frequencia():
 
     return render_template('frequencia.jinja', listaTurmas=listaTurmas, data=hoje.strftime('%Y-%m-%d'), msg=msg)
 
+
+@app.route('/render_boletim', methods=['GET', 'POST'])
+def boletim():
+
+    num_classe = request.args.getlist('num_classe')[0]
+    ano = request.args.getlist('ano')[0]
+
+    # pegar todos os alunos ativos dessa turma
+    alunos = banco.executarConsulta('select ra_aluno, nome, situacao.descricao as situacao from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno inner join situacao on vinculo_alunos_turmas.situacao = situacao.id where num_classe = %s and situacao in (1, 6, 7, 8, 10) order by nome' % num_classe)
+
+    # pegar as disciplinas das turmas
+    disciplinas = banco.executarConsulta('select disciplinas.descricao as disc, notas.disciplina, disciplinas.classificacao from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina where num_classe = %s group by disciplina order by classificacao, disciplina' % num_classe)
+
+    # pegar a informação da classe
+    info_classe = banco.executarConsulta('select nome_turma, tipo_ensino.descricao as tipo_ensino from turma inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where num_classe = %s' % num_classe)[0]
+
+    # correr a lista dos alunos e buscar a nota
+    for aluno in alunos:
+        notas_aluno = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, aluno['ra_aluno']))
+
+        notas = {}
+        aux = {}
+        disc = notas_aluno[0]['codigo_disciplina']
+
+        for item in notas_aluno:
+            if item['codigo_disciplina'] == disc:
+                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+            else:
+                notas[disc] = aux
+                aux = {}
+                disc = item['codigo_disciplina']
+
+                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+
+        notas[disc] = aux
+        
+        aluno['notas'] = notas
+
+    return render_template('render_pdf/render_boletim.jinja', alunos=alunos, disciplinas=disciplinas, info_classe=info_classe)
+
+
+
 @app.route('/ponto', methods=['GET', 'POST'])
 def ponto():
 
