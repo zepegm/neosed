@@ -6,7 +6,8 @@ from waitress import serve
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista, getMes, hojePorExtenso, series_fund
+from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL
+from flask_socketio import SocketIO, emit
 import pandas as pd
 import os
 import csv
@@ -25,6 +26,7 @@ app=Flask(__name__)
 app.secret_key = "abc123"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'justasecretkeythatishouldputhere'
+socketio = SocketIO(app, async_mode='threading')
 
 
 #locale.setlocale(locale.LC_ALL, "")
@@ -1225,6 +1227,187 @@ def render_lista():
             print(ls_final)
 
             return render_template('render_pdf/render_ata_final.jinja', info=info, dados=ls_final, ls_keys=ls_keys)
+
+@app.route('/atualizar_lista_auto', methods=['GET', 'POST'])
+async def atualizar_lista_auto():
+
+    ano = request.json
+    print(ano)
+
+    browser = await launch(
+        handleSIGINT=False,
+        handleSIGTERM=False,
+        handleSIGHUP=False
+    )
+
+    page = await browser.newPage()
+    # Navigate the page to a URL
+    await page.goto('https://sed.educacao.sp.gov.br/')
+
+    # Set screen size
+    await page.setViewport({'width':1366, 'height':768})
+
+    await page.waitForSelector("#name")
+
+    # Type into login
+    await page.type('#name', 'rg490877795sp')
+    await page.type('#senha', 'BGarden@FF8')
+
+
+    await page.click("#botaoEntrar")
+
+    await page.waitForSelector("#decorMenuFilterTxt")
+
+
+    # pegar lista das turmas
+    turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as desc_duracao from turma inner join duracao on duracao.id = turma.duracao where ano = %s order by duracao, tipo_ensino, nome_turma' % ano)
+
+    for turma in turmas:  
+        
+        await page.goto('https://sed.educacao.sp.gov.br//NCA/RelacaoAlunosClasse/Index', {'waitUntil':'networkidle0'})
+
+        await page.type('#numeroClassePesq', str(turma['num_classe']))
+
+        await page.evaluate('''() => {
+            pesquisar();
+        }''')    
+
+        socketio.emit('update_info', '<b>Atualizando dados da %s - %s (%s)</b>' % (turma['nome_turma'], turma['desc_duracao'], ano))
+
+        await page.waitForSelector("#tabelaDadosClasse")
+
+        code = await page.evaluate('$("#tabelaDadosClasse").find("tbody").find("a").attr("onclick");')
+
+        await page.evaluate(code + ';')
+
+        await page.waitForSelector("#tabelaAlunosClasse")
+
+        tabela = await page.evaluate('''() => {
+            let table = $("#tabelaAlunosClasse").DataTable();
+
+            table.order( [1,'asc'] ).draw();
+
+            var columnNames = table.columns().header().toArray().map(header => $(header).text());
+
+            var dataDictList = table.rows().data().toArray().map(row => {
+                let rowData = {};
+                columnNames.forEach((colName, index) => {
+                    rowData[colName] = row[index];
+                });
+                return rowData;
+            });    
+
+            return Promise.resolve(dataDictList);
+        }''')
+
+        lista = []
+
+        for item in tabela:
+
+            nascimento = "'" + converterDataMySQL(item['Data de Nascimento']) + "'"
+            inicio_mat = "'" + converterDataMySQL(item['Data Início Matrícula']) + "'"
+            fim_mat = "'" + converterDataMySQL(item['Data Fim Matrícula']) + "'"
+
+
+            aluno = {'ra':int(item['RA']), 'digito':"'" + item['Dig. RA'] + "'", 'nome':"'" + item['Nome do Aluno'] + "'", 'nascimento':nascimento, 'matricula':inicio_mat, 'num_chamada':item['Nº'], 'serie':item['Série'], 'situacao':getSituacao(item['Situação']), 'fim_mat':fim_mat, 'num_classe':turma['num_classe']}
+            dados_extras = banco.executarConsulta("select ifnull(rg, '') as rg, ifnull(cpf, 'null') as cpf, sexo, ifnull(rm, 'null') as rm from aluno where ra = %s" % aluno['ra'])
+            
+            if len(dados_extras) > 0:
+                aluno['rg'] = "'" + dados_extras[0]['rg'] + "'"
+                aluno['cpf'] = dados_extras[0]['cpf']
+                aluno['sexo'] = "'" + dados_extras[0]['sexo'] + "'"
+                aluno['rm'] = dados_extras[0]['rm']
+            else:
+                aluno['rg'] = 'null'
+                aluno['cpf'] = 'null'
+                aluno['sexo'] = '-'
+                aluno['rm'] = 'null'
+
+            lista.append(aluno)
+                
+        
+        if (banco.importarDadosTurma(lista)):
+            socketio.emit('update_info', '<b>Dados da %s - %s <span class="text-success">atualizados com sucesso!</span></b>' % (turma['nome_turma'], turma['desc_duracao']))
+        else:
+            socketio.emit('update_info', '<b class="text-danger">Falha ao tentar atualizar dados da %s - %s!</b>' % (turma['nome_turma'], turma['desc_duracao']))
+
+
+    # repetir o mesmo processo, porém para if
+    turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as desc_duracao from turma_if inner join duracao on duracao.id = turma_if.duracao where ano = %s order by duracao, tipo_ensino, nome_turma' % ano)    
+
+    for turma in turmas:  
+        
+        await page.goto('https://sed.educacao.sp.gov.br//NCA/RelacaoAlunosClasse/Index', {'waitUntil':'networkidle0'})
+
+        await page.type('#numeroClassePesq', str(turma['num_classe']))
+
+        await page.evaluate('''() => {
+            pesquisar();
+        }''')    
+
+        socketio.emit('update_info', '<b>Atualizando dados da %s - %s (%s)</b>' % (turma['nome_turma'], turma['desc_duracao'], ano))
+
+        await page.waitForSelector("#tabelaDadosClasse")
+
+        code = await page.evaluate('$("#tabelaDadosClasse").find("tbody").find("a").attr("onclick");')
+
+        await page.evaluate(code + ';')
+
+        await page.waitForSelector("#tabelaAlunosClasse")
+
+        tabela = await page.evaluate('''() => {
+            let table = $("#tabelaAlunosClasse").DataTable();
+
+            table.order( [1,'asc'] ).draw();
+
+            var columnNames = table.columns().header().toArray().map(header => $(header).text());
+
+            var dataDictList = table.rows().data().toArray().map(row => {
+                let rowData = {};
+                columnNames.forEach((colName, index) => {
+                    rowData[colName] = row[index];
+                });
+                return rowData;
+            });    
+
+            return Promise.resolve(dataDictList);
+        }''')
+
+        lista = []
+
+        for item in tabela:
+
+            nascimento = "'" + converterDataMySQL(item['Data de Nascimento']) + "'"
+            inicio_mat = "'" + converterDataMySQL(item['Data Início Matrícula']) + "'"
+            fim_mat = "'" + converterDataMySQL(item['Data Fim Matrícula']) + "'"
+
+
+            aluno = {'ra':int(item['RA']), 'digito':"'" + item['Dig. RA'] + "'", 'nome':"'" + item['Nome do Aluno'] + "'", 'nascimento':nascimento, 'matricula':inicio_mat, 'num_chamada':item['Nº'], 'serie':"0", 'situacao':getSituacao(item['Situação']), 'fim_mat':fim_mat, 'num_classe':turma['num_classe']}
+            dados_extras = banco.executarConsulta("select ifnull(rg, '') as rg, ifnull(cpf, 'null') as cpf, sexo, ifnull(rm, 'null') as rm from aluno where ra = %s" % aluno['ra'])
+            
+            if len(dados_extras) > 0:
+                aluno['rg'] = "'" + dados_extras[0]['rg'] + "'"
+                aluno['cpf'] = dados_extras[0]['cpf']
+                aluno['sexo'] = "'" + dados_extras[0]['sexo'] + "'"
+                aluno['rm'] = dados_extras[0]['rm']
+            else:
+                aluno['rg'] = 'null'
+                aluno['cpf'] = 'null'
+                aluno['sexo'] = '-'
+                aluno['rm'] = 'null'
+
+            lista.append(aluno)
+                
+        
+        if (banco.importarDadosTurma(lista)):
+            socketio.emit('update_info', '<b>Dados da %s - %s <span class="text-success">atualizados com sucesso!</span></b>' % (turma['nome_turma'], turma['desc_duracao']))
+        else:
+            socketio.emit('update_info', '<b class="text-danger">Falha ao tentar atualizar dados da %s - %s!</b>' % (turma['nome_turma'], turma['desc_duracao']))
+
+    await page.screenshot({'path': 'static/images/etapas_navegacao/ETAPA 1.png'})
+
+    return jsonify(True)
+
 
 @app.route('/gerar_pdf', methods=['GET', 'POST'])
 async def gerar_pdf():

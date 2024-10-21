@@ -2,6 +2,10 @@ from datetime import datetime
 
 meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
 series_fund = {9:'6º ano', 10:'7º ano', 11:'8º ano', 12:'9º ano'}
+situacoes = {'ATIVO':1, 'BXTR':2, 'TRAN':2, 'REMA':3, 'NCFP':5, 'NCOM':5, 'CONCL':8, 'APROVADO':6, 'RETIDO FREQ.':10, 'RETIDO REND.':10, 'RECL':15, 'ENCERRADA':16}
+
+def getSituacao(descricao):
+    return situacoes[descricao]
 
 def converterLista(lista):
     texto = ""
@@ -43,3 +47,6 @@ def hojePorExtenso():
 
 def getAnoFund(serie):
     return series_fund[serie]
+
+def converterDataMySQL(data_original):
+    return data_original[-4:] + '-' + data_original[3:5] + '-' +  data_original[:2]

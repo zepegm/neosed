@@ -506,6 +506,8 @@
             <div class="col-sm-10 align-self-end">
                 <button id="btnNovaTurma" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nova_turma_modal">Cadastrar Nova Turma</button>
                 <button id="btnNovoItinerario" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#novo_itinerario_modal">Cadastrar Itinerário Formativo</button>
+                <button id="btnUpdateAutomatico" class="btn btn-secondary">Atualizar Listas Automaticamente</button>
+                <span id="status_auto_update"></span>
             </div>
             <div class="col-sm-1 align-self-center" style="text-align:right;">
                 <label for="cbAno">Ano:</label>
@@ -572,11 +574,32 @@
     <script src="{{ url_for('static', filename='jspdf/jspdf.umd.min.js') }}"></script>
     <script src="{{ url_for('static', filename='font-custom/BebasKai-normal.js') }}"></script>
     <script src="{{ url_for('static', filename='font-custom/GreatVibes-Regular-normal.js') }}"></script>  
-    <script src="{{ url_for('static', filename='js/gerador-pdf.js') }}"></script>  
+    <script src="{{ url_for('static', filename='js/gerador-pdf.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
     <script>
 
+        var socket = io();
+        socket.on('update_info', function(html) {
+            $("#status_auto_update").html(html)
+        }); 
 
 
+        $("#btnUpdateAutomatico").on('click', function() {
+            $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+            $("#status_auto_update").html('<b>Aguarde...</b>')
+
+            $.ajax({
+                type: "POST",
+                url: "atualizar_lista_auto",
+                contentType: "application/json",
+                data: JSON.stringify($("#cbAno").val()),
+                dataType: "json",
+                success: function(data) {
+                    $("#status_auto_update").html('<b>Processo concluído...</b>')
+                    $("#btnUpdateAutomatico").html('Atualizar Listas Automaticamente');
+                },
+            });            
+        });
 
 
         $("#cbAno").on('change', function() {
