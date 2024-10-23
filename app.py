@@ -16,6 +16,8 @@ from pyppeteer import launch
 import locale
 import math
 import calendar
+from jinja_try_catch import TryCatchExtension
+
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
 
@@ -27,6 +29,8 @@ app.secret_key = "abc123"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'justasecretkeythatishouldputhere'
 socketio = SocketIO(app, async_mode='threading')
+
+app.jinja_env.add_extension(TryCatchExtension)
 
 
 #locale.setlocale(locale.LC_ALL, "")
@@ -1699,6 +1703,24 @@ async def gerar_pdf():
         return jsonify(pdf_path)
 
 
+    elif info['destino'] == 12: # boletins
+
+        pdf_path = 'static/docs/boletins.pdf'
+            
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_boletim?num_classe=%s&ano=%s' % (info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)
+
+
 @app.route('/teste', methods=['GET', 'POST'])
 def teste():
 
@@ -2758,6 +2780,10 @@ def boletim():
     # correr a lista dos alunos e buscar a nota
     for aluno in alunos:
         notas_aluno = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, aluno['ra_aluno']))
+        notas_aluno_if = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma_if on turma_if.ano = %s and turma_if.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, aluno['ra_aluno']))
+
+        desc_if = banco.executarConsulta('select descricao from categoria_itinerario inner join turma_if on turma_if.categoria = categoria_itinerario.id where turma_if.num_classe = (select num_classe_if from vinculo_alunos_if where ra_aluno = %s and vinculo_alunos_if.situacao = 1 and year(matricula) = year(now()))' % aluno['ra_aluno'])
+        aluno['nome_if'] = desc_if[0]['descricao']
 
         notas = {}
         aux = {}
@@ -2776,6 +2802,50 @@ def boletim():
         notas[disc] = aux
         
         aluno['notas'] = notas
+
+        notas = []
+        aux = {}
+        disc = notas_aluno_if[0]['codigo_disciplina']
+
+        for item in notas_aluno_if:
+            if item['codigo_disciplina'] == disc:
+                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+
+                aux['desc'] = item['disc']
+                aux['cod'] = item['codigo_disciplina']
+
+            else:
+                notas.append(aux)
+           
+                aux = {}
+                disc = item['codigo_disciplina']
+
+                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+                aux['desc'] = item['disc']
+                aux['cod'] = item['codigo_disciplina']                     
+        
+        notas.append(aux)
+
+        aluno['notas_if'] = notas
+
+
+        # calcular frequência
+
+        sql = 'select disciplina, (select 100 - (sum(falta) - sum(ac)) * 100 / sum(aulas_dadas) from notas '
+        sql += 'inner join vinculo_prof_disc on vinculo_prof_disc.num_classe = notas.num_classe and vinculo_prof_disc.disciplina = notas.disciplina '
+        sql += 'where ra_aluno = %s and notas.disciplina = n_principal.disciplina and notas.num_classe in(%s, (select num_classe_if from vinculo_alunos_if where ra_aluno = %s and vinculo_alunos_if.situacao = 1 and year(matricula) = year(now())))) as freq from notas as n_principal where ra_aluno = %s group by disciplina' % (aluno['ra_aluno'], num_classe, aluno['ra_aluno'], aluno['ra_aluno'])
+
+        freq = banco.executarConsulta(sql)
+        freq_final = {}
+
+        for item in freq:
+            try:
+                freq_final[item['disciplina']] = round(item['freq'], 1)
+            except:
+                freq_final[item['disciplina']] = "-"
+
+        aluno['freq'] = freq_final
+
 
     return render_template('render_pdf/render_boletim.jinja', alunos=alunos, disciplinas=disciplinas, info_classe=info_classe)
 

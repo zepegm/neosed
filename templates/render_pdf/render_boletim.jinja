@@ -12,14 +12,16 @@
                 url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
             }
 
-            .tb_boletim {
+            .tb_boletim,
+            .tb_if {
                 font-family: 'Helvetica', 'sans-serif';
                 border: 2px solid;
                 border-color: black;
                 border-collapse: collapse;
-                table-layout: fixed;
+                /*table-layout: fixed;*/
                 text-align: center;
-                width: 680px;
+                width: 100%;
+                margin-top: 30px;
             }
 
             .titulo {
@@ -41,6 +43,61 @@
                 border: solid 1px black;
             }
 
+
+            .pagina {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: white;
+                /*position: absolute;
+                top:30px;*/
+                margin-left: 24px;
+                margin-top: -8px;
+                background-color: white;
+            }     
+
+            .left {
+                text-align: left;
+            }
+
+            .medium-size {
+                font-size: small;
+            }
+
+            .column {
+                width: 31px;
+            }
+
+            .red {
+                color:red;
+            }
+
+            .column-2 {
+                width: 50px;
+            }
+
+            .bg-primary {
+                background-color: lightgray;
+            }
+
+            .bg-secondary {
+                background-color: rgb(231, 231, 231);
+            }  
+
+            .if_head {
+                background-color: beige;
+                height: 30px;
+            }
+
+            .bg-primary-if {
+                background-color: rgb(252, 252, 185);
+            }
+
+            .bege {
+                background-color: beige;
+            } 
+
         </style>
     </head>
     <body>
@@ -48,7 +105,7 @@
             <div class="pagina">
                 <table class="tb_boletim">
                     <thead>
-                        <tr><td colspan="15" class="titulo"><span class="red">{{info_classe['nome_turma']}}</span> - {{info_classe['tipo_ensino']}}</td></tr>
+                        <tr><td colspan="15" class="titulo"><span class="red">{{info_classe['nome_turma']}}</span> - {{info_classe['tipo_ensino']}} - Boletim Escolar</td></tr>
                         <tr>
                             <td colspan="10" style="text-align: left;padding:10px;">
                                 <b>Nome: </b>{{aluno['nome']}}
@@ -57,26 +114,105 @@
                                 <b>Situação: </b>{{aluno['situacao']}}
                             </td>
                         <tr>
-                            <th class="border" rowspan="2">Disc.</th>
-                            <th class="border" colspan="3">1º Bimestre</th>
-                            <th class="border" colspan="3">2º Bimestre</th>
-                            <th class="border" colspan="3">3º Bimestre</th>
-                            <th class="border" colspan="3">4º Bimestre</th>
-                            <th class="border-basic" colspan="2">Conceito Final</th>
+                            <th class="border left bg-primary" rowspan="2">&nbsp;&nbsp;Disciplinas</th>
+                            <th class="border bg-primary" colspan="3">1º Bimestre</th>
+                            <th class="border bg-primary" colspan="3">2º Bimestre</th>
+                            <th class="border bg-primary" colspan="3">3º Bimestre</th>
+                            <th class="border bg-primary" colspan="3">4º Bimestre</th>
+                            <th class="border-basic bg-primary" colspan="2">Conceito Final</th>
                         </tr>
                         <tr>
                             {% for n in range(0,4) %}
-                            <td class="border-basic">N</td>
-                            <td class="border-basic">F</td>
-                            <td class="border">AC</td>
+                            <td class="border-basic column bg-secondary">N</td>
+                            <td class="border-basic column bg-secondary">F</td>
+                            <td class="border column bg-secondary">AC</td>
                             {% endfor %}
 
-                            <td class="border-basic">M</td>
-                            <td class="border-basic">Freq</td>
+                            <td class="border-basic column-2 bg-secondary">M</td>
+                            <td class="border-basic bg-secondary  ">Freq</td>
                         </tr>
                     </thead>
                     <tbody>
-    
+                        {% for disc in disciplinas %}
+                        <tr>
+                            <td class="border left medium-size">&nbsp;&nbsp;{{disc['disc']}}</td>
+                            {% for n in range(1,5) %}
+                                {% try %}
+                                <td class="border-basic {{'red' if aluno['notas'][disc['disciplina']][n]['n']|int < 5 else '' }}">{{aluno['notas'][disc['disciplina']][n]['n']}}</td>
+                                <td class="border-basic">{{aluno['notas'][disc['disciplina']][n]['f']}}</td>
+                                    {% if aluno['notas'][disc['disciplina']][n]['ac'] > 0 %}
+                                        <td class="border">{{aluno['notas'][disc['disciplina']][n]['ac']}}</td>
+                                    {% else %}
+                                        <td class="border">-</td>
+                                    {% endif %}
+
+                                {% catch %}
+                                <td class="border-basic">-</td><td class="border-basic">-</td><td class="border">-</td>
+                                {% endtry %}
+                            {% endfor %}
+                            <td class="border-basic">-</td>
+                            <td class="border {{'red' if aluno['freq'][disc['disciplina']]|float < 75 else '' }}">{{aluno['freq'][disc['disciplina']]}}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <table class="tb_if">
+                    <thead>
+                        <tr>
+                            <th class="if_head" colspan="15">Itineráfio Formativo - {{aluno['nome_if']}}</th>
+                        </tr>
+
+                        <tr>
+                            <th class="border left bg-primary-if" rowspan="2">&nbsp;&nbsp;Disciplinas</th>
+                            <th class="border bg-primary-if" colspan="3">1º Bimestre</th>
+                            <th class="border bg-primary-if" colspan="3">2º Bimestre</th>
+                            <th class="border bg-primary-if" colspan="3">3º Bimestre</th>
+                            <th class="border bg-primary-if" colspan="3">4º Bimestre</th>
+                            <th class="border-basic bg-primary-if" colspan="2">Conceito Final</th>
+                        </tr>
+
+                        <tr>
+                            {% for n in range(0,4) %}
+                            <td class="border-basic column bg-secondary bege">N</td>
+                            <td class="border-basic column bg-secondary bege">F</td>
+                            <td class="border column bg-secondary bege">AC</td>
+                            {% endfor %}
+
+                            <td class="border-basic column-2 bg-secondary bege">M</td>
+                            <td class="border-basic bg-secondary bege">Freq</td>
+                        </tr>
+
+                    </thead>
+                    <tbody>
+                        {% for nota in aluno['notas_if'] %}
+                            <tr>
+                                <td class="border left medium-size">&nbsp;&nbsp;{{nota['desc']}}</td>
+
+                                {% for n in range(1,5) %}
+                                    {% try %}
+                                    <td class="border-basic {{'red' if nota[n]['n']|int < 5 else '' }}">{{nota[n]['n']}}</td>
+                                    <td class="border-basic">{{nota[n]['f']}}</td>
+                                        {% if nota[n]['ac'] > 0 %}
+                                            <td class="border">{{nota[n]['ac']}}</td>
+                                        {% else %}
+                                            <td class="border">-</td>
+                                        {% endif %}
+
+                                    {% catch %}
+                                    <td class="border-basic">-</td><td class="border-basic">-</td><td class="border">-</td>
+                                    {% endtry %}
+                                {% endfor %}
+
+                                <td class="border-basic">-</td>
+                                {% try %}
+                                <td class="border {{'red' if aluno['freq'][nota['cod']]|float < 75 else '' }}">{{aluno['freq'][nota['cod']]}}%</td>
+                                {% catch %}
+                                <td class="border">-</td>
+                                {% endtry %}                                
+
+                            </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>

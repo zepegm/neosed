@@ -415,6 +415,29 @@
             $("#loading").remove();
         }
 
+        $("#btn_boletim").on('click', function() {
+            $("#btn_boletim").attr('disabled', '');
+            $("#btn_boletim").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+
+            const dataAtual = new Date();
+            const anoAtual = dataAtual.getFullYear();
+
+            info = {'destino':12, 'num_classe':$('#lista_geral .active').attr("data-id"), 'ano':anoAtual}
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $("#btn_boletim").html('Gerar Boletins');
+                $("#btn_boletim").removeAttr('disabled');
+                },
+            });            
+        });
+
         $("#btn_confirmar_importacao").on('click', function(e) {
             $("#form_upload_dif").submit();
         });
