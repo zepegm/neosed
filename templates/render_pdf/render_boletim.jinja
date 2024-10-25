@@ -168,7 +168,11 @@
                                 {% endif %}
                                 {% endtry %}
                             {% endfor %}
-                            <td class="border-basic {{'red' if aluno['final'][disc['disciplina']]|int < 5 and aluno['final'][disc['disciplina']] != 'null' else '' }}">{{aluno['final'][disc['disciplina']] if aluno['final'][disc['disciplina']] != 'null' else '-'}}</td>
+                                {% try %}
+                                <td class="border-basic {{'red' if aluno['final'][disc['disciplina']]|int < 5 and aluno['final'][disc['disciplina']] != 'null' else '' }}">{{aluno['final'][disc['disciplina']] if aluno['final'][disc['disciplina']] != 'null' else '-'}}</td>
+                                {% catch %}
+                                <td class="border-basic">-</td>
+                                {% endtry %}
                             {% try %}
                             <td class="border {{'red' if aluno['freq'][disc['disciplina']]|float < 75 else '' }}">{{aluno['freq'][disc['disciplina']]}}%</td>
                             {% catch %}
