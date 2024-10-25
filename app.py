@@ -2822,7 +2822,7 @@ def boletim():
 
                 aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
                 aux['desc'] = item['disc']
-                aux['cod'] = item['codigo_disciplina']                     
+                aux['cod'] = item['codigo_disciplina']
         
         notas.append(aux)
 
@@ -2830,19 +2830,32 @@ def boletim():
 
 
         # calcular frequência
+  
 
-        sql = 'select disciplina, (select 100 - (sum(falta) - sum(ac)) * 100 / sum(aulas_dadas) from notas '
-        sql += 'inner join vinculo_prof_disc on vinculo_prof_disc.num_classe = notas.num_classe and vinculo_prof_disc.disciplina = notas.disciplina '
-        sql += 'where ra_aluno = %s and notas.disciplina = n_principal.disciplina and notas.num_classe in(%s, (select num_classe_if from vinculo_alunos_if where ra_aluno = %s and vinculo_alunos_if.situacao = 1 and year(matricula) = year(now())))) as freq from notas as n_principal where ra_aluno = %s group by disciplina' % (aluno['ra_aluno'], num_classe, aluno['ra_aluno'], aluno['ra_aluno'])
+        sql = 'select disciplina, sum(falta) - sum(ac) as faltas from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = %s and (turma.ano = %s or turma_if.ano = %s) group by disciplina ' % (aluno['ra_aluno'], ano, ano)
 
-        freq = banco.executarConsulta(sql)
+        freq_disciplinas = banco.executarConsulta(sql)
+        
         freq_final = {}
 
-        for item in freq:
-            try:
-                freq_final[item['disciplina']] = round(item['freq'], 1)
-            except:
-                freq_final[item['disciplina']] = "-"
+        for disc in freq_disciplinas:
+            sql = 'select '
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 1 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 1 and (turma.ano = %s or turma_if.ano = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 2 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 2 and (turma.ano = %s or turma_if.ano = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 3 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 3 and (turma.ano = %s or turma_if.ano = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 4 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 4 and (turma.ano = %s or turma_if.ano = %s))), 0) as aulas_dadas ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
+
+            aulas_dadas = banco.executarConsulta(sql)[0]['aulas_dadas']
+            freq_calc = 100 - (disc['faltas'] * 100 / aulas_dadas)
+            freq_final[disc['disciplina']] = round(freq_calc, 1)
+
+            if aluno['ra_aluno'] == 110174396:
+                print(aulas_dadas)
+                print(disc['faltas'])
+                print(disc['disciplina'])
+
+        
+
 
         aluno['freq'] = freq_final
 
