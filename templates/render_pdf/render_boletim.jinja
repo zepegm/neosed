@@ -98,6 +98,20 @@
                 background-color: beige;
             } 
 
+            .Aprovado {
+                font-weight: bold;
+                color:rgb(41, 116, 255);
+            }
+
+            .Retido {
+                font-weight: bold;
+                color:red;                
+            }
+
+            .row-disc {
+                height: 25px;
+            }
+
         </style>
     </head>
     <body>
@@ -105,13 +119,13 @@
             <div class="pagina">
                 <table class="tb_boletim">
                     <thead>
-                        <tr><td colspan="15" class="titulo"><span class="red">{{info_classe['nome_turma']}}</span> - {{info_classe['tipo_ensino']}} - Boletim Escolar</td></tr>
+                        <tr><td colspan="15" class="titulo"><span class="red">{{info_classe['nome_turma']}}</span> - {{info_classe['tipo_ensino']}}{{desc_duracao}} - Boletim Escolar - <span class="red">{{ano}}</span></td></tr>
                         <tr>
                             <td colspan="10" style="text-align: left;padding:10px;">
                                 <b>Nome: </b>{{aluno['nome']}}
                             </td>
                             <td colspan="5">
-                                <b>Situação: </b>{{aluno['situacao']}}
+                                <b>Situação: </b><span class="{{aluno['situacao']}}">{{aluno['situacao']}}</span>
                             </td>
                         <tr>
                             <th class="border left bg-primary" rowspan="2">&nbsp;&nbsp;Disciplinas</th>
@@ -135,7 +149,7 @@
                     <tbody>
                         {% for disc in disciplinas %}
                         <tr>
-                            <td class="border left medium-size">&nbsp;&nbsp;{{disc['disc']}}</td>
+                            <td class="border left medium-size row-disc">&nbsp;&nbsp;{{disc['disc']}}</td>
                             {% for n in range(1,5) %}
                                 {% try %}
                                 <td class="border-basic {{'red' if aluno['notas'][disc['disciplina']][n]['n']|int < 5 else '' }}">{{aluno['notas'][disc['disciplina']][n]['n']}}</td>
@@ -147,15 +161,25 @@
                                     {% endif %}
 
                                 {% catch %}
+                                {% if (duracao == 3 and n in (1, 2)) or (duracao == 2 and n in (3, 4)) %}
+                                <td class="border-basic bg-primary"></td><td class="border-basic bg-primary"></td><td class="border bg-primary"></td>
+                                {% else %}
                                 <td class="border-basic">-</td><td class="border-basic">-</td><td class="border">-</td>
+                                {% endif %}
                                 {% endtry %}
                             {% endfor %}
-                            <td class="border-basic">-</td>
+                            <td class="border-basic {{'red' if aluno['final'][disc['disciplina']]|int < 5 and aluno['final'][disc['disciplina']] != 'null' else '' }}">{{aluno['final'][disc['disciplina']] if aluno['final'][disc['disciplina']] != 'null' else '-'}}</td>
+                            {% try %}
                             <td class="border {{'red' if aluno['freq'][disc['disciplina']]|float < 75 else '' }}">{{aluno['freq'][disc['disciplina']]}}%</td>
+                            {% catch %}
+                            <td class="border">-</td>
+                            {% endtry %}
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+
+                {% if aluno['nome_if'] != None %}
 
                 <table class="tb_if">
                     <thead>
@@ -187,7 +211,7 @@
                     <tbody>
                         {% for nota in aluno['notas_if'] %}
                             <tr>
-                                <td class="border left medium-size">&nbsp;&nbsp;{{nota['desc']}}</td>
+                                <td class="border left medium-size row-disc">&nbsp;&nbsp;{{nota['desc']}}</td>
 
                                 {% for n in range(1,5) %}
                                     {% try %}
@@ -200,11 +224,17 @@
                                         {% endif %}
 
                                     {% catch %}
+
+                                    {% if (duracao == 3 and n in (1, 2)) or (duracao == 2 and n in (3, 4)) %}
+                                    <td class="border-basic bg-primary"></td><td class="border-basic bg-primary"></td><td class="border bg-primary"></td>
+                                    {% else %}
                                     <td class="border-basic">-</td><td class="border-basic">-</td><td class="border">-</td>
+                                    {% endif %}
+
                                     {% endtry %}
                                 {% endfor %}
 
-                                <td class="border-basic">-</td>
+                                <td class="border-basic {{'red' if aluno['final'][nota['cod']]|int < 5 and aluno['final'][nota['cod']] != 'null' else '' }}">{{aluno['final'][nota['cod']] if aluno['final'][nota['cod']] != 'null' else '-'}}</td>
                                 {% try %}
                                 <td class="border {{'red' if aluno['freq'][nota['cod']]|float < 75 else '' }}">{{aluno['freq'][nota['cod']]}}%</td>
                                 {% catch %}
@@ -215,6 +245,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% endif %}
             </div>
         {% endfor %}
     </body>

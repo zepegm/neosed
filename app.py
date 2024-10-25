@@ -1177,6 +1177,7 @@ def render_lista():
                 cpf = '&nbsp;'
             sexo = request.args.getlist('sexo')[0]
             nome = request.args.getlist('nome')[0]
+            nome_social = request.args.getlist('nome_social')[0]
             pai = request.args.getlist('pai')[0]
             mae = request.args.getlist('mae')[0]
             cidade = request.args.getlist('cidade')[0]
@@ -1200,7 +1201,7 @@ def render_lista():
             # teste in http://localhost/render_lista?tipo=ficha_mat&num_classe=0&rm=5610&ra=109.789.948-2&rg=68.645.560-5&cpf=598.165.948-38&sexo=F&nome=GABRIELLA+GUIMAR%C3%83ES+PRADO&pai=DOUGLAS+PEREIRA+PRADO&mae=FERNANDA+DE+ALMEIDA+GUIMARAES&cidade=GUARATINGUET%C3%81&estado=SP&nascimento=29/07/2006&endereco=Rua+Dois,+65,+Compl.A,+Pit%C3%A9u,+Cachoeira+Paulista&telefone=(12)+99251-4094&email=leticiavictoria9035@gmail.com&serie=9%C2%BA+ANO&fund=X&medio=
             print(ano)
 
-            return render_template('render_pdf/render_ficha_matricula.jinja', rm=rm, ra=ra, rg=rg, cpf=cpf, cor='white', sexo=sexo, nome=nome, pai=pai, mae=mae, cidade=cidade, estado=estado, nascimento=nascimento, endereco=endereco, telefone=telefone, email=email, serie=serie_desc, fund=fund, medio=medio, hoje=hojePorExtenso(), serie_simples=serie_simples, ano=ano)
+            return render_template('render_pdf/render_ficha_matricula.jinja', rm=rm, ra=ra, rg=rg, cpf=cpf, cor='white', sexo=sexo, nome=nome, nome_social=nome_social, pai=pai, mae=mae, cidade=cidade, estado=estado, nascimento=nascimento, endereco=endereco, telefone=telefone, email=email, serie=serie_desc, fund=fund, medio=medio, hoje=hojePorExtenso(), serie_simples=serie_simples, ano=ano)
         
         elif tipo == "ata_final":
 
@@ -1608,14 +1609,20 @@ async def gerar_pdf():
             dados = await page.evaluate("document.getElementById('sedUiModalWrapper_1title').textContent")
             lista = dados.split('-')
 
-            nome = lista[0][16:].strip()
+            nome = await page.evaluate("document.getElementById('NomeAluno').value")
+            nome_social = await page.evaluate("document.getElementById('NomeSocial').value")
             ra = lista[1][7:10] + '.' + lista[1][10:13] + '.' + lista[1][13:16] + '-' + lista[2][0:1]
             data_nascimento = lista[3][18:]
             cidade_nascimento = await page.evaluate("document.getElementById('CidadeNascimento').value")
             uf_nascimento = await page.evaluate("document.getElementById('UFNascimento').value")
             rg = await page.evaluate("document.getElementById('RgAluno').value") + '-' + await page.evaluate("document.getElementById('DigRgAluno').value")
+            uf_rg = await page.evaluate("document.getElementById('sgUfRg').value")
+            print(uf_rg)
             if rg != '':
-                rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
+                if uf_rg == 'RJ':
+                    rg = rg[0:2] + '.' + rg[2:5] + '.' + rg[5:] + '/' + uf_rg
+                else:
+                    rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
             else:
                 rg = '-'
             cpf = await page.evaluate("document.getElementById('CpfAluno').value")
@@ -1648,7 +1655,7 @@ async def gerar_pdf():
             # montar url para inserir os dados no render
             url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0'
             url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], ra, rg, cpf, sexo)
-            url += '&nome=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
+            url += '&nome=%s&nome_social=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), nome_social.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
             url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s&ano=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'], info['ano'])
 
             print(url)
@@ -2768,6 +2775,15 @@ def boletim():
     num_classe = request.args.getlist('num_classe')[0]
     ano = request.args.getlist('ano')[0]
 
+    duracao = banco.executarConsultaVetor('select duracao from turma where num_classe = %s' % num_classe)[0]
+
+    if duracao == 1:
+        desc_duracao = ''
+    elif duracao == 2:
+        desc_duracao = ' - <span class="red">1º Semestre</span>'
+    else:
+        desc_duracao = ' - <span class="red">2º Semestre</span>'
+
     # pegar todos os alunos ativos dessa turma
     alunos = banco.executarConsulta('select ra_aluno, nome, situacao.descricao as situacao from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno inner join situacao on vinculo_alunos_turmas.situacao = situacao.id where num_classe = %s and situacao in (1, 6, 7, 8, 10) order by nome' % num_classe)
 
@@ -2779,88 +2795,94 @@ def boletim():
 
     # correr a lista dos alunos e buscar a nota
     for aluno in alunos:
-        notas_aluno = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, aluno['ra_aluno']))
-        notas_aluno_if = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma_if on turma_if.ano = %s and turma_if.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, aluno['ra_aluno']))
+        notas_aluno = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.duracao = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
+        notas_aluno_if = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma_if on turma_if.ano = %s and turma_if.duracao = %s and turma_if.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
 
-        desc_if = banco.executarConsulta('select descricao from categoria_itinerario inner join turma_if on turma_if.categoria = categoria_itinerario.id where turma_if.num_classe = (select num_classe_if from vinculo_alunos_if where ra_aluno = %s and vinculo_alunos_if.situacao = 1 and year(matricula) = year(now()))' % aluno['ra_aluno'])
-        aluno['nome_if'] = desc_if[0]['descricao']
+        desc_if = banco.executarConsulta('select descricao from categoria_itinerario inner join turma_if on turma_if.categoria = categoria_itinerario.id where turma_if.duracao = %s and turma_if.num_classe in (select num_classe_if from vinculo_alunos_if where ra_aluno = %s and year(matricula) = %s)' % (duracao, aluno['ra_aluno'], ano))
+        
+        if len(desc_if) > 0:
+            aluno['nome_if'] = desc_if[0]['descricao']
+        else:
+            aluno['nome_if'] = None
 
         notas = {}
         aux = {}
-        disc = notas_aluno[0]['codigo_disciplina']
 
-        for item in notas_aluno:
-            if item['codigo_disciplina'] == disc:
-                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
-            else:
-                notas[disc] = aux
-                aux = {}
-                disc = item['codigo_disciplina']
+        if len(notas_aluno) > 0:
+            disc = notas_aluno[0]['codigo_disciplina']
 
-                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+            for item in notas_aluno:
+                if item['codigo_disciplina'] == disc:
+                    aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+                else:
+                    notas[disc] = aux
+                    aux = {}
+                    disc = item['codigo_disciplina']
 
-        notas[disc] = aux
-        
-        aluno['notas'] = notas
+                    aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+
+            notas[disc] = aux
+            
+            aluno['notas'] = notas
 
         notas = []
         aux = {}
-        disc = notas_aluno_if[0]['codigo_disciplina']
 
-        for item in notas_aluno_if:
-            if item['codigo_disciplina'] == disc:
-                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+        if len(notas_aluno_if) > 0:
 
-                aux['desc'] = item['disc']
-                aux['cod'] = item['codigo_disciplina']
+            disc = notas_aluno_if[0]['codigo_disciplina']
 
-            else:
-                notas.append(aux)
-           
-                aux = {}
-                disc = item['codigo_disciplina']
+            for item in notas_aluno_if:
+                if item['codigo_disciplina'] == disc:
+                    aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
 
-                aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
-                aux['desc'] = item['disc']
-                aux['cod'] = item['codigo_disciplina']
-        
-        notas.append(aux)
+                    aux['desc'] = item['disc']
+                    aux['cod'] = item['codigo_disciplina']
 
-        aluno['notas_if'] = notas
+                else:
+                    notas.append(aux)
+            
+                    aux = {}
+                    disc = item['codigo_disciplina']
+
+                    aux[item['bimestre']] = {'n':item['nota'], 'f':item['falta'], 'ac':item['ac']}
+                    aux['desc'] = item['disc']
+                    aux['cod'] = item['codigo_disciplina']
+            
+            notas.append(aux)
+
+            aluno['notas_if'] = notas
 
 
         # calcular frequência
   
 
-        sql = 'select disciplina, sum(falta) - sum(ac) as faltas from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = %s and (turma.ano = %s or turma_if.ano = %s) group by disciplina ' % (aluno['ra_aluno'], ano, ano)
+        sql = "select notas.disciplina, sum(falta) - sum(ac) as faltas, ifnull(media, 'null') as media from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe left join conceito_final on conceito_final.num_classe = notas.num_classe and conceito_final.disciplina = notas.disciplina and conceito_final.ra_aluno = notas.ra_aluno where notas.ra_aluno = %s and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s) group by notas.disciplina, notas.num_classe" % (aluno['ra_aluno'], ano, ano, duracao, duracao)
 
         freq_disciplinas = banco.executarConsulta(sql)
         
         freq_final = {}
+        conceito_final = {}
 
         for disc in freq_disciplinas:
             sql = 'select '
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 1 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 1 and (turma.ano = %s or turma_if.ano = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 2 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 2 and (turma.ano = %s or turma_if.ano = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 3 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 3 and (turma.ano = %s or turma_if.ano = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 4 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 4 and (turma.ano = %s or turma_if.ano = %s))), 0) as aulas_dadas ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 1 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 1 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 2 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 2 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 3 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 3 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 4 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 4 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as aulas_dadas ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
 
             aulas_dadas = banco.executarConsulta(sql)[0]['aulas_dadas']
             freq_calc = 100 - (disc['faltas'] * 100 / aulas_dadas)
             freq_final[disc['disciplina']] = round(freq_calc, 1)
 
-            if aluno['ra_aluno'] == 110174396:
-                print(aulas_dadas)
-                print(disc['faltas'])
-                print(disc['disciplina'])
-
-        
+            conceito_final[disc['disciplina']] = disc['media']
 
 
         aluno['freq'] = freq_final
+        aluno['final'] = conceito_final
 
 
-    return render_template('render_pdf/render_boletim.jinja', alunos=alunos, disciplinas=disciplinas, info_classe=info_classe)
+    return render_template('render_pdf/render_boletim.jinja', alunos=alunos, disciplinas=disciplinas, info_classe=info_classe, duracao=duracao, ano=ano, desc_duracao=desc_duracao)
 
 
 

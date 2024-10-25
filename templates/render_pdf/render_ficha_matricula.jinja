@@ -16,7 +16,7 @@
                 height: 1057px;
                 border-width: 2px;
                 border-style: solid;
-                border-color: {{cor}};
+                border-color: white;
                 position: absolute;
                 top:30px;
                 left: 30px;
@@ -42,8 +42,9 @@
             #tb_filiacao,
             #tb_nasc,
             #tb_dados_pessoais,
-            #tb_matricula {
-                margin-top: 20px;
+            #tb_matricula,
+            #tb_nome_social {
+                margin-top: 15px;
                 font-family: Arial, Helvetica, sans-serif;
                 border-collapse: collapse;
                 width: 100%;                
@@ -224,6 +225,13 @@
                 </tr>
             </table>
 
+            <table id="tb_nome_social">
+                <tr>
+                    <td class="border-2px" rowspan="2" style="font-size:11px; width:62px; height: 31px; text-align: center; !important;">NOME SOCIAL</td>
+                    <td class="border-2px pl-10" rowspan="2" style="text-align: left;">{{nome_social}}</td>
+                </tr>            
+            </table>
+
             <table id="tb_nasc">
                 <tr>
                      <td class="text-center border-right-2px" rowspan="2" style="width:62px">NASC.</td>
@@ -302,7 +310,7 @@
                     <td class="pt-20 pr-10 pb-5 border-left-2px border-right-2px border-bottom-2px" style="font-size:13px; text-align:right;" colspan="4">Canas, {{hoje}}</td>
                 </tr>
                 <tr>
-                    <td class="text-center border-left-2px border-right-2px border-bottom" colspan="3" style="height: 52px;">MOVIMENTAÇÃO DO ALUNO</td>
+                    <td class="text-center border-left-2px border-right-2px border-bottom" colspan="3" style="height: 49px;">MOVIMENTAÇÃO DO ALUNO</td>
                     <td class="text-center border-right-2px border-bottom">RESPONSÁVEL</td>
                 </tr>
                 <tr>
@@ -318,7 +326,7 @@
                     <td class="text-center border-right-2px border-bottom" style="font-size:13px;">&nbsp;</td>
                 </tr>
 
-                {% for i in range(9) %}
+                {% for i in range(8) %}
                 <tr>
                     <td class="text-center border-left-2px border-right border-bottom" style="font-size:13px; width:80px">&nbsp;</td>
                     <td class="text-center border-right border-bottom" style="font-size:13px; width:90px">&nbsp;</td>
