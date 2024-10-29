@@ -2857,8 +2857,8 @@ def boletim():
         # calcular frequência
   
 
-        sql = "select notas.disciplina, sum(falta) - sum(ac) as faltas, ifnull(media, 'null') as media from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe left join conceito_final on conceito_final.num_classe = notas.num_classe and conceito_final.disciplina = notas.disciplina and conceito_final.ra_aluno = notas.ra_aluno where notas.ra_aluno = %s and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s) group by notas.disciplina, notas.num_classe" % (aluno['ra_aluno'], ano, ano, duracao, duracao)
-
+        sql = 'select disciplina, sum(falta) - sum(ac) as faltas from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = %s and (turma.ano = %s or turma_if.ano = %s) group by disciplina ' % (aluno['ra_aluno'], ano, ano)
+        #print(sql)
         freq_disciplinas = banco.executarConsulta(sql)
         
         freq_final = {}
@@ -2875,7 +2875,11 @@ def boletim():
             freq_calc = 100 - (disc['faltas'] * 100 / aulas_dadas)
             freq_final[disc['disciplina']] = round(freq_calc, 1)
 
-            conceito_final[disc['disciplina']] = disc['media']
+            media = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma on turma.num_classe = conceito_final.num_classe and turma.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))
+            if len(media) > 0:
+                conceito_final[disc['disciplina']] = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma on turma.num_classe = conceito_final.num_classe and turma.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))[0]
+            else:
+                conceito_final[disc['disciplina']] = 'null'
 
 
         aluno['freq'] = freq_final
