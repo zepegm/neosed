@@ -571,6 +571,7 @@
     <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> 
     <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='datatable/datatables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/diacritics-sort.js') }}"></script>
     <script src="{{ url_for('static', filename='jspdf/jspdf.umd.min.js') }}"></script>
     <script src="{{ url_for('static', filename='font-custom/BebasKai-normal.js') }}"></script>
     <script src="{{ url_for('static', filename='font-custom/GreatVibes-Regular-normal.js') }}"></script>  
@@ -753,7 +754,10 @@
                                     "previous": "Anterior",
                                     "next": "Próximo"
                                 }
-                            }                    
+                            },
+                            columnDefs: [
+                                { targets: 4, type: 'diacritics-neutralise' }
+                            ]                    
                     }); 
 
 
@@ -834,7 +838,10 @@
                                     "previous": "Anterior",
                                     "next": "Próximo"
                                 }
-                            }                    
+                            },
+                            columnDefs: [
+                                { targets: 4, type: 'diacritics-neutralise' }
+                            ]                    
                         });   
 
                     if (response['certificado']) {

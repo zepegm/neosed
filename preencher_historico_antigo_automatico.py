@@ -4,7 +4,9 @@ from MySQL import db
 from excel import xls
 import html_to_json
 
-ra_aluno = 105251764
+ra_aluno = 107911715
+
+rows_notas = [{'disc':'ARTE', 'linha':18}, {'disc':'BIOLOGIA', 'linha':21}, {'disc':'ED. FISICA', 'linha':19}, {'disc':'FILOSOFIA', 'linha':26}, {'disc':'FISICA', 'linha':22}, {'disc':'GEOGRAFIA', 'linha':25}, {'disc':'HISTORIA', 'linha':24}, {'disc':'L.ING', 'linha':17}, {'disc':'L. EST. INGLES', 'linha':17}, {'disc':'LIN PORT LIT', 'linha':16}, {'disc':'LING. PORTUGUESA', 'linha':16}, {'disc':'MATEMATICA', 'linha':20}, {'disc':'PROJETO DE VIDA', 'linha':29}, {'disc':'QUIMICA', 'linha':23}, {'disc':'SOCIOLOGIA', 'linha':27}, {'disc':'TEC', 'linha':30}]
 
 planilha = xls() # formar conexão com a planilha
 banco = db({'host':"localhost",    # your host, usually localhost
@@ -15,7 +17,7 @@ banco = db({'host':"localhost",    # your host, usually localhost
 
 
 async def main():
-    browser = await launch()
+    browser = await launch({'headless': False})
     page = await browser.newPage()
     await page.setViewport({"width": 1366, "height": 768})
 
@@ -73,13 +75,13 @@ async def main():
     rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
 
 
-    planilha.setValCell('D14', nome)
-    planilha.setValCell('N14', rg)
-    planilha.setValCell('R14', ra)
-    planilha.setValCell('F15', cidade_nascimento)
-    planilha.setValCell('N15', uf_nascimento)
-    planilha.setValCell('E16', alt)
-    planilha.setValCell('R15', 'BRASIL')
+    planilha.setValCell('E10', nome)
+    planilha.setValCell('O10', rg)
+    planilha.setValCell('S10', ra)
+    planilha.setValCell('G11', cidade_nascimento)
+    planilha.setValCell('O11', uf_nascimento)
+    planilha.setValCell('F12', alt)
+    planilha.setValCell('S11', 'BRASIL')
 
     #await page.waitFor(2000)
 
@@ -93,7 +95,7 @@ async def main():
 
     tamanho_tabela = int(await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data().length"))
 
-
+    anos = []
 
     for i in range(tamanho_tabela):
         tipo_ensino = int(await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][8]" % i))
@@ -106,18 +108,21 @@ async def main():
                 escola = escola.replace('ALICE VILELA GALVAO PROFA', 'EE PROFª ALICE VILELA GALVÃO')
                 serie = int(await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][10]" % i))
                 ano = await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][0]" % i)
+                turma = await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][11]" % i)
                 municipio = await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][2]" % i)
 
                 match(serie):
                     case 1:
-                        coluna = 'O'
-                        linha = 44
-                    case 2:
-                        coluna = 'Q'
+                        coluna = 'P'
                         linha = 45
-                    case 3:
-                        coluna = 'S'
+                    case 2:
+                        coluna = 'R'
                         linha = 46
+                    case 3:
+                        coluna = 'T'
+                        linha = 47
+
+                anos.append({'ano':ano, 'turma':turma, 'coluna':coluna})                        
 
                 match(tipo_ensino):
                     case 2:
@@ -125,11 +130,11 @@ async def main():
                     case 5:
                         desc_serie = str(serie) + 'º Termo'
 
-                planilha.setValCell(coluna + '18', ano)
-                planilha.setValCell(coluna + '19', desc_serie)
-                planilha.setValCell('H%s' % linha, escola)
-                planilha.setValCell('P%s' % linha, municipio)
-                planilha.setValCell('T%s' % linha, 'SP')
+                planilha.setValCell(coluna + '14', ano)
+                planilha.setValCell(coluna + '15', desc_serie)
+                planilha.setValCell('I%s' % linha, escola)
+                planilha.setValCell('Q%s' % linha, municipio)
+                planilha.setValCell('U%s' % linha, 'SP')
 
         elif tipo_ensino == 14:
             status = await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][17]" % i)
@@ -139,14 +144,85 @@ async def main():
                     ano = await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][0]" % i)
                     escola = await page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][6]" % i)
                     escola = escola.replace("ALICE VILELA GALVAO PROFA EMEF", 'EMEF PROFª ALICE VILELA GALVÃO')
-                    planilha.setValCell('F39', ano)
-                    planilha.setValCell('H39', escola)
+                    planilha.setValCell('G43', ano)
+                    planilha.setValCell('I43', escola)
 
 
     print('ETAPA 2 Concluída! Dados iniciais do aluno puxados com sucesso!')
     
     await page.screenshot({'path': 'static/images/etapas_navegacao/ETAPA 2.png'})
     
+
+    await page.goto('https://sed.educacao.sp.gov.br/ataresultadofinal/Index', {'waitUntil': 'networkidle0' })
+
+    for ano in anos:
+        await page.evaluate('''() => {
+            $("#filt-anoLetivo").val('');
+        }''')
+
+        await page.type('#filt-anoLetivo', ano['ano'])
+
+        await page.keyboard.press("Tab")
+
+        await page.waitForFunction("document.querySelectorAll('.filter-option-inner-inner')[4].innerText == 'ALICE VILELA GALVAO PROFA - 13134'")
+
+        #await page.waitForFunction('document.querySelectorAll("#filt-tipoEnsino option")[8].innerText == "ENSINO MÉDIO"')
+
+        await page.waitForFunction('document.querySelectorAll(".blockUI").length == 0')
+
+        await page.click("#filt-grupotipoEnsino button")
+
+        await page.keyboard.type('ENSINO M')
+
+        await page.keyboard.down('ArrowDown')
+
+        await page.keyboard.press('Enter')
+
+        await page.waitForFunction('document.querySelectorAll(".blockUI").length == 0')
+
+        await page.click("#filt-grupoturma button")
+
+        await page.keyboard.type(ano['turma'])
+
+        await page.keyboard.press('Enter')
+
+        await page.waitForFunction('document.querySelectorAll(".blockUI").length == 0')
+
+        await page.click("#btnPesquisar")
+
+        await page.waitForFunction('document.querySelectorAll(".blockUI").length == 0')
+        
+        tabela = await page.evaluate('''() => {
+            let table = $("#tabela").DataTable();
+
+            table.order( [1,'asc'] ).draw();
+
+            var columnNames = table.columns().header().toArray().map(header => $(header).text());
+
+            var dataDictList = table.rows().data().toArray().map(row => {
+                let rowData = {};
+                columnNames.forEach((colName, index) => {
+                    rowData[colName] = row[index];
+                });
+                return rowData;
+            });    
+
+            return Promise.resolve(dataDictList);
+        }''')
+
+        for item in tabela:
+            if int(item['RA']) == ra_aluno:
+                for disc in rows_notas:
+                    try:
+                        planilha.setValCell(ano['coluna'] + str(disc['linha']), item[disc['disc']])
+                    except:
+                        print(item)
+
+
+        print('ETAPA 3 Concluída! Dados iniciais do aluno puxados com sucesso!')
+        print(ano['turma'])
+    
+        await page.screenshot({'path': 'static/images/etapas_navegacao/ETAPA 3.png'})        
 
 
     
