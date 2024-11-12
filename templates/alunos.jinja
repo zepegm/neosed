@@ -90,6 +90,49 @@
       {% include 'menu.jinja' %}
     {% endblock %} 
 
+    <div class="modal fade" id="modal_transf" tabindex="-1" aria-labelledby="modal_painel_headLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_painel_headLabel">Painel de Transferência</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-9 align-self-end">
+                            <label for="cb_tipo_declaracao">Tipo:</label>
+                            <select class="form-select" id="cb_tipo_declaracao">
+                                <option value="1">Declaração Simples</option>
+                                <option value="2">Desistência de Vaga - Ensino Profissionalizante (menor de idade)</option>
+                                <option value="3">Desistência de Vaga - Ensino Profissionalizante (maior de idade)</option>
+                                <option value="4">Solicitação de Baixa (menor de idade)</option>
+                                <option value="5">Solicitação de Baixa (maior de idade)</option>
+                            </select>                        
+                        </div>
+                        <div class="col-sm-3 align-self-end d-flex">
+                            <button class="btn btn-danger" id="btn_confirmar_preview_transf">Confirmar</button>
+                        </div>
+                    </div>
+
+                    <div class="row" id="painel_dados_resp" hidden>
+                        <div class="col-sm-9 pt-2">
+                            <label for="txt_nome_resp">Nome do Responsável:</label>
+                            <input class="form-control" type="input" id="txt_nome_resp">
+                        </div>
+                        <div class="col-sm-9 pt-2">
+                            <label for="txt_rg_resp">RG do Responsável:</label>
+                            <input class="form-control" type="input" id="txt_rg_resp">
+                        </div>                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <!-- <button id="btn-importar_if" class="btn btn-warning">Importar Alunos</button> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal_detalhe_aluno" tabindex="-1" aria-labelledby="modal_lista_turma_ifLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -142,7 +185,7 @@
                         <div class="col-sm-12">
                             <button id="btn_declaracao_matricula" class="btn btn-primary" hidden>Declaração de Matrícula</button>
                             <button id="btn_declaracao_matricula_freq" class="btn btn-success" hidden>Declaração de Matrícula com Freq (%)</button>
-                            <button id="btn_declaracao_transferencia" class="btn btn-danger" hidden>Declaração de Transferência</button>
+                            <button id="btn_declaracao_transferencia" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal_transf" hidden>Declaração de Transferência</button>
                         </div>
                     </div>
                 </div>
@@ -291,8 +334,18 @@
             declaracaoMatricula("{{url_for('static', filename='images/brasao.png')}}", $("#txtnome").text(), $("#txtrg").text(), $("#txtcpf").text(), $("#txtra").text(), $("#txtnasc").text(), $("#txtsexo").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text());
         });
 
+        $("#cb_tipo_declaracao").on('change', function() {
+            let val = $("#cb_tipo_declaracao").val();
+
+            if (val == 2 || val == 4) {
+                $("#painel_dados_resp").removeAttr('hidden');
+            } else {
+                $("#painel_dados_resp").attr('hidden', '');
+            }
+        });
+
         $("#btn_declaracao_transferencia").on('click', function(e) {
-            nome = $("#txtnome").text();
+            /*nome = $("#txtnome").text();
             rg = $("#txtrg").text();
             cpf = $("#txtcpf").text();
             ra = $("#txtra").text();
@@ -306,7 +359,7 @@
                 ensino = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
             }
 
-            declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino);
+            declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino);*/
         });
 
         $("#btn_declaracao_matricula_freq").on('click', function() {
