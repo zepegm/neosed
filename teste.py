@@ -1,5 +1,4 @@
-rg = '28137504-8'
+dados = [{'aluno': 'HENRYQUE FABRÍCIO CONSTANTINO VIEIRA', 'pai': ''}, {'aluno': 'MARIANNE DE FÁTIMA CONSTANTINO VIEIRA', 'pai': ''}, {'aluno': 'BEATRIZ PRAXEDES DE SOUZA', 'pai': ''}, {'aluno': 'KESSY KELLY ALVES SENA', 'pai': ''}, {'aluno': 'KAUAN FELIPE DE JESUS', 'pai': ''}, {'aluno': 'KAUAN FELIPE DE JESUS', 'pai': ''}, {'aluno': 'PRISCILA MARIA DINIZ DA SILVA RODRIGUES', 'pai': ''}, {'aluno': 'MARIA CRISTINA DOS SANTOS', 'pai': ''}, {'aluno': 'FABIANA RENATA DOS SANTOS RAMOS', 'pai': ''}, {'aluno': 'ALESSANDRO PIRES ROBERTO', 'pai': ''}, {'aluno': 'PRISCILA MARIA DINIZ DA SILVA RODRIGUES', 'pai': ''}, {'aluno': 'PAULO SERGIO DE CARVALHO', 'pai': ''}, {'aluno': 'APARECIDA SOARES DA SILVA FARIA', 'pai': ''}, {'aluno': 'ANA VIRGINIA DELFINO DE CASTRO', 'pai': ''}, {'aluno': 'GEOVANA VENINA SANTOS CARVALHO', 'pai': ''}, {'aluno': 'PAULO SERGIO DE CARVALHO', 'pai': ''}, {'aluno': 'PRISCILA MARIA DINIZ DA SILVA RODRIGUES', 'pai': ''}, {'aluno': 'MARIA CRISTINA DOS SANTOS', 'pai': ''}, {'aluno': 'ANDRÉIA APARECIDA DE FARIAS', 'pai': ''}, {'aluno': 'AMANDA GRAZIELA ROSA', 'pai': ''}, {'aluno': 'GILCLEY JOSE DA SILVA', 'pai': ''}, {'aluno': 'MARYA EDUARDA VIEIRA COSTA', 'pai': ''}, {'aluno': 'MARCOS EDUARDO PEREIRA', 'pai': ''}, {'aluno': 'MARCOS EDUARDO PEREIRA', 'pai': ''}, {'aluno': 'MARIA BEATRIZ DOS SANTOS', 'pai': ''}, {'aluno': 'PAULO SERGIO DE CARVALHO', 'pai': ''}, {'aluno': 'APARECIDA SOARES DA SILVA FARIA', 'pai': ''}]
 
-new_rg = rg[0:2] + '.' + rg[2:5] + '.' + rg[5:]
-
-print(new_rg)
+for item in dados:
+    print(item['aluno'])
