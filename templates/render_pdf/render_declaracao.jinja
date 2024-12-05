@@ -61,12 +61,33 @@
                 text-indent: 100px
             }
 
+            #texto2 {
+                font-family: Arial, Helvetica, sans-serif;
+                text-align: justify;
+                width: 90%;
+                position: relative;
+                left: 5%;
+                font-size: 20px;
+                line-height: 2;
+                text-indent: 100px;
+            }
+
             #data {
                 font-family: Arial, Helvetica, sans-serif;
                 text-align: right;
                 margin-top: 60px;
                 font-size: 20px;
                 margin-right: 5%;
+            }
+
+            #tb_anos {
+                font-family: Arial, Helvetica, sans-serif;
+                margin-top: 10px;
+                position: relative;
+                left: 5%;
+                font-size: 20px;
+                text-indent: 100px;
+                line-height: 1.75;
             }
 
         </style>
@@ -83,6 +104,19 @@
             </div>
             <div id="titulo">{{titulo}}</div>
             <div id="texto">{{texto}}</div>
+            {% if anos %}
+            <div id="texto2">Comunicamos também que nos <b>últimos anos</b> {{pronome}} alun{{pronome}} estudou nas seguintes Instituições de Ensino:</div>
+            <table id="tb_anos">
+                {% for item in anos %}
+                <tr>
+                    <td><b>{{item['ano']}}</b> - {{item['escola']}}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td><b>{{data[-4:]}}</b> - EE Profª. Alice Vilela Galvão - Canas/SP <b>(Cursando)</b></td>
+                </tr>
+            </table>
+            {% endif %}
             <div id="data">Canas, {{data}}</div>
         </div>
     </body>

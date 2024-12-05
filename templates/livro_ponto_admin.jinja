@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastro de Livro Ponto</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='datatable/datatables.min.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+        #loading {
+            background-color: white;
+            height: 100%;
+            left: 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 9999;
+        }
+
+        .loader {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            bottom: 0;
+            margin: auto;
+            border: 20px solid #EAF0F6;
+            border-radius: 50%;
+            border-top: 20px solid #FF7A59;
+            width: 200px;
+            height: 200px;
+            animation: spinner 4s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }  
+
+        .form-check-input {
+            cursor: pointer;
+        }
+
+        th, td {
+            vertical-align: middle;
+        }
+
+        #tb-quadro-principal td {
+            border: solid 1px black;
+            text-align: center;
+        }
+
+        #body-quadro th {
+            border: solid 1px white;
+        }
+
+        #tb-quadro-principal td:last-child { border-right: none; }
+        
+        #tb-quadro-principal td:first-child { border-left: none; }
+
+        .quadro_aulas, .row_professor, .afs_professor, .desativar_prof, .reativar_professor, .bt_delete_afs { cursor: pointer; }
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    {% block menu_superior %}
+      {% include 'menu.jinja' %}
+    {% endblock %}  
+
+
+    <div class="modal fade" tabindex="-1" id="modal_visualizar">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes do Professor:</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" id="body-detalhes"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" id="modal_confirmar_desativacao">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Desativação de Professor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Você tem certeza que deseja desativar o(a) funcionário(a) <span class="fw-bold" id="lb_professor_nome_exclusao"></span> do Livro Ponto?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não</button>
+                    <button type="button" id="btn_enviar_desativacao" class="btn btn-danger">Sim</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" id="modal_lista_desativados">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Lista de Funcionários Desativados</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nome</th>
+                                <th>RG</th>
+                                <th>CPF</th>
+                                <th class="text-center">Reativar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for professor in desativados %}
+                            <tr>
+                                <td>{{professor['nome']}}</td>
+                                <td>{{professor['rg']}}</td>
+                                <td>{{professor['cpf']}}</td>
+                                <td class="reativar_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-trash-can-arrow-up"></i></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div> 
+
+    <div class="modal fade" tabindex="-1" id="modal_afastamentos">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Afastamentos - <span class="text-danger" id="lb_nome_afastamento"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon_de">DE:</span>
+                        <input type="date" class="form-control" id="txt_de" name="txt_de">
+                        <span class="input-group-text" id="basic-addon_ate">ATÉ:</span>
+                        <input type="date" class="form-control" id="txt_ate" name="txt_ate">
+                        <span class="input-group-text" id="basic-addon_ate">DESC:</span>
+                        <input type="text" class="form-control" id="txt_desc" name="txt_desc" style="width: 30%;">
+                        <button id="btn_add_row" class="btn btn-success"><i class="fa-solid fa-plus"></i></button>
+                    </div>                    
+                    <table id="tb_afastamentos" class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>De</th>
+                                <th>Até</th>
+                                <th>Descrição</th>
+                                <th class="text-center">Excluir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_afs"></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn_confirm_salvar_afs" type="button" class="btn btn-warning">Confirmar Salvamento</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>     
+
+
+    <div class="modal fade" id="modal_cadastro" tabindex="-1" aria-labelledby="modal_mapaoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <form action="ponto_adm" method="POST" id="enviarDadosProf">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_mapaoLabel">Cadastro de Funcionário:</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="scoll-tree">
+                        <div class="row">
+                            <div class="col-sm-7">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_nome">Nome:</label>
+                                    <input type="text" class="form-control" placeholder="Nome Completo" name="nome" id="txt_nome" maxlength="200" required>                                
+                                </div>
+                            </div>
+                            <div class="col-sm-5">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_cpf">CPF:</label>
+                                    <input type="text" class="form-control" placeholder="Somente Números" name="cpf" id="txt_cpf" maxlength="11" required>                                
+                                </div>
+                            </div>
+
+                            <div class="col-sm-7">
+                                <label class="form-label" for="txt_rg">RG:</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" class="form-control" id="txt_rg" name="rg" style="width: 50%" required>
+                                    <span class="input-group-text" id="basic-addon1">-</span>
+                                    <input type="text" class="form-control" id="txt_digito_rg" name="digito_rg" maxlength="1">
+                                </div>
+                            </div>
+
+                            <div class="col-sm-5">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_cargo">Cargo:</label>
+                                    <select class="form-select" id="cb_cargo" name="cargo">
+                                        {% for cargo in cargos %}
+                                        <option value="{{cargo['id']}}">{{cargo['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="plantao" name="plantao">
+                                        <label class="form-check-label" for="plantao">
+                                            Regime Plantão
+                                        </label>
+                                    </div>                               
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="estudante" name="estudante">
+                                        <label class="form-check-label" for="estudante">
+                                            Horário Estudante
+                                        </label>
+                                    </div>                               
+                                </div>
+                            </div>
+
+                            <div class="col-sm-8">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_horario">Horário de Trabalho:</label>
+                                    <input type="text" class="form-control" placeholder="Descrição Completa" name="txt_horario" id="txt_horario" maxlength="200" required>                                
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4">
+                                <div class="mb-3">
+                                    <label class="form-label" for="txt_intervalo">Intervalo:</label>
+                                    <input type="text" class="form-control" placeholder="Apenas o período" name="txt_intervalo" id="txt_intervalo" maxlength="200" required>                                
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" id="btn-confirmar" class="btn btn-warning">Confirmar Dados</button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+
+    <main class="container-xxl">
+        <div id="loading"><div class="loader"></div></div>
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="fs-2">Cadastro de Livro Ponto</p>
+            </div>
+            <div class="col-sm-12" id="status_result">{{msg|safe}}</div>
+        </div>
+
+        <hr>
+        <div class="row">
+            <div class="col-sm-6">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_cadastro">Cadastrar Novo Funcionário</button>
+                {% if desativados|length > 0 %}
+                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_lista_desativados">Funcionários Desativados</button>
+                {% endif %}
+            </div>
+            <div class="col-sm-6">
+                <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-text" id="basic-addon1">Selecione o mês: </span>
+                        <select class="form-control" id="cb_mes">
+                            {% for mes in meses %}
+                            {% if mes['atual'] %}
+                            <option value="{{mes['valor']}}" selected>{{mes['desc']}}</option>
+                            {% else %}
+                            <option value="{{mes['valor']}}">{{mes['desc']}}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        <span class="input-group-text" id="basic-addon2">Ano: </span>
+                        <input id="txt_ano" type="number" class="form-control" value="{{ano}}">
+                        <button class="btn btn-danger" id="btn_gerar_livro_completo">Gerar Livro Completo</button>
+                    </div>
+                </div>            
+            </div>
+        </div>     
+        <hr>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <table id="tb-principal" class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Nome</th>
+                            <th scope="col">RG</th>
+                            <th scope="col">CPF</th>   
+                            <th scope="col">Cargo</th>
+                            <th class="text-center" scope="col">Editar</th>
+                            <th class="text-center" scope="col">Afastamentos</th>
+                            <th class="text-center" scope="col">Desativar</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-light">
+                        {% for funcionario in funcionarios %}
+                        <tr>
+                            <td>{{funcionario['nome']}}</td>
+                            <td>{{funcionario['rg']}}</td>
+                            <td>{{funcionario['cpf']}}</td>
+                            <td>{{funcionario['cargo']}}</td>
+                            <td class="row_professor text-center" data-id="{{funcionario['raw_cpf']}}"><i class="fa-solid fa-pen-to-square"></i></td>
+                            <td class="afs_professor text-center" data-id="{{funcionario['raw_cpf']}}"><i class="fa-solid fa-table-list"></i></td>
+                            <td class="desativar_prof text-center" data-id="{{funcionario['raw_cpf']}}"><i class="fa-solid fa-trash"></i></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>           
+
+    <form id="form_ativacao_prof" action="/ponto_adm" method="POST">
+        <input type="hidden" name="cpf" id="cpf_ativacao">
+        <input type="hidden" name="ativacao" id="ativacao">
+    </form>
+
+    <form id="form_afastamentos" action="/ponto_adm" method="POST">
+        <input type="hidden" name="cpf" id="cpf_afs">
+        <input type="hidden" name="info_afs" id="info_afs">
+    </form>    
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> 
+    <script src="{{ url_for('static', filename='datatable/datatables.min.js') }}"></script>
+
+    <script>
+
+        window.onload=function() {
+            $("#loading").remove();
+        }
+
+        $(document).ready(function() {
+            let dataTable = new DataTable("#tb-principal", {
+                    order: [[0, 'asc']],
+                    lengthMenu: [
+                        [15, 100, 500, 1000],
+                        [15, 100, 500, 1000],
+                    ], 
+                    "autoWidth": false,
+                    "oLanguage": {
+                        "sSearch": "Pesquisar:",
+                    },
+                    "language": {
+                        "lengthMenu": "Exibir _MENU_ itens por página",
+                        "zeroRecords": "Nada encontrado - Desculpe",
+                        "info": "Exibindo _START_ até _END_ de um total de _TOTAL_ registro(s)",
+                        "infoEmpty": "Sem registros",
+                        "infoFiltered": "(filtrado de um total de _MAX_ registro(s))",
+                        "paginate": {
+                            "previous": "Anterior",
+                            "next": "Próximo"
+                        }
+                    }                    
+            }); 
+        });
+
+        function capitalizeFirstLetter(string) {
+            result = string.toLowerCase();
+            return result.replace(/\b\w/g, c => c.toUpperCase()).replaceAll('Da ', 'da ').replaceAll('De ', 'de ').replaceAll('Do ', 'do ').replaceAll('Dos ', 'dos ');
+        }
+
+        function converterData(data) {
+            // Verifica se a data é válida
+            const partes = data.split('/'); // Divide a data em dia, mês e ano
+            if (partes.length === 3) {
+                const dia = partes[0];  // Dia
+                const mes = partes[1];  // Mês
+                const ano = partes[2];  // Ano
+                
+                // Retorna a data no formato yyyy-mm-dd
+                return `${ano}-${mes}-${dia}`;
+            } else {
+                return "Data inválida!";
+            }
+        }        
+
+        $("#txt_nome").on('change', function() {
+            $(this).val(capitalizeFirstLetter($(this).val()));
+        });   
+
+        $(".desativar_prof").on('click', function() {
+            $("#lb_professor_nome_exclusao").text($(this).parent().find('td:first').text());
+            $("#ativacao").val(0);
+            $("#cpf_ativacao").val($(this).attr('data-id'));
+            $("#modal_confirmar_desativacao").modal('show');
+        });
+
+        $("#btn_enviar_desativacao").on('click', function() {
+            $("#form_ativacao_prof").submit();
+        });
+
+        $(".reativar_professor").on('click', function() {
+            $("#ativacao").val(1);
+            $("#cpf_ativacao").val($(this).attr('data-id'));
+            $("#form_ativacao_prof").submit();
+        });        
+
+        $(".row_professor").on('click', function() {
+            cpf = $(this).attr('data-id');
+
+            info = {'destino':0, 'cpf':cpf}
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('ponto_adm') }}",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(response) {
+                    console.log(response);
+                    $("#txt_nome").val(response['nome']);
+                    $("#txt_cpf").val(response['cpf']);
+                    $("#txt_rg").val(response['rg']);
+                    $("#txt_digito_rg").val(response['digito']);
+                    $("#cb_cargo").val(response['cargo']);
+                    $("#txt_horario").val(response['horario']);
+                    $("#txt_intervalo").val(response['intervalo']);
+
+                    if (response['plantao'] == 1) {
+                        $("#plantao").attr('checked', '');
+                    } else {
+                        $("#plantao").removeAttr('checked');
+                    }
+
+                    if (response['estudante'] == 1) {
+                        $("#estudante").attr('checked', '');
+                    } else {
+                        $("#estudante").removeAttr('checked');
+                    }                    
+
+                    $("#modal_cadastro").modal('show');
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });            
+        });
+
+        $(".afs_professor").on("click", function() {
+            let nome = $(this).parent().find('td:first').text();
+            let cpf = $(this).attr('data-id');
+
+            $.ajax({
+                type: "POST",
+                url: "ponto_adm",
+                contentType: "application/json",
+                data: JSON.stringify({'destino':1, 'cpf':cpf}),
+                dataType: "json",
+                success: function(data) {
+
+                    $("#tbody_afs").empty();
+
+                    for (let i = 0; i < data.length; i++) {
+                        $("#tbody_afs").append("<tr><td>" + data[i]['dt_inicio'] + "</td><td>" + data[i]['dt_fim'] + "</td><td>" + data[i]['descricao'] + '</td><td class="text-center bt_delete_afs"><i class="fa-solid fa-trash"></i></td></tr>')
+                    }
+
+                    $("#lb_nome_afastamento").html(nome);
+                    $("#cpf_afs").val(cpf);
+                    $("#modal_afastamentos").modal('show');
+                },
+            });             
+
+
+        });
+
+        $("#btn_add_row").on('click', function() {
+
+            if ($("#txt_de").val() != '' && $("#txt_ate").val().split("-") != '') {
+                let [ano_i, mes_i, dia_i] = $("#txt_de").val().split("-");
+                let [ano_f, mes_f, dia_f] = $("#txt_ate").val().split("-");
+                let desc = $("#txt_desc").val();
+
+                $("#tbody_afs").append('<tr class="item-afs"><td>' + `${dia_i}/${mes_i}/${ano_i}` + '</td><td>' + `${dia_f}/${mes_f}/${ano_f}` + '</td><td>' + desc + '</td><td class="text-center bt_delete_afs"><i class="fa-solid fa-trash"></i></td></tr>')
+            }
+        });
+
+        $("#tbody_afs").on('click', '.bt_delete_afs', function() {
+            $(this).parent().remove();
+        });
+
+        $("#btn_confirm_salvar_afs").on('click', function() {
+            // criar uma lista com os dados
+            var ls_final = [];
+
+            $(".item-afs").each(function(index, element) {
+                let data_de = converterData($(element).find('td:first').text());
+                let data_ate = converterData($(element).find('td:eq(1)').text());
+                let desc = $(element).find('td:eq(2)').text();
+
+                ls_final.push({'inicio':data_de, 'fim':data_ate, 'desc':desc})
+            });
+
+            $("#info_afs").val(JSON.stringify(ls_final));
+
+            $("#form_afastamentos").submit();
+        });
+
+    </script>
+  </body>
+</html>

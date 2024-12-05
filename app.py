@@ -225,6 +225,18 @@ def relatorios():
 
     return render_template('relatorios.jinja', opcao = -1, combo_final=combo_final)
 
+@app.route('/render_livro_ponto_adm',  methods=['GET', 'POST'])
+def render_livro_ponto_adm():
+
+    cpf = int(request.args.getlist('cpf')[0])
+    mes = int(request.args.getlist('mes')[0])
+    ano = int(request.args.getlist('ano')[0])
+
+    
+    return render_template('render_pdf/render_livro_ponto_adm.jinja')
+
+
+
 @app.route('/render_livro_ponto',  methods=['GET', 'POST'])
 def render_livro_ponto():
 
@@ -1162,7 +1174,7 @@ def render_lista():
             data_atual = datetime.now()
             data_formatada = data_atual.strftime("%d de %B de %Y")
 
-            return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe)
+            return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe, anos=aux_info['anos'], pronome=pronome)
         
         elif tipo == 'ficha_mat':
 
@@ -1694,7 +1706,7 @@ async def gerar_pdf():
             freq_percent = -1
             bimestre = 0
 
-        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre}
+        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None}
 
         browser = await launch(
             handleSIGINT=False,
@@ -1726,6 +1738,47 @@ async def gerar_pdf():
         await browser.close()
 
         return jsonify(pdf_path)
+
+    elif info['destino'] == 13: # declaração completa
+
+        pdf_path = 'static/docs/declaracao_freq.pdf'
+        
+        aluno = banco.executarConsulta('select nome, rg, sexo from aluno where ra = %s' % info['ra'].replace('.', '')[:9])[0]
+        
+        info_classe = banco.executarConsulta('select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = %s and situacao = 1' % info['ra'].replace('.', '')[:9])[0]
+
+        sql = 'SELECT '
+        sql += '(select sum(falta) - sum(ac) from notas inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.situacao = 1 left join vinculo_alunos_if on vinculo_alunos_if.ra_aluno = notas.ra_aluno and vinculo_alunos_if.situacao = 1 where notas.ra_aluno = %s and (notas.num_classe = vinculo_alunos_turmas.num_classe or notas.num_classe = vinculo_alunos_if.num_classe_if)) as faltas,' % info['ra'].replace('.', '')[:9]
+        sql += '(select sum(aulas_dadas) from vinculo_prof_disc inner join vinculo_alunos_turmas on vinculo_alunos_turmas.situacao = 1 and vinculo_alunos_turmas.ra_aluno = %s left join vinculo_alunos_if on vinculo_alunos_if.situacao = 1 and vinculo_alunos_if.ra_aluno = %s where vinculo_prof_disc.num_classe = vinculo_alunos_turmas.num_classe or vinculo_prof_disc.num_classe = vinculo_alunos_if.num_classe_if) as aulas_dadas,' % (info['ra'].replace('.', '')[:9], info['ra'].replace('.', '')[:9])
+        sql += '(select max(bimestre) from notas inner join turma on turma.num_classe = notas.num_classe where ra_aluno = %s and turma.ano = YEAR(CURDATE())) as bimestre' % info['ra'].replace('.', '')[:9]
+
+        freq = banco.executarConsulta(sql)
+
+        if (freq[0]['faltas']):
+            freq_percent = round((freq[0]['aulas_dadas'] - freq[0]['faltas']) / freq[0]['aulas_dadas'] * 100, 2)
+            bimestre = freq[0]['bimestre']
+        else:
+            freq_percent = -1
+            bimestre = 0
+
+        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':info['anos']}
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white', {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)
+
+
+
+
 
 
 @app.route('/teste', methods=['GET', 'POST'])
@@ -2889,13 +2942,128 @@ def boletim():
     return render_template('render_pdf/render_boletim.jinja', alunos=alunos, disciplinas=disciplinas, info_classe=info_classe, duracao=duracao, ano=ano, desc_duracao=desc_duracao)
 
 
+@app.route('/ponto_adm', methods=['GET', 'POST'])
+def ponto_adm():
+    
+    msg=''
+
+    if request.method == 'POST': # houve envio de formulário
+
+        if request.is_json:
+            info = request.json
+
+            if info['destino'] == 0: # pegar os dados do professor para editar no formulário
+                detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, cargo, plantao, estudante, horario, intervalo from funcionario_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
+                return jsonify(detalhes)
+            
+            elif info['destino'] == 1: # quadro de aulas
+                lista = banco.executarConsulta(r"SELECT cpf, DATE_FORMAT(inicio,'%d/%m/%Y') as dt_inicio, DATE_FORMAT(fim,'%d/%m/%Y') as dt_fim, descricao FROM afastamentos_ponto_adm WHERE cpf = " + str(info['cpf']) + ' order by inicio')
+                return jsonify(lista)
+
+        if 'nome' in request.form: # inserir ou alterar novo funcionário
+
+            dados = {}
+            dados['cpf'] = request.form['cpf'].replace('.', '').replace('-', '')
+            dados['nome'] = "'%s'" % request.form['nome']
+            dados['rg'] = "'%s'" % request.form['rg']
+            dados['digito'] = 'null' if request.form['digito_rg'] == '' else "'%s'" % request.form['digito_rg']
+            dados['cargo'] = request.form['cargo']
+            dados['horario'] = "'%s'" % request.form['txt_horario']
+            dados['intervalo'] = "'%s'" % request.form['txt_intervalo']
+            dados['estudante'] = 1 if 'estudante' in request.form else 0
+            dados['plantao'] = 1 if 'plantao' in request.form else 0
+
+            if banco.insertOrUpdate(dados, 'funcionario_livro_ponto'):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação bem-sucedida!</strong> Dados do(a) Funcionário(a) <strong>' + dados['nome'] + '</strong> inseridos com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'  
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados do funcionário no banco de dados!"' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'  
+
+
+        if 'ativacao' in request.form: # é pra desativar ou ativar o funcionário
+            ativacao = int(request.form['ativacao'])
+            id = request.form['cpf']
+            
+            basic_sql = 'UPDATE funcionario_livro_ponto SET ativo = %s WHERE cpf = %s' % (ativacao, id)
+
+            if banco.executeBasicSQL(basic_sql):
+                if ativacao == 0:
+                    msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                            '<strong>Operação realizada com sucesso!</strong> Funcionário desativado do Livro Ponto' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'    
+                else:
+                    msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                            '<strong>Operação realizada com sucesso!</strong> Funcionário reativado no Livro Ponto' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'                      
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados do funcionário no banco de dados!"' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'    
+
+
+        if 'info_afs' in request.form: # é pra criar a lista de afastamentos
+
+            lista = json.loads(request.form['info_afs'])
+            cpf = int(request.form['cpf'])
+
+            if banco.inserirAfastamentos(cpf, lista):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação realizada com sucesso!</strong> Lista de Afastamentos registrados com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'    
+
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados no banco de dados! Verifique se as datas não batem!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'              
+
+
+    cargos = banco.executarConsulta('select * from cargos_livro_ponto where tipo = 2')
+
+    funcionarios = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf, cargos_livro_ponto.descricao as cargo from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where ativo = 1 order by nome")
+    for funcionario in funcionarios:
+        funcionario['raw_cpf'] = funcionario['cpf']
+        cpf = "%011d" % funcionario['cpf']
+        funcionario['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
+
+        rg = "%08d" % int(funcionario['rg'])
+        funcionario['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], funcionario['digito'])
+
+    desativados = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf, cargos_livro_ponto.descricao as cargo from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where ativo = 0 order by nome")
+    for funcionario in desativados:
+        funcionario['raw_cpf'] = funcionario['cpf']
+        cpf = "%011d" % funcionario['cpf']
+        funcionario['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
+
+        rg = "%08d" % int(funcionario['rg'])
+        funcionario['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], funcionario['digito'])
+
+
+    # pegar os meses
+    meses = []
+    data_atual = datetime.now()
+
+    index = 1
+    for mes in list(calendar.month_name)[1:]:
+        meses.append({'desc':mes.title(), 'valor':index, 'atual':int(data_atual.strftime("%m")) == index})    
+
+    return render_template('livro_ponto_admin.jinja', meses=meses, ano=data_atual.strftime("%Y"), cargos=cargos, msg=msg, funcionarios=funcionarios, desativados=desativados)
 
 @app.route('/ponto', methods=['GET', 'POST'])
 def ponto():
 
     msg = ''
 
-    if request.method == 'POST': # ouve envio de formulário
+    if request.method == 'POST': # houve envio de formulário
 
         if request.is_json: # enviado por ajax
             info = request.json
@@ -3030,7 +3198,7 @@ def ponto():
                         '</div>'                   
 
 
-    cargos = banco.executarConsulta('select * from cargos_livro_ponto')
+    cargos = banco.executarConsulta('select * from cargos_livro_ponto where tipo = 1')
     categorias = banco.executarConsulta('select * from categoria_livro_ponto')
     jornadas = banco.executarConsulta('select * from jornada_livro_ponto')
     escolas = banco.executarConsulta("select id, concat('UA: ', id, ' - ', descricao) as descricao from sede_livro_ponto order by id")
@@ -3165,5 +3333,5 @@ def calendario():
 
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
-    app.run(debug=True, use_reloader=False, port=80)
-    #serve(app, host='0.0.0.0', port=80, threads=8)
+    #app.run(debug=True, use_reloader=False, port=80)
+    serve(app, host='0.0.0.0', port=80, threads=8)

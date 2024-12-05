@@ -78,7 +78,17 @@
                 <li class="nav-item">
                     <a class="nav-link" href="../ponto">Livro Ponto</a>
                 </li>
-                {% endif %}  
+                {% endif %}
+
+                {% if url_for(request.endpoint) == '/ponto_adm' %}
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Livro Ponto ADM</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="../ponto_adm">Livro Ponto ADM</a>
+                </li>
+                {% endif %}                  
 
 
                 {% if url_for(request.endpoint) == '/relatorios' %}
