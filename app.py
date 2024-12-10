@@ -2924,9 +2924,14 @@ def boletim():
             sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 3 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 3 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
             sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 4 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 4 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as aulas_dadas ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
 
+            print(sql)
+
             aulas_dadas = banco.executarConsulta(sql)[0]['aulas_dadas']
-            freq_calc = 100 - (disc['faltas'] * 100 / aulas_dadas)
-            freq_final[disc['disciplina']] = round(freq_calc, 1)
+            try:
+                freq_calc = 100 - (disc['faltas'] * 100 / aulas_dadas)
+                freq_final[disc['disciplina']] = round(freq_calc, 1)
+            except:
+                freq_final[disc['disciplina']] = ''
 
             media = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma on turma.num_classe = conceito_final.num_classe and turma.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))
             if len(media) > 0:
