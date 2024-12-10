@@ -2417,6 +2417,10 @@ def listaAlunos():
 def notas():
     msg = ""
 
+    anos = banco.executarConsulta('select ano from turma group by ano order by ano desc')
+
+    ano_base = anos[0]['ano']
+
     if 'status' in request.args:
         if request.args['status'] == '1':
             msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -2538,6 +2542,9 @@ def notas():
 
                 return jsonify({'alunos':alunos, 'medias':disciplinas, 'professores':profs, 'notas':[]})
 
+        if 'cb_ano' in request.form:
+            ano_base = request.form.get('cb_ano')
+        
         if 'txt_coddisciplina' in request.form:
             codigo = request.form.get('txt_coddisciplina')
             desc = "'" + request.form.get('txt_descricao') + "'"
@@ -2710,6 +2717,7 @@ def notas():
     professores = banco.executarConsulta('select * from professor order by nome_ata')
     dificuldades = banco.executarConsulta('select id, descricao as title from dificuldades')
 
+
     listaTipos = banco.executarConsulta('select tipo_ensino.id, tipo_ensino.descricao as tipo_ensino, if (count(turma.tipo_ensino) > 0, count(turma.tipo_ensino), count(turma_if.tipo_ensino)) as total from tipo_ensino LEFT JOIN turma ON turma.tipo_ensino = tipo_ensino.id LEFT JOIN turma_if ON turma_if.tipo_ensino = tipo_ensino.id GROUP BY id order by id')
 
     listaTurmas = []
@@ -2719,21 +2727,21 @@ def notas():
         if item['total'] > 0:
 
             if item['id'] != 2 and item['id'] != 5:
-                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = year(now()) order by duracao, nome_turma' % item['id'])
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano_base))
             else:
-                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = year(now()) order by duracao, nome_turma' % item['id'])
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano_base))
 
             listaTurmas.append({'tipo_ensino':item, 'lista':turmas})
 
 
-    bimestres = banco.executarConsulta('select * from calendario where ano = Year(Now())')
+    bimestres = banco.executarConsulta('select * from calendario where ano = %s' % ano_base)
     #bimestres = banco.executarConsulta('select * from calendario where ano = 2023')
     bim = {'1bim':{'inicio':bimestres[0]['1bim_inicio'], 'fim':bimestres[0]['1bim_fim']}}
     bim['2bim'] = {'inicio':bimestres[0]['2bim_inicio'], 'fim':bimestres[0]['2bim_fim']}
     bim['3bim'] = {'inicio':bimestres[0]['3bim_inicio'], 'fim':bimestres[0]['3bim_fim']}
     bim['4bim'] = {'inicio':bimestres[0]['4bim_inicio'], 'fim':bimestres[0]['4bim_fim']}
 
-    return render_template('notas.jinja', bimestres=json.dumps(bim, indent=4, sort_keys=True, default=str), classificacao=classificacao, msg=msg, disciplinas=disciplinas, listaTurmas=listaTurmas, professores=professores, dificuldades=json.dumps(dificuldades))
+    return render_template('notas.jinja', bimestres=json.dumps(bim, indent=4, sort_keys=True, default=str), classificacao=classificacao, msg=msg, disciplinas=disciplinas, listaTurmas=listaTurmas, professores=professores, dificuldades=json.dumps(dificuldades), anos=anos, ano_base=ano_base)
 
 @app.route('/frequencia', methods=['GET', 'POST'])
 def frequencia():
@@ -3338,5 +3346,5 @@ def calendario():
 
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
-    #app.run(debug=True, use_reloader=False, port=80)
-    serve(app, host='0.0.0.0', port=80, threads=8)
+    app.run(debug=True, use_reloader=False, port=80)
+    #serve(app, host='0.0.0.0', port=80, threads=8)

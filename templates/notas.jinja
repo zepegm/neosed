@@ -330,7 +330,16 @@
                 <p class="fs-2">Cadastro Notas</p>
             </div>
             <div class="col-sm-12">{{msg|safe}}</div>
-            <div class="col-sm-8">
+            <div class="col-sm-1">
+                <form id="form-ano" action="{{ url_for('notas') }}" method="post">
+                    <select id="cb_ano" name="cb_ano" class="form-select">
+                        {% for ano in anos %}
+                        <option value="{{ano['ano']}}" {{ 'selected' if ano_base|int == ano['ano']|int else '' }}>{{ano['ano']}}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+            <div class="col-sm-7">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_disciplinas">Cadastro de Disciplinas</button>
                 <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modal_professores">Cadastro de Professores</button>
                 <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal_vinculo">Vínculo de Professores e Turmas</button>
@@ -414,6 +423,10 @@
         window.onload=function() {
             $("#loading").remove();
         }
+
+        $("#cb_ano").on("change", function() {
+            $("#form-ano").submit();
+        });
 
         $("#btn_boletim").on('click', function() {
             $("#btn_boletim").attr('disabled', '');
