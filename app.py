@@ -232,8 +232,69 @@ def render_livro_ponto_adm():
     mes = int(request.args.getlist('mes')[0])
     ano = int(request.args.getlist('ano')[0])
 
-    
-    return render_template('render_pdf/render_livro_ponto_adm.jinja')
+    dados = banco.executarConsulta("select nome, cpf, rg, digito, horario, intervalo, cargos_livro_ponto.descricao as cargo, CASE WHEN estudante = 1 THEN 'Sim' ELSE 'Não' END AS estudante, CASE WHEN plantao = 1 THEN 'Sim' ELSE 'Não' END AS plantao from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where cpf = %s" % cpf)[0]
+
+    aux_rg = '%08d' % int(dados['rg'])
+    dados['rg'] = aux_rg[0:2] + "." + aux_rg[2:5] + "." + aux_rg[5:] + '-' + dados['digito']
+
+    aux = '%011d' % int(dados['cpf'])
+    dados['cpf'] = aux[:3] + "." + aux[3:6] + "." + aux[6:9] + "-" + aux[9:]
+
+    # preencher o mês
+    _, num_dias = calendar.monthrange(ano, mes)
+
+    # Cria uma lista para armazenar os resultados
+    dias_com_fim_de_semana = []
+    verso_txt = []
+    afastamentos = []
+    aux_afs = {}
+    cont_afs = 1
+    afastamento = False
+
+
+    for dia in range(1, num_dias + 1):
+        data = datetime(ano, mes, dia)
+
+        # antes de mais nada verifica se existe afastamento
+        inicio_afastamento = banco.executarConsulta("select * from afastamentos_ponto_adm where cpf = %s and inicio = '%s-%s-%s'" % (cpf, ano, mes, dia))
+
+        if len(inicio_afastamento) > 0:
+            afastamento = True
+            aux_afs['nome'] = 'afastamento_%s' % cont_afs
+            aux_afs['inicio'] = dia
+            cont_afs += 1
+            dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'VIDE VERSO', 'class':'red'})
+            verso_txt.append('De %02d até %02d - %s' % (inicio_afastamento[0]['inicio'].day, inicio_afastamento[0]['fim'].day, inicio_afastamento[0]['descricao']))
+
+        if not afastamento:
+
+            # Verifica se é feriado, se for puxa o feriado
+            feriado = banco.executarConsulta("select eventos_calendario.descricao, cat_letivo.descricao as tipo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where '%s-%s-%s' in (data_inicial, data_final) and evento in (3, 4, 5)" % (ano, mes, dia))
+
+            if len(feriado) > 0:
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'FERIADO', 'obs':'VIDE VERSO', 'class':'red'})
+                verso_txt.append('Dia %02d - %s' % (dia, feriado[0]['descricao']))
+            elif data.weekday() == 5:
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'SÁBADO', 'obs':'', 'class':''})
+            elif data.weekday() == 6:
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'DOMINGO', 'obs':'', 'class':''})
+            else:
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'', 'class':''})
+
+        else:
+            fim_afastamento = banco.executarConsulta("select * from afastamentos_ponto_adm where cpf = %s and fim = '%s-%s-%s'" % (cpf, ano, mes, dia))
+
+            if len(fim_afastamento) > 0: # pegou o fim
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'VIDE VERSO', 'class':'red'})
+                afastamento = False
+                aux_afs['fim'] = dia
+                afastamentos.append(aux_afs)
+                aux_afs = {}
+                
+            elif len(inicio_afastamento) == 0:
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'', 'class':'divisor'})
+
+    return render_template('render_pdf/render_livro_ponto_adm.jinja', mes=getMes(mes), ano=ano, dados=dados, dias=dias_com_fim_de_semana, verso=verso_txt, afastamentos=afastamentos)
 
 
 
@@ -1252,6 +1313,7 @@ async def atualizar_lista_auto():
     print(ano)
 
     browser = await launch(
+        {'headless': False},
         handleSIGINT=False,
         handleSIGTERM=False,
         handleSIGHUP=False
@@ -1775,7 +1837,26 @@ async def gerar_pdf():
         await browser.close()
 
         return jsonify(pdf_path)
+    
+    elif info['destino'] == 14: #livro ponto ADM
 
+        pdf_path = 'static/docs/ponto.pdf'
+        cpf = info['cpf']
+        ano = info['ano']
+        mes = info['mes']
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s' % (cpf, mes, ano), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)
 
 
 
@@ -3026,6 +3107,8 @@ def ponto_adm():
 
             lista = json.loads(request.form['info_afs'])
             cpf = int(request.form['cpf'])
+
+            print(lista)
 
             if banco.inserirAfastamentos(cpf, lista):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \

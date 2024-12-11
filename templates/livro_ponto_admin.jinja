@@ -65,7 +65,7 @@
         
         #tb-quadro-principal td:first-child { border-left: none; }
 
-        .quadro_aulas, .row_professor, .afs_professor, .desativar_prof, .reativar_professor, .bt_delete_afs { cursor: pointer; }
+        .imprimir, .quadro_aulas, .row_professor, .afs_professor, .desativar_prof, .reativar_professor, .bt_delete_afs { cursor: pointer; }
     </style>
 
   </head>
@@ -288,13 +288,13 @@
 
         <hr>
         <div class="row">
-            <div class="col-sm-6">
+            <div class="col-sm-7">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_cadastro">Cadastrar Novo Funcionário</button>
                 {% if desativados|length > 0 %}
                 <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_lista_desativados">Funcionários Desativados</button>
                 {% endif %}
             </div>
-            <div class="col-sm-6">
+            <div class="col-sm-5">
                 <div class="form-group">
                     <div class="input-group">
                         <span class="input-group-text" id="basic-addon1">Selecione o mês: </span>
@@ -309,7 +309,6 @@
                         </select>
                         <span class="input-group-text" id="basic-addon2">Ano: </span>
                         <input id="txt_ano" type="number" class="form-control" value="{{ano}}">
-                        <button class="btn btn-danger" id="btn_gerar_livro_completo">Gerar Livro Completo</button>
                     </div>
                 </div>            
             </div>
@@ -325,6 +324,7 @@
                             <th scope="col">RG</th>
                             <th scope="col">CPF</th>   
                             <th scope="col">Cargo</th>
+                            <th scope="col">Imprimir</th>
                             <th class="text-center" scope="col">Editar</th>
                             <th class="text-center" scope="col">Afastamentos</th>
                             <th class="text-center" scope="col">Desativar</th>
@@ -337,6 +337,7 @@
                             <td>{{funcionario['rg']}}</td>
                             <td>{{funcionario['cpf']}}</td>
                             <td>{{funcionario['cargo']}}</td>
+                            <td class="imprimir text-center" data-id="{{funcionario['raw_cpf']}}"><i class="fa-solid fa-print"></i></td>
                             <td class="row_professor text-center" data-id="{{funcionario['raw_cpf']}}"><i class="fa-solid fa-pen-to-square"></i></td>
                             <td class="afs_professor text-center" data-id="{{funcionario['raw_cpf']}}"><i class="fa-solid fa-table-list"></i></td>
                             <td class="desativar_prof text-center" data-id="{{funcionario['raw_cpf']}}"><i class="fa-solid fa-trash"></i></td>
@@ -416,6 +417,26 @@
             }
         }        
 
+        $(".imprimir").on('click', function() {
+            $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+            var cpf = $(this).attr('data-id');
+            var ano = $("#txt_ano").val();
+            var mes = $("#cb_mes").val();
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify({'destino':14, 'cpf':cpf, 'ano':ano, 'mes':mes}),
+                dataType: "json",
+                success: function(data) {
+                    window.open(data);
+                    /*$("#btn_gerar_pdf").html('Gerar PDF');
+                    $("#btn_gerar_pdf").removeAttr('disabled');*/
+                },
+            });            
+        });
+
         $("#txt_nome").on('change', function() {
             $(this).val(capitalizeFirstLetter($(this).val()));
         });   
@@ -493,7 +514,7 @@
                     $("#tbody_afs").empty();
 
                     for (let i = 0; i < data.length; i++) {
-                        $("#tbody_afs").append("<tr><td>" + data[i]['dt_inicio'] + "</td><td>" + data[i]['dt_fim'] + "</td><td>" + data[i]['descricao'] + '</td><td class="text-center bt_delete_afs"><i class="fa-solid fa-trash"></i></td></tr>')
+                        $("#tbody_afs").append("<tr  class='item-afs'><td>" + data[i]['dt_inicio'] + "</td><td>" + data[i]['dt_fim'] + "</td><td>" + data[i]['descricao'] + '</td><td class="text-center bt_delete_afs"><i class="fa-solid fa-trash"></i></td></tr>')
                     }
 
                     $("#lb_nome_afastamento").html(nome);
