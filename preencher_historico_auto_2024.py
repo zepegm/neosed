@@ -3,7 +3,7 @@ from pyppeteer import launch
 from MySQL import db
 from excel import xls
 
-ra_aluno = 	110560582
+ra_aluno = 	106373292
 
 estados = {'SP':'SÃO PAULO', 'RJ':'RIO DE JANEIRO', 'CE':'CEARÁ', 'MG':'Minas Gerais', 'ES':'ESPÍRITO SANTO'}
 

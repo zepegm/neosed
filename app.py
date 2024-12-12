@@ -3026,7 +3026,12 @@ def boletim():
             if len(media) > 0:
                 conceito_final[disc['disciplina']] = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma on turma.num_classe = conceito_final.num_classe and turma.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))[0]
             else:
-                conceito_final[disc['disciplina']] = 'null'
+                # verificar se é nota de if
+                media = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma_if on turma_if.num_classe = conceito_final.num_classe and turma_if.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))
+                if len(media) > 0:
+                    conceito_final[disc['disciplina']] = media[0]
+                else:
+                    conceito_final[disc['disciplina']] = 'null'
 
 
         aluno['freq'] = freq_final
