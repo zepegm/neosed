@@ -549,7 +549,7 @@ def render_certificados_conclusao():
         else:
             modalidade = 'Ensino Médio'
 
-        alunos = banco.executarConsulta(r"select aluno.nome, aluno.rg, serie, aluno.sexo, DATE_FORMAT (aluno.nascimento,'%d/%m/%Y') as nascimento, DATE_FORMAT (vinculo_alunos_turmas.fim_mat,'%d/%m/%Y') as fim from vinculo_alunos_turmas  inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = " + classe + " and situacao = 6 and (serie = 3 or serie = 4 or serie = 12) order by nome")
+        alunos = banco.executarConsulta(r"select aluno.nome, aluno.rg, serie, aluno.sexo, DATE_FORMAT (aluno.nascimento,'%d/%m/%Y') as nascimento, DATE_FORMAT (vinculo_alunos_turmas.fim_mat,'%d/%m/%Y') as fim from vinculo_alunos_turmas  inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = " + classe + " and situacao = in (1, 6) and serie in  (3, 4, 12) order by nome")
 
         for aluno in alunos:
             aluno['nome_assinatura'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
