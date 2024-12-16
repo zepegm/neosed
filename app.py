@@ -2299,7 +2299,7 @@ def getAlunosTurma():
 
             turma = banco.executarConsulta(sql)
 
-            total_habilitados_certificado = banco.executarConsultaVetor('select count(*) as total from vinculo_alunos_turmas where num_classe = %s and situacao = 6 and (serie = 3 or serie = 4 or serie = 12)' % num_classe)[0]
+            total_habilitados_certificado = banco.executarConsultaVetor('select count(*) as total from vinculo_alunos_turmas where num_classe = %s and situacao in (6, 1) and serie in (3, 4, 12)' % num_classe)[0]
             
             if (total_habilitados_certificado > 0):
                 certificado = True
