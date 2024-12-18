@@ -1164,9 +1164,9 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
                                     {% else %}
                                         {% if turma['alunos'][n]['if'][disc['disciplina']] is defined %}
                                             {% if turma['alunos'][n]['if'][disc['disciplina']]['media']|int < 5 %}
-                                            <td style="border-right: solid 2px black;" class="nota_if red">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
+                                            <td style="border-right: solid {{'4px' if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 else '2px'}} black;" class="nota_if red">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
                                             {% else %}
-                                            <td style="border-right: solid 2px black;" class="nota_if">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
+                                            <td style="border-right: solid {{'4px' if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 else '2px'}} black;" class="nota_if">{{turma['alunos'][n]['if'][disc['disciplina']]['media']}}</td>
                                             {% endif %}
                                         {% else %}
                                             {% if loop.index == item['disciplinas']|length and indice == 1 and turma['turmas_if']|length > 1 %}

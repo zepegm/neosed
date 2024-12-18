@@ -711,7 +711,7 @@ def render_conselho_bimestre_all():
                     sql = 'select ' + \
 	                      'sum(falta) as total_faltas_if, ' + \
                           'sum(ac) as total_ac_if, ' + \
-                          'round(100 - ((select sum(falta) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = ' + str(bimestre) + ' and num_classe =  (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
+                          'round(100 - ((select sum(falta) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = ' + str(bimestre) + ' and num_classe in (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
                           'from notas ' + \
                           'where num_classe in (' + turmas_if_concat + ') and bimestre = ' + str(bimestre) + ' and ra_aluno = ' + str(aluno['ra_bruto'])
 
@@ -720,7 +720,7 @@ def render_conselho_bimestre_all():
                     sql = 'select ' + \
 	                      'sum(falta) as total_faltas_if, ' + \
                           'sum(ac) as total_ac_if, ' + \
-                          'round(100 - ((select (sum(falta) - sum(ac)) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where num_classe =  (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
+                          'round(100 - ((select (sum(falta) - sum(ac)) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where num_classe in (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
                           'from notas ' + \
                           'where num_classe in (' + turmas_if_concat + ') and ra_aluno = ' + str(aluno['ra_bruto'])
                     
@@ -983,7 +983,7 @@ def render_conselho_bimestre():
                     sql = 'select ' + \
 	                      'sum(falta) as total_faltas_if, ' + \
                           'sum(ac) as total_ac_if, ' + \
-                          'round(100 - ((select sum(falta) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = ' + str(bimestre) + ' and num_classe =  (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
+                          'round(100 - ((select sum(falta) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where bimestre = ' + str(bimestre) + ' and num_classe in (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and bimestre = ' + str(bimestre) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
                           'from notas ' + \
                           'where num_classe in (' + turmas_if_concat + ') and bimestre = ' + str(bimestre) + ' and ra_aluno = ' + str(aluno['ra_bruto'])
 
@@ -992,7 +992,7 @@ def render_conselho_bimestre():
                     sql = 'select ' + \
 	                      'sum(falta) as total_faltas_if, ' + \
                           'sum(ac) as total_ac_if, ' + \
-                          'round(100 - ((select (sum(falta) - sum(ac)) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where num_classe =  (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
+                          'round(100 - ((select (sum(falta) - sum(ac)) from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ')) * 100 / (select sum(aulas_dadas) from vinculo_prof_disc where num_classe in (select num_classe from notas where ra_aluno = ' + str(aluno['ra_bruto']) + ' and num_classe in (' + turmas_if_concat + ') group by(num_classe)))), 0) as freq_if ' + \
                           'from notas ' + \
                           'where num_classe in (' + turmas_if_concat + ') and ra_aluno = ' + str(aluno['ra_bruto'])
                     
@@ -1020,7 +1020,6 @@ def render_conselho_bimestre():
 
         # verificar se o bimestre é o último, se for será necessário também desenhar o quinto conceito
         lista_conceito_final = []
-        notas_conceito_final = {}
         conceito_final = False
         situacao_final = None
 
@@ -1045,7 +1044,8 @@ def render_conselho_bimestre():
             for aluno in lista_conceito_final:
                 aluno['nome'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
 
-            situacao_final = banco.executarConsulta('SELECT (select count(situacao) from vinculo_alunos_turmas where num_classe = 287808299 and situacao = 6 ) as aprovados,   (select count(situacao) from vinculo_alunos_turmas where num_classe = 287808299 and situacao = 10 ) as reprovados, (select count(situacao) from vinculo_alunos_turmas where num_classe = 287808299 and situacao <> 6 and situacao <> 10 ) as outros')[0]
+            situacao_final = banco.executarConsulta('SELECT (select count(situacao) from vinculo_alunos_turmas where num_classe = %s and situacao = 6 ) as aprovados,   (select count(situacao) from vinculo_alunos_turmas where num_classe = %s and situacao = 10 ) as reprovados, (select count(situacao) from vinculo_alunos_turmas where num_classe = %s and situacao <> 6 and situacao <> 10 ) as outros' % (num_classe, num_classe, num_classe))[0]
+
 
             # pegar notas do conselho final
             for item in disciplinas:
@@ -1056,13 +1056,15 @@ def render_conselho_bimestre():
 
                 notas = banco.executarConsulta(sql)
 
-                for aluno in notas:
-                    notas_conceito_final[aluno['ra_aluno']] = aluno
+                item['conceito_final'] = {}
 
-                item['conceito_final'] = notas_conceito_final
+                for aluno in notas:
+                    item['conceito_final'][aluno['ra_aluno']] = aluno
+
 
             # pegar conceito final do IF quando houver
-            print(turmas_if)
+            #print(turmas_if)
+
 
         return render_template('render_pdf/render_conselho_bimestre.jinja', alunos=alunos, turma=turma, disciplinas=disciplinas, freq=freq, total=total, bimestre=bimestre, fim_bimestre=fim_bimestre, dificuldades=dificuldades, turmas_if=turmas_if, colspan_if=colspan_if, lista_conceito_final=lista_conceito_final, situacao_final=situacao_final)
 
@@ -3434,5 +3436,5 @@ def calendario():
 
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
-    app.run(debug=True, use_reloader=False, port=80)
-    #serve(app, host='0.0.0.0', port=80, threads=8)
+    #app.run(debug=True, use_reloader=False, port=80)
+    serve(app, host='0.0.0.0', port=80, threads=8)

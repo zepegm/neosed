@@ -1055,13 +1055,17 @@ Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</
                             <th style="border-right:solid 2px;">{{'%02d' % alunos[n]['num']}}</th>
                             {% for disc in disciplinas %}
                                 {% if alunos[n]['fim_mat'] == '' %}
+                                {% try %}
                                     {% if disc['conceito_final'][alunos[n]['ra_bruto']]['media']|int < 5 %}
                                     <td style="border-right:solid 2px rgb(0,0,0);" class="center nota_final red" style="width: 100%;">{{disc['conceito_final'][alunos[n]['ra_bruto']]['media']}}</td>
                                     {% else %}
                                     <td style="border-right:solid 2px rgb(0,0,0);" class="center nota_final" style="width: 100%;">{{disc['conceito_final'][alunos[n]['ra_bruto']]['media']}}</td>
                                     {% endif %}
+                                {% catch %}
+                                <td style="border-right:solid 2px rgb(0,0,0);" class="center nota_final" style="width: 100%;">-</td>
+                                {% endtry %}                            
                                 {% else %}
-                                    <td style="border-right:solid 2px rgb(0,0,0);" class="red center nota_final">{{alunos[n]['mat']}}</td>
+                                    <td style="border-right:solid 2px rgb(0,0,0);" class="red center nota">{{alunos[n]['mat']}}</td>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
@@ -1077,7 +1081,7 @@ Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</
                     <tr>
                         <th style="border-top:solid 2px;border-right:solid 2px;" class="nota_final" rowspan="2">Prof</th>
                         {% for disc in disciplinas %}
-                            <td style="border-top:solid 2px;border-right:solid 2px;" class="nota_final">{{disc['nome_ata']}}</td>
+                            <td style="border-top:solid 2px;border-right:solid 2px;" class="nota">{{disc['nome_ata']}}</td>
                         {% endfor %}
                     </tr>
                 </tfoot>
@@ -1106,11 +1110,15 @@ Classe e Série das turmas de <span class="destaque_ata">Itinerário Formativo</
                             <th>{{'%02d' % lista_conceito_final[n]['num']}}</th>
                             {% for disc in disciplinas %}
                                 {% if alunos[n]['fim_mat'] == '' %}
+                                    {% try %}
                                     {% if disc['conceito_final'][lista_conceito_final[n]['ra_bruto']]['media']|int < 5 %}
                                     <td class="center nota_verso red" style="width: 100%;">{{disc['conceito_final'][lista_conceito_final[n]['ra_bruto']]['media']}}</td>
                                     {% else %}
                                     <td class="center nota_verso" style="width: 100%;">{{disc['conceito_final'][lista_conceito_final[n]['ra_bruto']]['media']}}</td>
                                     {% endif %}
+                                    {% catch %}
+                                    <td class="center nota_verso" style="width: 100%;">-</td>
+                                    {% endtry %}
                                 {% else %}
                                     <td class="center nota_verso">-</td>
                                 {% endif %}
@@ -1246,12 +1254,12 @@ Classe e Série dos alunos da <span class="red" style="font-weight: bold;">{{tur
                                 {% else %}
                                     {% if alunos[n]['if'][disc['disciplina']] is defined %}
                                         {% if alunos[n]['if'][disc['disciplina']]['media']|int < 5 %}
-                                        <td style="border-right: solid 2px black;" class="nota_if red">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
+                                        <td style="border-right: solid {{'4px' if loop.index == item['disciplinas']|length and indice == 1 and turmas_if|length > 1 else '2px'}} black;" class="nota_if red">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
                                         {% else %}
-                                        <td style="border-right: solid 2px black;" class="nota_if">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
+                                        <td style="border-right: solid {{'4px' if loop.index == item['disciplinas']|length and indice == 1 and turmas_if|length > 1 else '2px'}} black;" class="nota_if">{{alunos[n]['if'][disc['disciplina']]['media']}}</td>
                                         {% endif %}
                                     {% else %}
-                                            {% if loop.index == disciplinas|length and indice == 1 and turmas_if|length > 1 %}
+                                            {% if loop.index == item['disciplinas']|length and indice == 1 and turmas_if|length > 1 %}
                                             <td class="nota_if" style="border-right: solid 4px black;">-</td>
                                             {% else %}
                                             <td class="nota_if" style="border-right: solid 2px black;">-</td>
