@@ -95,7 +95,7 @@ def index():
         #print('yes')
         if 'txtnumeroclasse' in request.form:
 
-            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':ano}
+            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':request.form['ano']}
             
             if banco.inserirNovaTurma(classe):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -1487,6 +1487,8 @@ async def atualizar_lista_auto():
 
     await page.screenshot({'path': 'static/images/etapas_navegacao/ETAPA 1.png'})
 
+    await browser.close()
+
     return jsonify(True)
 
 
@@ -2351,13 +2353,70 @@ def pesquisarPlan():
             return jsonify(lista)
 
 @app.route('/pesquisarRGCPF', methods=['GET', 'POST'])
-def pesquisarRGCPF():
+async def pesquisarRGCPF():
     if request.method == "POST":
         if request.is_json:
             lista = request.json
-            new_lista = buscarCPF(lista, 1)
-            #print(new_lista)
-            return jsonify(new_lista)
+            new_list = []
+            
+            browser = await launch(
+                {'headless': False},
+                handleSIGINT=False,
+                handleSIGTERM=False,
+                handleSIGHUP=False
+            )
+
+            page = await browser.newPage()
+            # Navigate the page to a URL
+            await page.goto('https://sed.educacao.sp.gov.br/')
+
+            # Set screen size
+            await page.setViewport({'width':1366, 'height':768})
+
+            await page.waitForSelector("#name")
+
+            # Type into login
+            await page.type('#name', 'rg490877795sp')
+            await page.type('#senha', 'BGarden@FF8')
+
+
+            await page.click("#botaoEntrar")
+
+            await page.waitForSelector("#decorMenuFilterTxt")
+
+            for item in lista:
+                await page.goto("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index", {'timeout':60000, 'waitUntil':'domcontentloaded'})
+
+                await page.waitForSelector('.blockUI', {'hidden':True})
+                await page.evaluate('''$("#fieldSetRA").removeAttr("style")''')
+                await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#txtRa', item)
+                await page.evaluate('''$("#TipoConsultaFichaAluno").val(1)''') 
+                await page.evaluate('CarregarPesquisaFichaAluno()')
+
+                await page.waitForSelector('#tabelaDados')
+
+                script_txt = await page.evaluate('''$(".colVisualizar a").attr('onclick')''')
+                await page.evaluate(script_txt)
+
+                await page.waitForSelector("#dtAlteracaoAluno")
+
+                sexo = await page.evaluate('$("#Sexo").val()')
+                sexo = sexo[0:1]
+                cpf = await page.evaluate('$("#CpfAluno").val()')
+                cpf = cpf.replace('.', '').replace('-', '')
+                estado = await page.evaluate('$("#sgUfRg").val()')
+
+                if estado == 'SP':
+                    rg = await page.evaluate("document.getElementById('RgAluno').value") + '-' + await page.evaluate("document.getElementById('DigRgAluno').value")
+                    rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
+                else:
+                    rg = await page.evaluate("document.getElementById('RgAluno').value") + '-' + await page.evaluate("document.getElementById('DigRgAluno').value") + '/' + estado
+
+                new_list.append({'cpf':cpf, 'rg':rg, 'sexo':sexo})
+
+            await browser.close()
+
+            return jsonify(new_list)
 
 @app.route('/importarTurma', methods=['GET', 'POST'])
 def importarTurma():
@@ -3157,7 +3216,8 @@ def ponto_adm():
 
     index = 1
     for mes in list(calendar.month_name)[1:]:
-        meses.append({'desc':mes.title(), 'valor':index, 'atual':int(data_atual.strftime("%m")) == index})    
+        meses.append({'desc':mes.title(), 'valor':index, 'atual':int(data_atual.strftime("%m")) == index})  
+        index += 1  
 
     return render_template('livro_ponto_admin.jinja', meses=meses, ano=data_atual.strftime("%Y"), cargos=cargos, msg=msg, funcionarios=funcionarios, desativados=desativados)
 

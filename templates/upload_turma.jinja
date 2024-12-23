@@ -195,6 +195,7 @@
                         //console.log(index);
 
                         /*console.log(response[item]['rg']);*/
+                        $("table tbody tr:nth-child(" + index + ") td:nth-child(5) select").val(response[item]['sexo']);
                         $("table tbody tr:nth-child(" + index + ") td:nth-child(6) input").val(response[item]['rg']);
                         $("table tbody tr:nth-child(" + index + ") td:nth-child(7) input").val(response[item]['cpf']);
                     }
