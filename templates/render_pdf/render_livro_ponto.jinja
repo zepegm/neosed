@@ -321,7 +321,9 @@
                 width: 300px;
             }
           
-            .red-line {
+            .red-line,
+            .red-line-extra,
+            .red-line-extra-min {
                 /*border:1px solid green;*/
                 position:absolute;
                 top: 303px;
@@ -336,6 +338,10 @@
                         rgba(220,53,69,0) calc(50% + 0.8px),
                         rgba(220,53,69,0) 100%);
              
+            }
+
+            .red-line-extra-min {
+                width: 84.38px;
             }
           
 
@@ -466,8 +472,8 @@
                         <tr>
                             <td colspan="11" class="center right-strong-border">Nesta Unidade Escolar</td>
                             <td colspan="3" class="center right-strong-border">Total</td>
-                            <td class="vertical_text center" rowspan="2">NATUREZA (TIPO) DA FALTA</td>
-                            <td class="vertical_text center" rowspan="2">FALTA MÉDICA PARCIAL</td>
+                            <td class="vertical_text center fixed-col" rowspan="2">NATUREZA (TIPO) DA FALTA</td>
+                            <td class="vertical_text center fixed-col" rowspan="2">FALTA MÉDICA PARCIAL</td>
                         </tr>
 
                         <tr>
@@ -493,7 +499,7 @@
 
                     </thead>
                     <tbody>
-                        {% for dia in dias %}
+                        {% for dia in professor['dias'] %}
                         {% if professor['assina_livro'] == 1 %}
                         <tr class="center {{dia['class-bg']}}" style="height: 16px;">
                         {% else %}
@@ -507,7 +513,7 @@
                             <td class="{{dia['class-txt']}}">{{dia['dia']}}</td>
                             <td class="{{dia['class-txt']}}">{{dia['semana']}}</td>
 
-                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 %}
+                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] not in (10, 12) %}
                             <td class="blue">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
                             {% else %}
                             <td></td>
@@ -515,7 +521,7 @@
 
                             <td></td><td></td>
 
-                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 %}
+                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] not in (10, 12) %}
                             <td class="blue right-strong-border">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
                             {% else %}
                             <td class = 'right-strong-border'></td>
@@ -541,32 +547,10 @@
                                 OBSERVAÇÕES
                             </td>
                         </tr>
-                        <tr>
-                            {% if professor['obs'] != '' %}
-                            <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{professor['obs']}}</td>
-                            {% else %}
-                                {% if professor['assina_livro'] == 1 %}
-                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos[0]}}</td>
-                                {% else %}
-                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">NÃO ASSINA ESSE LIVRO PONTO</td>
-                                {% endif %}
-                            {% endif %}
-                        </tr>
-                        <tr>
-                            {% if professor['obs'] != '' %}
-                                {% if professor['assina_livro'] == 1 %}
-                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos[0]}}</td>
-                                {% else %}
-                                <td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">NÃO ASSINA ESSE LIVRO PONTO</td>
-                                {% endif %}
-                            {% else %}
-                            <td colspan="23" style="height: 16px;">&nbsp;</td>
-                            {% endif %}
-                        </tr> 
 
                         <!-- Preencher o resto das lacunas do campo observação -->
                         {% for n in range(linhas) %}
-                        <tr><td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{eventos[n + 1]}}</td></tr>
+                        <tr><td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{professor['eventos'][n]}}</td></tr>
                         {% endfor %}
 
                         {% for n in range(4) %}
@@ -611,6 +595,7 @@
                 {% if professor['assina_livro'] == 0 %}
                 <div class="red-line"></div>
                 {% endif %}
+                {{professor['extra_red']}}
 
                 <!-- Basta agora apenas inserir as informações no lado direito da folha onde consta o quadro de aulas -->
                 <div class="side_final">

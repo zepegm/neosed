@@ -152,7 +152,7 @@
                                 <td>{{professor['nome']}}</td>
                                 <td>{{professor['rg']}}</td>
                                 <td>{{professor['cpf']}}</td>
-                                <td class="reativar_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-trash-can-arrow-up"></i></td>
+                                <td class="reativar_professor text-center" data-id="{{professor['raw_cpf']}}" data-di="{{professor['di']}}"><i class="fa-solid fa-trash-can-arrow-up"></i></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -337,6 +337,17 @@
                                 </div>                            
                             </div>
 
+                            <div class="col-sm-12">
+                                <div class="mb-3">
+                                    <label class="form-check-label" for="txt_obs">Instância do Calendário</label>
+                                    <select id="cb_instancia" name="cb_instancia" class="form-control">
+                                        {% for item in instancias %}
+                                        <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>                    
+                                </div>                            
+                            </div>                            
+
                         </div>
                     </div>
                 </div>
@@ -410,10 +421,10 @@
                             <td>{{professor['rg']}}</td>
                             <td>{{professor['cpf']}}</td>
                             <td>{{professor['categoria']}}</td>
-                            <td class="quadro_aulas text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-table"></i></td>
-                            <td class="view_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-magnifying-glass"></i></td>
-                            <td class="row_professor text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-pen-to-square"></i></td>
-                            <td class="desativar_prof text-center" data-id="{{professor['raw_cpf']}}"><i class="fa-solid fa-trash"></i></td>
+                            <td class="quadro_aulas text-center" data-id="{{professor['raw_cpf']}}" data-di="{{professor['di']}}"><i class="fa-solid fa-table"></i></td>
+                            <td class="view_professor text-center" data-id="{{professor['raw_cpf']}}" data-di="{{professor['di']}}"><i class="fa-solid fa-magnifying-glass"></i></td>
+                            <td class="row_professor text-center" data-id="{{professor['raw_cpf']}}" data-di="{{professor['di']}}"><i class="fa-solid fa-pen-to-square"></i></td>
+                            <td class="desativar_prof text-center" data-id="{{professor['raw_cpf']}}" data-di="{{professor['di']}}"><i class="fa-solid fa-trash"></i></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -424,6 +435,7 @@
     <form id="form_ativacao_prof" action="/ponto" method="POST">
         <input type="hidden" name="cpf" id="cpf_ativacao">
         <input type="hidden" name="ativacao" id="ativacao">
+        <input type="hidden" name="di" id="di_ativacao">
     </form>
 
     <form id="form_quadro_aula" action="/ponto" method="POST">
@@ -512,12 +524,14 @@
             $("#lb_professor_nome_exclusao").text($(this).parent().find('td:first').text());
             $("#ativacao").val(0);
             $("#cpf_ativacao").val($(this).attr('data-id'));
+            $("#di_ativacao").val($(this).attr('data-di'));
             $("#modal_confirmar_desativacao").modal('show');
         });
 
         $(".reativar_professor").on('click', function() {
             $("#ativacao").val(1);
             $("#cpf_ativacao").val($(this).attr('data-id'));
+            $("#di_ativacao").val($(this).attr('data-di'));
             $("#form_ativacao_prof").submit();
         });
 
@@ -527,8 +541,9 @@
 
         $(".view_professor ").on('click', function() {
             cpf = $(this).attr('data-id');
+            di = $(this).attr('data-di');
 
-            info = {'destino':2, 'cpf':cpf}
+            info = {'destino':2, 'cpf':cpf, 'di':di}
 
             $.ajax({
                 type: "POST",
@@ -619,6 +634,7 @@
                     form_adicional += '<input id="folha_extra" type="number" class="form-control" value="0">';
                     form_adicional += '<button class="btn_extra btn btn-danger">Gerar Folha Extra</button>';
                     form_adicional += '<input type="hidden" id="cpf_prof_extra" value="' + response['detalhes']['cpf'] + '">';
+                    form_adicional += '<input type="hidden" id="di_prof_extra" value="' + response['detalhes']['di'] + '">';
 
                     form_adicional += '</div></div></div>';
 
@@ -764,7 +780,7 @@
             $(this).attr('disabled');
             $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
 
-            info = {'destino':9, 'mes':$("#cb_mes_extra").val(), 'ano':$("#txt_ano_extra").val(), 'professor':$("#cpf_prof_extra").val(), 'number':$("#folha_extra").val()}
+            info = {'destino':9, 'mes':$("#cb_mes_extra").val(), 'ano':$("#txt_ano_extra").val(), 'professor':$("#cpf_prof_extra").val(), 'di':$("#di_prof_extra").val(), 'number':$("#folha_extra").val()}
 
             $.ajax({
                 type: "POST",
@@ -790,8 +806,9 @@
 
         $(".row_professor").on('click', function() {
             cpf = $(this).attr('data-id');
+            di = $(this).attr('data-di');
 
-            info = {'destino':0, 'cpf':cpf}
+            info = {'destino':0, 'cpf':cpf, 'di':di}
 
             $.ajax({
                 type: "POST",
@@ -820,6 +837,7 @@
                     $("#txt_atpl").val(response['atpl']);
                     $("#txt_atpc").val(response['atpc']);
                     $("#txt_aulas").val(response['aulas_outra_ue']);
+                    $("#cb_instancia").val(response['instancia_calendario']);
 
                     if (response['assina_livro'] == 1) {
                         $("#assina").attr('checked', '');

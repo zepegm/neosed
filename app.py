@@ -271,6 +271,8 @@ def render_livro_ponto_adm():
             # Verifica se é feriado, se for puxa o feriado
             feriado = banco.executarConsulta("select eventos_calendario.descricao, cat_letivo.descricao as tipo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where '%s-%s-%s' in (data_inicial, data_final) and evento in (3, 4, 5)" % (ano, mes, dia))
 
+            print("select eventos_calendario.descricao, cat_letivo.descricao as tipo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where '%s-%s-%s' in (data_inicial, data_final) and evento in (3, 4, 5)" % (ano, mes, dia))
+
             if len(feriado) > 0:
                 dias_com_fim_de_semana.append({'dia':dia, 'tipo':'FERIADO', 'obs':'VIDE VERSO', 'class':'red'})
                 verso_txt.append('Dia %02d - %s' % (dia, feriado[0]['descricao']))
@@ -311,7 +313,7 @@ def render_livro_ponto():
     condicao_extra = ''
 
     if len(professor_individual) > 0:
-        condicao_extra = 'and cpf = %s' % professor_individual[0].replace('.', '').replace('-', '')
+        condicao_extra = 'and cpf = %s and di = %s' % (professor_individual[0].replace('.', '').replace('-', ''), request.args.getlist('di')[0])
 
 
     folha_extra = 0
@@ -323,7 +325,7 @@ def render_livro_ponto():
     # ---------------------------------------------------------------------------
     # pegar a lista de professores
     sql = "select " + \
-          "nome, ifnull(di, '-') as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
+          "instancia_calendario, nome, ifnull(di, '-') as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
           "cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
           "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuída(s) ', (select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf), ' aula(s) nesta UE'), 'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
           "ifnull(FNREF, '') as FNREF, jornada_livro_ponto.descricao as jornada, jornada_livro_ponto.qtd as qtd_jornada, " + \
@@ -462,63 +464,112 @@ def render_livro_ponto():
         professor['total_geral'] = total_aulas_geral
 
 
-    # ---------------------------------------------------------------------------
-    # pegar os dias do mes
-    qtd_dias = qtd_dias = calendar.monthrange(ano, mes)[1]
+        # ---------------------------------------------------------------------------
+        # pegar os dias do mes
+        qtd_dias = qtd_dias = calendar.monthrange(ano, mes)[1]
+        professor['extra_red'] = ''
+        cont_deixou = 0
+        top_deixou = 303
+        height_deixou = 0
+        dias = []
 
-    dias = []
+        for i in range(1, qtd_dias + 1):
+            date_aux = datetime(ano, mes, i)
 
-    for i in range(1, qtd_dias + 1):
-        date_aux = datetime(ano, mes, i)
+            if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb': # dias de semana
+                evento = banco.executarConsulta("select eventos_calendario.evento as id, cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final) and instancia_calendario = %s" % (date_aux.strftime("%y-%m-%d"), professor['instancia_calendario']))
 
-        if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb': # dias de semana
-            evento = banco.executarConsulta("select eventos_calendario.evento as id, cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
-        
-            if len(evento) > 0: # existe um evento
-                if evento[0]['qtd_letivo'] < 1 and evento[0]['id'] < 7: # significa que é feriado ou dia não letivo e não é replanejamento
-                    dias.append({'dia':'%02d' % i, 'Assinatura':evento[0]['descricao'], 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'black'})
+                if len(evento) > 0: # existe um evento
+
+                    if evento[0]['id'] == 11:
+                        professor['extra_red'] = '<div class="red-line-extra" style="height: %spx"></div>' % (i * 16)
+                    elif evento[0]['id'] == 12:
+                        if cont_deixou == 0:
+                            top_deixou += ((i - 1) * 16)
+                            cont_deixou += 1
+                        else:
+                            cont_deixou += 1
+                            height_deixou = cont_deixou * 16
+                            professor['extra_red'] = '<div class="red-line-extra-min" style="top: %spx; height: %spx"></div>' % (top_deixou, height_deixou)
+                            
+
+                    if evento[0]['qtd_letivo'] < 1 and (evento[0]['id'] < 7 or evento[0]['id'] in (10, 11, 12)): # significa que é feriado ou dia não letivo e não é replanejamento
+                        dias.append({'dia':'%02d' % i, 'Assinatura':evento[0]['descricao'].replace("Sem vínculo", '').replace('Deixou de ministrar aulas nesta U.E.', ''), 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'black', 'evento':evento[0]['id']})
+                    else:
+                        dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'black', 'evento':evento[0]['id']})
                 else:
-                    dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'black'})
-            else:
-                dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'black'})
-        else: # sábado e domingo
-            evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
+                    dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'black', 'evento':0})
+            else: # sábado e domingo
+                evento = banco.executarConsulta("select eventos_calendario.evento as id, cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final) and instancia_calendario = %s" % (date_aux.strftime("%y-%m-%d"), professor['instancia_calendario']))
 
-            if len(evento) > 0: # existe um evento, talvez seja reposição
-                if evento[0]['qtd_letivo'] > 0: # significa que é reposição de dia letivo
-                    dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'red'})
+                if len(evento) > 0: # existe um evento, talvez seja reposição
+
+                    if evento[0]['id'] == 11:
+                        professor['extra_red'] = '<div class="red-line-extra" style="height: %spx"></div>' % (i * 16)
+                    elif evento[0]['id'] == 12:
+                        if cont_deixou == 0:
+                            top_deixou += ((i - 1) * 16)
+                            cont_deixou += 1
+                        else:
+                            height_deixou = cont_deixou * 16
+                            professor['extra_red'] = '<div class="red-line-extra-min" style="top: %spx; height: %spx"></div>' % (top_deixou, height_deixou)
+                            cont_deixou += 1
+
+                    if evento[0]['qtd_letivo'] > 0: # significa que é reposição de dia letivo
+                        dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'red', 'evento':evento[0]['id']})
+                    else:
+                        dias.append({'dia':'%02d' % i, 'Assinatura':evento[0]['descricao'].replace("Sem vínculo", '').replace('Deixou de ministrar aulas nesta U.E.', ''), 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'red', 'evento':evento[0]['id']})
                 else:
-                    dias.append({'dia':'%02d' % i, 'Assinatura':evento[0]['descricao'], 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'red'})
+                    dias.append({'dia':'%02d' % i, 'Assinatura':date_aux.strftime("%A").title(), 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'red', 'evento':0})
+
+        professor['dias']   = dias
+
+        linhas = 5 + (30 - len(dias))
+
+        # criar um texto citando os eventos mensais de acordo com o calendário pedagógico
+        eventos = banco.executarConsulta('select data_inicial, data_final, cat_letivo.descricao as cat, eventos_calendario.descricao, eventos_calendario.evento as id_evento from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where MONTH(data_inicial) = %s and YEAR(data_inicial) = %s and instancia_calendario = %s and eventos_calendario.evento != 11 order by data_inicial' % (mes, ano, professor['instancia_calendario']))
+        txt_eventos = ''
+
+        lst_final_eventos = []
+
+        if professor['assina_livro'] == 0:
+            lst_final_eventos.append("NÃO ASSINA ESTE LIVRO PONTO")
+            eventos = []
+
+        if professor['obs'] != '':
+            lst_final_eventos.append(professor['obs'])
+
+        for evento in eventos:
+
+            if evento['id_evento'] == 12:
+                if txt_eventos != '':
+                    lst_final_eventos.append(txt_eventos[:-2])
+                    txt_eventos = ''
+
+                txt_descricao = evento['cat']
+                # definir como aparecerá no campo observação, se tiver os detalhes, serão os detalhes, senão só a descrição básica
+                if evento['descricao'] is not None:
+                    txt_descricao = evento['descricao']
+
+                txt_eventos += 'A partir de %s: %s, ' % (evento['data_inicial'].strftime('%d'), txt_descricao)
             else:
-                dias.append({'dia':'%02d' % i, 'Assinatura':date_aux.strftime("%A").title(), 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'red'})    
+                txt_descricao = evento['cat']
+                # definir como aparecerá no campo observação, se tiver os detalhes, serão os detalhes, senão só a descrição básica
+                if evento['descricao'] is not None:
+                    txt_descricao = evento['descricao']
 
+                if evento['data_inicial'] == evento['data_final']: # evento de apenas um dia
+                    txt_eventos += 'Dia %s: %s, ' % (evento['data_inicial'].strftime('%d'), txt_descricao)
+                else: # evento de período
+                    txt_eventos += 'De %s até %s: %s, ' % (evento['data_inicial'].strftime('%d'), evento['data_final'].strftime('%d'), txt_descricao)
 
-    # criar um texto citando os eventos mensais de acordo com o calendário pedagógico
-    eventos = banco.executarConsulta('select data_inicial, data_final, cat_letivo.descricao as cat, eventos_calendario.descricao from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where MONTH(data_inicial) = %s order by data_inicial' % mes)
-    txt_eventos = ''
+            if len(txt_eventos) > 100:
+                lst_final_eventos.append(txt_eventos[:-2])
+                txt_eventos = ''
 
-    lst_final_eventos = []
+        lst_final_eventos.append(txt_eventos[:-2])
+        professor['eventos'] = lst_final_eventos
 
-    for evento in eventos:
-
-        txt_descricao = evento['cat']
-        # definir como aparecerá no campo observação, se tiver os detalhes, serão os detalhes, senão só a descrição básica
-        if evento['descricao'] is not None:
-            txt_descricao = evento['descricao']
-
-        if evento['data_inicial'] == evento['data_final']: # evento de apenas um dia
-            txt_eventos += 'Dia %s: %s, ' % (evento['data_inicial'].strftime('%d'), txt_descricao)
-        else: # evento de período
-            txt_eventos += 'De %s até %s: %s, ' % (evento['data_inicial'].strftime('%d'), evento['data_final'].strftime('%d'), txt_descricao)
-
-        if len(txt_eventos) > 100:
-            lst_final_eventos.append(txt_eventos[:-2])
-            txt_eventos = ''
-
-    lst_final_eventos.append(txt_eventos[:-2])
-
-
-    linhas = 3 + (30 - len(dias))
 
     info_assinatura = banco.executarConsulta("select (select valor from config where id_config = 'diretor_ponto') as diretor, (select valor from config where id_config = 'rg_diretor_ponto') as rg_diretor, (select valor from config where id_config = 'secretario_ponto') as secretario, (select valor from config where id_config = 'rg_secretario_ponto') as rg_secretario, (select valor from config where id_config = 'cargo_secretario_ponto') as cargo_secretario")[0]
 
@@ -1629,7 +1680,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s' % (info['mes'], info['ano'], info['professor'], info['number']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s' % (info['mes'], info['ano'], info['professor'], info['number'], info['di']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3232,7 +3283,7 @@ def ponto():
             info = request.json
 
             if info['destino'] == 0: # pegar os dados do professor para editar no formulário
-                detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs, ifnull(atpc, '') as atpc, ifnull(atpl, '') as atpl, ifnull(aulas_outra_ue, '') as aulas_outra_ue from professor_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
+                detalhes = banco.executarConsulta("select instancia_calendario, cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs, ifnull(atpc, '') as atpc, ifnull(atpl, '') as atpl, ifnull(aulas_outra_ue, '') as aulas_outra_ue from professor_livro_ponto WHERE cpf = %s and di = %s" % (info['cpf'], info['di']))[0]
                 return jsonify(detalhes)
             
             elif info['destino'] == 1: # pegar quadro aula
@@ -3247,6 +3298,8 @@ def ponto():
                 return jsonify({'quadro':quadro, 'aulas_ue':aulas})
             
             elif info['destino'] == 2: # pegar os dado do professor para exibir no formulário
+
+                print(info)
 
                 sql = "SELECT nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
                       "jornada_livro_ponto.descricao as jornada, sede_c.descricao as sede_classificacao, sede_f.descricao as sede_controle_freq, ifnull(di, '') as di, " + \
@@ -3264,7 +3317,7 @@ def ponto():
                       "LEFT JOIN sede_livro_ponto AS sede_f ON sede_f.id = professor_livro_ponto.sede_controle_freq " + \
                       "LEFT JOIN disciplinas ON disciplinas.codigo_disciplina = professor_livro_ponto.disciplina " + \
                       "LEFT JOIN afastamento_livro_ponto ON afastamento_livro_ponto.id = professor_livro_ponto.afastamento " + \
-                      "WHERE cpf = %s" % info['cpf']
+                      "WHERE cpf = %s and di = %s" % (info['cpf'], info['di'])
 
                 detalhes = banco.executarConsulta(sql)[0]
 
@@ -3303,8 +3356,9 @@ def ponto():
         if 'ativacao' in request.form: # é pra desativar ou ativar o professor
             ativacao = int(request.form['ativacao'])
             id = request.form['cpf']
+            di = request.form['di']
             
-            basic_sql = 'UPDATE professor_livro_ponto SET ativo = %s WHERE cpf = %s' % (ativacao, id)
+            basic_sql = 'UPDATE professor_livro_ponto SET ativo = %s WHERE cpf = %s and di = %s' % (ativacao, id, di)
 
             if banco.executeBasicSQL(basic_sql):
                 if ativacao == 0:
@@ -3348,6 +3402,7 @@ def ponto():
             dados['atpc'] = 'null' if request.form['atpc'] == '' else "'%s'" % request.form['atpc']
             dados['atpl'] = 'null' if request.form['atpl'] == '' else "'%s'" % request.form['atpl']
             dados['aulas_outra_ue'] = 'null' if request.form['aulas'] == '' else "'%s'" % request.form['aulas']
+            dados['instancia_calendario'] = request.form['cb_instancia']
 
             if banco.insertOrUpdate(dados, 'professor_livro_ponto'):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -3368,7 +3423,7 @@ def ponto():
     disciplinas = banco.executarConsulta('select codigo_disciplina as id, descricao from disciplinas where classificacao = 1 order by descricao')
     afastamentos = banco.executarConsulta("select id, concat(id, ' - ', descricao) as desc_longo from afastamento_livro_ponto order by descricao")
 
-    professores = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf, categoria_livro_ponto.descricao as categoria, ifnull(afastamento_livro_ponto.descricao, '-') as afastamento from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto on afastamento_livro_ponto.id = professor_livro_ponto.afastamento where ativo = 1 order by nome")
+    professores = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf, di, categoria_livro_ponto.descricao as categoria, ifnull(afastamento_livro_ponto.descricao, '-') as afastamento from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto on afastamento_livro_ponto.id = professor_livro_ponto.afastamento where ativo = 1 order by nome")
     for professor in professores:
         professor['raw_cpf'] = professor['cpf']
         cpf = "%011d" % professor['cpf']
@@ -3377,7 +3432,7 @@ def ponto():
         rg = "%08d" % int(professor['rg'])
         professor['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])
 
-    desativados = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf from professor_livro_ponto where ativo = 0 order by nome")
+    desativados = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf, di from professor_livro_ponto where ativo = 0 order by nome")
     for professor in desativados:
         professor['raw_cpf'] = professor['cpf']
         cpf = "%011d" % professor['cpf']
@@ -3388,6 +3443,7 @@ def ponto():
 
 
     periodos = banco.executarConsulta('select * from periodo_livro_ponto')
+    instancias = banco.executarConsulta('select * from calendario_ponto order by descricao')
 
 
     # pegar os meses
@@ -3400,7 +3456,7 @@ def ponto():
 
         index += 1    
 
-    return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores, desativados=desativados, periodos=periodos, meses=meses, ano=data_atual.strftime("%Y"))
+    return render_template('livro_ponto.jinja', cargos=cargos, categorias=categorias, jornadas=jornadas, escolas=escolas, disciplinas=disciplinas, afastamentos=afastamentos, msg=msg, professores=professores, desativados=desativados, periodos=periodos, meses=meses, ano=data_atual.strftime("%Y"), instancias=instancias)
 
 
 @app.route('/calendario', methods=['GET', 'POST'])
@@ -3408,33 +3464,53 @@ def calendario():
 
     status = ''
     ano = datetime.now().year
+    instancia = 1
 
-    if request.method == 'POST': # recebeu novo pedido para cadastrar evento
-        data_inicial = request.form['data_inicial']
-        data_final = request.form['data_final']
-        evento = request.form['cb_evento']
-        descricao = request.form['descricao']
+    if request.method == 'POST': # recebeu novo pedido para cadastrar evento ou instancia
 
-        # verificar se o ano foi digitado corretamente
-        if int(data_inicial[0:4]) == ano and int(data_final[0:4]) == ano:
-            # prosseguir
-            if banco.inserirEvento(data_inicial, data_final, evento, descricao):
+        if 'nova_instancia' in request.form:
+            if banco.executeBasicSQL("INSERT INTO calendario_ponto(descricao) VALUES('%s')" % request.form['nova_instancia']):
                 status = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
-                        '<strong>Operação bem sucedida!</strong> Evento cadastrado com sucesso.' \
+                        '<strong>Operação bem sucedida!</strong> Instância cadastrada com sucesso.' \
                         '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
-                        '</div>'          
+                        '</div>'  
             else:
                 status = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
                         '<strong>Erro falta!</strong> Falha ao tentar inserir informações no Banco de Dados!' \
                         '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
-                        '</div>'                  
-        else:
-            status = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
-                     '<strong>Atenção!</strong> Por favor digite uma data dentro do <strong>ano atual!</strong>' \
-                     '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
-                     '</div>'
+                        '</div>'                              
+            
 
-    # montando calendário padrão
+        elif 'cb_instancias' in request.form:
+            instancia = int(request.form['cb_instancias'])
+        
+        else:
+            data_inicial = request.form['data_inicial']
+            data_final = request.form['data_final']
+            evento = request.form['cb_evento']
+            descricao = request.form['descricao']
+            instancia = int(request.form['instancia'])
+
+            # verificar se o ano foi digitado corretamente
+            if int(data_inicial[0:4]) == ano and int(data_final[0:4]) == ano:
+                # prosseguir
+                if banco.inserirEvento(data_inicial, data_final, evento, descricao, instancia):
+                    status = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                            '<strong>Operação bem sucedida!</strong> Evento cadastrado com sucesso.' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'          
+                else:
+                    status = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                            '<strong>Erro falta!</strong> Falha ao tentar inserir informações no Banco de Dados!' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'                  
+            else:
+                status = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Por favor digite uma data dentro do <strong>ano atual!</strong>' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+
+    # montando calendário
 
     calendario = []
     letivos = 0
@@ -3452,7 +3528,7 @@ def calendario():
 
             if date_aux.strftime("%a") != 'dom' and date_aux.strftime("%a") != 'sáb': # dias de semana
 
-                evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
+                evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final) and instancia_calendario = %s" % (date_aux.strftime("%y-%m-%d"), instancia))
 
                 situacao = 'Letivo'
                 color = 'table-light'
@@ -3469,7 +3545,7 @@ def calendario():
                 dias.append({'dia':j, 'semana':date_aux.strftime("%a"), 'situacao':situacao, 'color':color})
             else:
 
-                evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final)" % date_aux.strftime("%y-%m-%d"))
+                evento = banco.executarConsulta("select cat_letivo.descricao, cat_letivo.qtd_letivo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where ('%s' BETWEEN data_inicial and data_final) and instancia_calendario = %s" % (date_aux.strftime("%y-%m-%d"), instancia))
 
                 situacao = '-'
                 color = 'table-secondary'
@@ -3491,10 +3567,11 @@ def calendario():
         calendario.append({'dias':dias, 'descricao':calendar.month_name[i].title(), 'letivos':letivos_mes})
 
     eventos = banco.executarConsulta('select id, descricao from cat_letivo')
+    instancias = banco.executarConsulta('select * from calendario_ponto order by descricao')
 
-    return render_template('calendario.jinja', calendario=calendario, letivos=letivos, ano=ano, eventos=eventos, status=status)
+    return render_template('calendario.jinja', calendario=calendario, letivos=letivos, ano=ano, eventos=eventos, status=status, instancias=instancias, instancia=instancia)
 
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
-    #app.run(debug=True, use_reloader=False, port=80)
-    serve(app, host='0.0.0.0', port=80, threads=8)
+    app.run(debug=True, use_reloader=False, port=80)
+    #serve(app, host='0.0.0.0', port=80, threads=8)

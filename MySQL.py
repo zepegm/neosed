@@ -303,7 +303,7 @@ class db:
             return False            
         
 
-    def inserirEvento(self, data_inicial, data_final, evento, descricao):
+    def inserirEvento(self, data_inicial, data_final, evento, descricao, instancia):
         try:
 
             if descricao == '':
@@ -316,11 +316,11 @@ class db:
 
             # remover dados conflitantes
             cur.execute('SET SQL_SAFE_UPDATES = 0')
-            cur.execute("DELETE FROM eventos_calendario WHERE (data_inicial BETWEEN '%s' AND '%s')" % (data_inicial, data_final))
-            cur.execute("DELETE FROM eventos_calendario WHERE (data_final BETWEEN '%s' AND '%s')" % (data_inicial, data_final))
+            cur.execute("DELETE FROM eventos_calendario WHERE (data_inicial BETWEEN '%s' AND '%s') and instancia_calendario = %s" % (data_inicial, data_final, instancia))
+            cur.execute("DELETE FROM eventos_calendario WHERE (data_final BETWEEN '%s' AND '%s') and instancia_calendario = %s" % (data_inicial, data_final, instancia))
+            print("DELETE FROM eventos_calendario WHERE (data_final BETWEEN '%s' AND '%s') and instancia_calendario = %s" % (data_inicial, data_final, instancia))
             cur.execute('SET SQL_SAFE_UPDATES = 1;')
-            print("INSERT INTO eventos_calendario VALUES('%s', '%s', %s, %s)" % (data_inicial, data_final, evento, descricao))
-            cur.execute("INSERT INTO eventos_calendario VALUES('%s', '%s', %s, %s)" % (data_inicial, data_final, evento, descricao))
+            cur.execute("INSERT INTO eventos_calendario VALUES('%s', '%s', %s, %s, %s)" % (data_inicial, data_final, evento, descricao, instancia))
 
             database.commit()
 
