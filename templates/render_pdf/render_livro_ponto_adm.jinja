@@ -161,7 +161,7 @@
             }
 
             .line {
-                border-right: solid 4px red !important;
+                border-right: solid 2px red !important;
             }
 
             .title {
@@ -187,14 +187,51 @@
                 margin-left: 200px;
             }
 
+            .line_day {
+                height: 19px !important; 
+            }
+
+            .line-afast {
+                position: relative;             
+            }
+
+            .line-afast::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 30px;
+                width: 480px;
+                border-top: 1px solid red;
+                transform: translateY(-50%);                
+            }
+
+            .red-line {
+                /*border:1px solid green;*/
+                position:absolute;
+                top: 289px;
+                left: 27px;
+                width:491px;
+                height: 303px;
+
+                background: 
+                    linear-gradient(to top right,
+                        rgba(220,53,69,0) 0%,
+                        rgba(220,53,69,0) calc(50% - 0.8px),
+                        rgba(220,53,69,1) 50%,
+                        rgba(220,53,69,0) calc(50% + 0.8px),
+                        rgba(220,53,69,0) 100%);
+             
+            }            
+
         </style>
     </head>
     <body>
 
         <!-- Aqui será feita primeira página -->
         <div class="pag capa">
-            {% for afastamento in afastamentos %}
-            <canvas class="line-afastamento" id="{{afastamento['nome']}}"></canvas>
+
+            {% for item in afastamentos %}
+            <div class="red-line" style="top:{{289 + item['inicio'] * 19}}px; height:{{(item['fim'] - 1 - item['inicio']) * 19}}px" data="{{item}}"></div>
             {% endfor %}
 
             <table class="tb_head">
@@ -249,8 +286,8 @@
                 </thead>
                 <tbody>
                 {% for dia in dias %}
-                    <tr>
-                        <td>{{dia['dia']}}</td>
+                    <tr {{dia['tr-class']}}>
+                        <td class="line_day">{{dia['dia']}}</td>
                         <td id="dia_{{dia['dia']}}">&nbsp;</td>
                         <td class="{{dia['class']}}">{{dia['tipo']}}</td>
                         <td>&nbsp;</td>
@@ -363,45 +400,6 @@
 
     <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
     <script>
-
-        // desenhar afastamentos adequadamente
-        afastamentos = {{afastamentos}};
-
-        for (let i = 0; i < afastamentos.length; i++) {
-
-            var canvas = document.getElementById(afastamentos[i]['nome']);
-            var context = canvas.getContext('2d');
-
-            let top_tb = $("#tb_dias").position();
-            let posicao = $('#dia_' + afastamentos[i]['inicio']).position();
-
-            let posicao_fim = $('#dia_' + afastamentos[i]['fim']).position();
-
-            let tamanho = $("#dia_" + afastamentos[i]['fim']).height();
-
-            console.log(tamanho);
-
-            final_pos = posicao_fim.top - posicao.top + tamanho;
-
-            // Set the starting point of the line
-            let top = top_tb.top + posicao.top
-            $("#" + afastamentos[i]['nome']).css('top', top + 18);
-            $("#" + afastamentos[i]['nome']).css('left', posicao.left + 5);
-
-            $("#" + afastamentos[i]['nome']).css('height', final_pos);
-
-            context.moveTo(0, 0);
-
-            // Set the ending point of the line
-            context.lineTo(1000, 500);    
-
-            // Set the line color and width
-            context.strokeStyle = 'red'; // Red color
-            context.lineWidth = 2;
-
-            // Draw the line
-            context.stroke();                
-        }
 
     </script>
 </html>

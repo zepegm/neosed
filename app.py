@@ -263,38 +263,47 @@ def render_livro_ponto_adm():
             aux_afs['nome'] = 'afastamento_%s' % cont_afs
             aux_afs['inicio'] = dia
             cont_afs += 1
-            dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'VIDE VERSO', 'class':'red'})
-            verso_txt.append('De %02d até %02d - %s' % (inicio_afastamento[0]['inicio'].day, inicio_afastamento[0]['fim'].day, inicio_afastamento[0]['descricao']))
+
+
+
+            if (inicio_afastamento[0]['inicio'] != inicio_afastamento[0]['fim']):
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'VIDE VERSO', 'class':'red', 'tr-class':'class="line-afast"'})
+                if 'Aposentando' in inicio_afastamento[0]['descricao']:
+                    verso_txt.append('A partir do dia %02d - %s' % (inicio_afastamento[0]['inicio'].day, inicio_afastamento[0]['descricao']))
+                else:
+                    verso_txt.append('De %02d até %02d - %s' % (inicio_afastamento[0]['inicio'].day, inicio_afastamento[0]['fim'].day, inicio_afastamento[0]['descricao']))
+            else:
+                verso_txt.append('Dia %02d - %s' % (inicio_afastamento[0]['inicio'].day, inicio_afastamento[0]['descricao']))
 
         if not afastamento:
 
             # Verifica se é feriado, se for puxa o feriado
             feriado = banco.executarConsulta("select eventos_calendario.descricao, cat_letivo.descricao as tipo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where '%s-%s-%s' in (data_inicial, data_final) and evento in (3, 4, 5)" % (ano, mes, dia))
 
-            print("select eventos_calendario.descricao, cat_letivo.descricao as tipo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where '%s-%s-%s' in (data_inicial, data_final) and evento in (3, 4, 5)" % (ano, mes, dia))
-
             if len(feriado) > 0:
-                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'FERIADO', 'obs':'VIDE VERSO', 'class':'red'})
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'FERIADO', 'obs':'VIDE VERSO', 'class':'red', 'tr-class':''})
                 verso_txt.append('Dia %02d - %s' % (dia, feriado[0]['descricao']))
             elif data.weekday() == 5:
-                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'SÁBADO', 'obs':'', 'class':''})
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'SÁBADO', 'obs':'', 'class':'', 'tr-class':''})
             elif data.weekday() == 6:
-                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'DOMINGO', 'obs':'', 'class':''})
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'DOMINGO', 'obs':'', 'class':'', 'tr-class':''})
             else:
-                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'', 'class':''})
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'', 'class':'', 'tr-class':''})
 
         else:
+            print(len(inicio_afastamento))
             fim_afastamento = banco.executarConsulta("select * from afastamentos_ponto_adm where cpf = %s and fim = '%s-%s-%s'" % (cpf, ano, mes, dia))
 
             if len(fim_afastamento) > 0: # pegou o fim
-                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'VIDE VERSO', 'class':'red'})
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'VIDE VERSO', 'class':'red', 'tr-class':'class="line-afast"'})
                 afastamento = False
                 aux_afs['fim'] = dia
-                afastamentos.append(aux_afs)
+                if (aux_afs['fim'] - aux_afs['inicio'] > 1):
+                    afastamentos.append(aux_afs)
                 aux_afs = {}
                 
             elif len(inicio_afastamento) == 0:
-                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'', 'class':'divisor'})
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'', 'class':'divisor', 'tr-class':''})
 
     return render_template('render_pdf/render_livro_ponto_adm.jinja', mes=getMes(mes), ano=ano, dados=dados, dias=dias_com_fim_de_semana, verso=verso_txt, afastamentos=afastamentos)
 
@@ -1145,15 +1154,6 @@ def render_lista():
                                           "inner join duracao on duracao.id = turma.duracao " + \
                                           "where num_classe = %s" % num_classe)[0]
 
-    
-            # pegar total
-            if head['status'] == 'andamento':
-                total = banco.executarConsulta('select (select count(*) from vinculo_alunos_turmas where num_classe = %s) as total, (select count(*) from vinculo_alunos_turmas where num_classe = %s and situacao = 1) as total_ativos' % (num_classe, num_classe))[0]
-                desc_total = 'ativos'
-            else:
-                total = banco.executarConsulta('select (select count(*) from vinculo_alunos_turmas where num_classe = %s) as total, (select count(*) from vinculo_alunos_turmas where num_classe = %s and situacao = 6) as total_ativos' % (num_classe, num_classe))[0]
-                desc_total = 'aprovados'
-
             info = banco.executarConsulta('select ' + \
                                         'CASE ' + \
                                         r"WHEN duracao = 3 THEN (select DATE_FORMAT(`3bim_inicio`, '%Y-%m-%d') from calendario where ano = turma.ano) " + \
@@ -1165,16 +1165,34 @@ def render_lista():
                                         'END as fim ' + \
                                         'from turma where num_classe = %s' % num_classe)[0]
 
-            alunos =  banco.executarConsulta('SELECT ' + \
-                            "num_chamada as num, ifnull(aluno.rm, '-') as rm, aluno.nome, vinculo_alunos_turmas.serie, " + \
-                            'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
-                            "if(fim_mat < '" + info['fim']  + "', situacao.abv1, if(matricula > '" + info['inicio']  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
-                            "if(fim_mat < '" + info['fim']  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
-                            "DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, aluno.sexo, ifnull(rg, '-') as rg, ifnull(concat(LPAD(SUBSTR(cpf, -11, 1), 1, 0), SUBSTR(cpf, -10, 2), '.', substr(cpf, -8, 3), '.', substr(cpf, -5, 3), '-', substr(cpf, -2, 2)), '-') as cpf " + \
-                            "from vinculo_alunos_turmas " + \
-                            'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
-                            'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
-                            "where num_classe = " + num_classe  + " order by num_chamada")
+            # pegar total
+            if head['status'] == 'andamento':
+                total = banco.executarConsulta('select (select count(*) from vinculo_alunos_turmas where num_classe = %s) as total, (select count(*) from vinculo_alunos_turmas where num_classe = %s and situacao = 1) as total_ativos' % (num_classe, num_classe))[0]
+                desc_total = 'ativos'
+                alunos =  banco.executarConsulta('SELECT ' + \
+                                "num_chamada as num, ifnull(aluno.rm, '-') as rm, aluno.nome, vinculo_alunos_turmas.serie, " + \
+                                'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                                "if(fim_mat < '" + info['fim']  + "', situacao.abv1, if(matricula > '" + info['inicio']  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                                "if(fim_mat < '" + info['fim']  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
+                                "DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, aluno.sexo, ifnull(rg, '-') as rg, ifnull(concat(LPAD(SUBSTR(cpf, -11, 1), 1, 0), SUBSTR(cpf, -10, 2), '.', substr(cpf, -8, 3), '.', substr(cpf, -5, 3), '-', substr(cpf, -2, 2)), '-') as cpf " + \
+                                "from vinculo_alunos_turmas " + \
+                                'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
+                                'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
+                                "where num_classe = " + num_classe  + " order by num_chamada")                
+            else:
+                total = banco.executarConsulta('select (select count(*) from vinculo_alunos_turmas where num_classe = %s) as total, (select count(*) from vinculo_alunos_turmas where num_classe = %s and situacao = 6) as total_ativos' % (num_classe, num_classe))[0]
+                desc_total = 'aprovados'
+                alunos =  banco.executarConsulta('SELECT ' + \
+                                "num_chamada as num, ifnull(aluno.rm, '-') as rm, aluno.nome, vinculo_alunos_turmas.serie, " + \
+                                'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                                "if(fim_mat < '" + info['fim']  + "', situacao.abv1, if(matricula > '" + info['inicio']  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                                "if(fim_mat < '" + info['fim']  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), UPPER(if(sexo = 'F', situacao.desc_fem, situacao.descricao))) as fim_mat, " + \
+                                "DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, aluno.sexo, ifnull(rg, '-') as rg, ifnull(concat(LPAD(SUBSTR(cpf, -11, 1), 1, 0), SUBSTR(cpf, -10, 2), '.', substr(cpf, -8, 3), '.', substr(cpf, -5, 3), '-', substr(cpf, -2, 2)), '-') as cpf " + \
+                                "from vinculo_alunos_turmas " + \
+                                'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
+                                'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
+                                "where num_classe = " + num_classe  + " order by num_chamada")
+
 
             for item in alunos:
                 item['nome'] = item['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
@@ -1197,7 +1215,7 @@ def render_lista():
             total = []
             lista_final = []
             for classe in classes_if:
-                alunos = banco.executarConsulta('select num_chamada, aluno.nome, (select turma.nome_turma from vinculo_alunos_turmas inner join turma on vinculo_alunos_turmas.num_classe = turma.num_classe where ra_aluno = vinculo_alunos_if.ra_aluno and (situacao = 1 or situacao = 6) order by fim_mat desc limit 1) as serie from vinculo_alunos_if inner join aluno on aluno.ra = ra_aluno where num_classe_if = %s and situacao = 1 order by num_chamada' % classe['num_classe_if'])
+                alunos = banco.executarConsulta('select num_chamada, aluno.nome, (select turma.nome_turma from vinculo_alunos_turmas inner join turma on vinculo_alunos_turmas.num_classe = turma.num_classe where ra_aluno = vinculo_alunos_if.ra_aluno and (situacao = 1 or situacao = 6) order by fim_mat desc limit 1) as serie from vinculo_alunos_if inner join aluno on aluno.ra = ra_aluno where num_classe_if = %s and situacao in (1, 16) order by num_chamada' % classe['num_classe_if'])
                 
                 total.append(len(alunos))
 

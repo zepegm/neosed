@@ -130,6 +130,11 @@
                 top: 130px;
                 left: 512px;
             }
+
+            .APROVADO,
+            .APROVADA {
+                color: rgb(12, 146, 255);
+            }
          
         </style>
     </head>
@@ -141,7 +146,7 @@
                 <p><b>Número da Classe: </b>{{head['num_classe']}}</p>
                 <p><b>Período:</b> {{head['periodo']}}</p>
                 <p><b>Duração:</b> {{head['duracao_tempo']}}</p>
-                <p><b>Total:</b> {{total['total_ativos']}} ativos ({{total['total']}} no total)</p>
+                <p><b>Total:</b> {{total['total_ativos']}} {{'aprovados' if head['status'] == 'encerrado' else 'ativos'}} ({{total['total']}} no total)</p>
             </div>
             <div id="sub1" class="subtitulo">
                 Dados de Matrícula
@@ -164,7 +169,7 @@
                 <tbody>
                 {% for n in range(0, 50) %}
                     {% if loop.index <= alunos|length %}
-                    {% if alunos[n]['fim_mat'] != '' %}
+                    {% if alunos[n]['fim_mat'] not in ('', 'APROVADO', 'APROVADA') %}
                     <tr class="red"> 
                     {% else %}
                     <tr>
@@ -174,12 +179,12 @@
                         <td class="center">{{alunos[n]['serie']}}</td>
                         <td>&nbsp;{{alunos[n]['nome']}}</td>
                         <td class="center">{{alunos[n]['ra']}}</td>
-                        {% if alunos[n]['fim_mat'] != '' %}
+                        {% if alunos[n]['fim_mat'] not in ('', 'APROVADO', 'APROVADA') %}
                         <td class="center"><b>{{alunos[n]['mat']}}</b></td>
                         {% else %}
                         <td class="center blue"><b>{{alunos[n]['mat']}}</b></td>
                         {% endif %}
-                        <td class="center"><b>{{alunos[n]['fim_mat']}}</b></td>
+                        <td class="center {{alunos[n]['fim_mat']}}"><b>{{alunos[n]['fim_mat']}}</b></td>
                     </tr>
                     {% else %}
                     <tr>
@@ -226,7 +231,7 @@
                 <tbody>
                 {% for n in range(0, 50) %}
                     {% if loop.index <= alunos|length %}
-                    {% if alunos[n]['fim_mat'] != '' %}
+                    {% if alunos[n]['fim_mat'] not in ('', 'APROVADO', 'APROVADA') %}
                     <tr class="red"> 
                     {% else %}
                     <tr>
