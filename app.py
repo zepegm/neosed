@@ -37,7 +37,7 @@ app.jinja_env.add_extension(TryCatchExtension)
 
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 
