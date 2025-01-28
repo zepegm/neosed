@@ -854,8 +854,21 @@
         });
 
         function capitalizeFirstLetter(string) {
+            // Converte toda a string para letras minúsculas
             result = string.toLowerCase();
-            return result.replace(/\b\w/g, c => c.toUpperCase()).replaceAll('Da ', 'da ').replaceAll('De ', 'de ').replaceAll('Do ', 'do ').replaceAll('Dos ', 'dos ');
+            
+            // Divide a string em palavras, capitaliza a primeira letra de cada palavra e junta novamente
+            result = result.split(' ').map(word => {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join(' ');
+
+            // Substitui ocorrências específicas de palavras com letras maiúsculas por minúsculas
+            result = result.replaceAll(' Da ', ' da ')
+                        .replaceAll(' De ', ' de ')
+                        .replaceAll(' Do ', ' do ')
+                        .replaceAll(' Dos ', ' dos ');
+            
+            return result;
         }
 
     </script>
