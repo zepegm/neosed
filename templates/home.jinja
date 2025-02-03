@@ -542,7 +542,7 @@
                     <thead class="{{item['color']}}">
                     <!-- <thead class="table-dark"> -->
                         <tr>
-                            <th colspan="4">{{item['tipo_ensino']['tipo_ensino']}}</th>
+                            <th colspan="5">{{item['tipo_ensino']['tipo_ensino']}}</th>
                             <th colspan="2">Total de turmas: {{item['tipo_ensino']['total']}}</th>
                         </tr>
                     </thead>
@@ -552,6 +552,7 @@
                             <th class="text-center">Número da Classe</th>
                             <th class="text-center">Período</th>
                             <th class="text-center">Duração</th>
+                            <th class="text-center">Matriz Curricular</th>
                             <th class="text-center">Visualizar</th>
                             <th class="text-center">Editar</th>
                         </tr>
@@ -563,6 +564,7 @@
                                 <td class="text-center">{{turma['num_classe']}}</td>
                                 <td class="text-center">{{turma['periodo']}}</td>
                                 <td class="text-center">{{turma['duracao']}}</td>
+                                <td class="text-center"><a href="javascript:abrirMatriz({{turma['num_classe']}})"><i class="fa-solid fa-table-list"></i></a></td>
                                 {% if item['tipo_ensino']['id'] != 2 and item['tipo_ensino']['id'] != 5 %}
                                 <td class="text-center"><a href="javascript:consultar({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
                                 <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}})"><i class="fa-solid fa-edit"></i></a></td>
@@ -594,6 +596,10 @@
         socket.on('update_info', function(html) {
             $("#status_auto_update").html(html)
         }); 
+
+        function abrirMatriz(num_classe) {
+            
+        }
 
         $("#form-add-turma").on('submit', function() {
             $("#hidden_year").val($("#cbAno").val());

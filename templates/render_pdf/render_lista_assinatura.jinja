@@ -1,0 +1,173 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                width: 729px;
+                height: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: white;
+                position: absolute;
+                top:30px;
+                left: 30px;
+            }
+
+            #dados_matricula {
+                width: 100%;
+            }            
+
+            #logo {
+                width: 270px;
+                height: 270px;
+
+                position: relative;
+                top: -64px;
+                left: -20px;
+            }
+
+            #titulo {
+                font-family:'BebasKai', sans-serif;
+                font-size: 32px;
+                position: absolute;
+                top: -5px;
+                left: 100px;
+            }
+
+            .blue {
+                color: rgb(12, 146, 255);
+            }
+
+            .red {
+                color:red;
+            }
+
+            #head {
+                font-family: 'Helvetica', 'sans-serif';
+                position: absolute;
+                top: 30px;
+                left: 210px;
+                line-height: 0.62;
+            }
+
+            .subtitulo {
+                font-family:'BebasKai', sans-serif;
+                font-size: 50px;
+                position: absolute;
+                top: 70px;
+            }
+
+            #sub1 {
+                color:rgb(12, 146, 255);
+                left: 250px;
+                width: 300px;
+                text-align: center;
+            }
+
+            table, th, td {
+                font-family: 'Helvetica', 'sans-serif';
+                border: 1px solid;
+                border-color: black;
+                border-collapse: collapse;
+            }
+
+            table {
+                position: absolute;
+                top: 150px;
+                left: 0px;
+                height: 910px;
+            }
+
+            table {
+                border-width: 2px;
+            }
+
+            thead {
+                font-size:15px;
+            }
+
+            tbody {
+                font-size: 12px;
+            }
+
+            .center {
+                text-align: center;
+            }
+
+            th, td {
+                border-left-width: 1px;
+                border-bottom-color: rgb(0, 0, 0, 0.2);
+            }
+
+            th {
+                background-color: #FFFFE3;
+            }
+
+            .data {
+                position: absolute;
+                font-family: 'Helvetica', 'sans-serif';
+                font-weight: bold;
+                font-size: 14px;
+                top: 130px;
+                left: 512px;
+            }
+
+            .APROVADO,
+            .APROVADA {
+                color: rgb(12, 146, 255);
+            }
+         
+        </style>
+    </head>
+    <body>
+        <div id="pagina">
+            <img id="logo" src="../static/images/Logo Neo Sed White.png">
+            <div id="titulo">Lista Geral - {{titulo}}<span class="red"></div>
+            
+            <div id="sub1" class="subtitulo">
+                {{nome_turma}}
+            </div>
+
+            <table id="dados_matricula">
+                <thead>
+                    <tr>
+                        <th style="width:25px">Nº</th>
+                        <th style="width:360px;text-align:left;">&nbsp;NOME</th>
+                        <th>ASSINATURA RESP.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for n in range(0, 50) %}
+                    {% if loop.index <= alunos|length %}
+                    {% if alunos[n]['fim_mat'] not in ('', 'APROVADO', 'APROVADA') %}
+                    <tr class="red"> 
+                    {% else %}
+                    <tr>
+                    {% endif %}
+                        <td class="center">{{'%02d' % alunos[n]['num']}}</td>
+                        <td>&nbsp;{{alunos[n]['nome']}}</td>
+                        <td></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="center">{{'%02d' % loop.index}}</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </body>
+</htmL>

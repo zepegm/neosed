@@ -1240,6 +1240,39 @@ def render_lista():
 
             return render_template('render_pdf/render_lista_if.jinja', classes_if=classes_if, serie=serie, lista_final=lista_final, class_color=class_color, classes_regulares=classes_regulares)
 
+        elif tipo == 'assinatura':
+            titulo = request.args.getlist('titulo')[0]
+
+            info = banco.executarConsulta('select ' + \
+                                        'CASE ' + \
+                                        r"WHEN duracao = 3 THEN (select DATE_FORMAT(`3bim_inicio`, '%Y-%m-%d') from calendario where ano = turma.ano) " + \
+                                        r"ELSE (select DATE_FORMAT(`1bim_inicio`, '%Y-%m-%d') from calendario where ano = turma.ano) " + \
+                                        'END as inicio, ' + \
+                                        'CASE ' + \
+                                        r"WHEN duracao = 2 THEN (select DATE_FORMAT(`2bim_fim`, '%Y-%m-%d') from calendario where ano = turma.ano) " + \
+                                        r"ELSE (select DATE_FORMAT(`4bim_fim`, '%Y-%m-%d') from calendario where ano = turma.ano) " + \
+                                        'END as fim ' + \
+                                        'from turma where num_classe = %s' % num_classe)[0]
+
+            alunos =  banco.executarConsulta('SELECT ' + \
+                            "num_chamada as num, ifnull(aluno.rm, '-') as rm, aluno.nome, vinculo_alunos_turmas.serie, " + \
+                            'concat(LPAD(SUBSTR(ra_aluno, -9, 1), 1, 0), SUBSTR(ra_aluno, -8, 2), ".", substr(ra_aluno, -6, 3), ".", substr(ra_aluno, -3, 3), "-", aluno.digito_ra) as ra, ' + \
+                            "if(fim_mat < '" + info['fim']  + "', situacao.abv1, if(matricula > '" + info['inicio']  + r"', DATE_FORMAT(matricula,'%d/%m/%Y'), '')) as mat, " + \
+                            "if(fim_mat < '" + info['fim']  + r"', DATE_FORMAT(fim_mat,'%d/%m/%Y'), '') as fim_mat, " + \
+                            "DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, aluno.sexo, ifnull(rg, '-') as rg, ifnull(concat(LPAD(SUBSTR(cpf, -11, 1), 1, 0), SUBSTR(cpf, -10, 2), '.', substr(cpf, -8, 3), '.', substr(cpf, -5, 3), '-', substr(cpf, -2, 2)), '-') as cpf " + \
+                            "from vinculo_alunos_turmas " + \
+                            'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
+                            'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
+                            "where num_classe = " + num_classe  + " " + order)
+            
+            escola = banco.executarConsulta("select descricao from sede_livro_ponto where id = (select valor from config where id_config = 'ua_sede')")[0]['descricao']
+
+            nome_turma = banco.executarConsulta(f'select nome_turma from turma where num_classe = {num_classe}')[0]['nome_turma']
+
+            for item in alunos:
+                item['nome'] = item['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+
+            return render_template('render_pdf/render_lista_assinatura.jinja', titulo=titulo, alunos=alunos, escola=escola.upper(), nome_turma=nome_turma)
 
         elif tipo == 'declaracao':
             global aux_info
@@ -1594,7 +1627,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s' % (info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=0' % (info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1617,7 +1650,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white')
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0')
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1635,7 +1668,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_conselho_bimestre?bimestre=%s&num_classe=%s' % (info['bimestre'], info['num_classe']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_conselho_bimestre?bimestre=%s&num_classe=%s&order=0' % (info['bimestre'], info['num_classe']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1651,7 +1684,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_conselho_bimestre_all?bimestre=%s&ano=%s' % (info['bimestre'], info['ano']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (info['bimestre'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1667,7 +1700,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s' % (info['mes'], info['ano']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&order=0' % (info['mes'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1683,7 +1716,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_certificados_conclusao?classe=%s' % info['classe'], {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_certificados_conclusao?classe=%s&order=0' % info['classe'], {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1699,7 +1732,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s' % (info['mes'], info['ano'], info['professor'], info['number'], info['di']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (info['mes'], info['ano'], info['professor'], info['number'], info['di']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1851,7 +1884,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white', {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1869,7 +1902,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_boletim?num_classe=%s&ano=%s' % (info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_boletim?num_classe=%s&ano=%s&order=0' % (info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1906,7 +1939,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white', {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1926,7 +1959,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s' % (cpf, mes, ano), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (cpf, mes, ano), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
