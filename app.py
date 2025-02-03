@@ -277,11 +277,11 @@ def render_livro_ponto_adm():
 
         if not afastamento:
 
-            # Verifica se é feriado, se for puxa o feriado
-            feriado = banco.executarConsulta("select eventos_calendario.descricao, cat_letivo.descricao as tipo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where '%s-%s-%s' in (data_inicial, data_final) and evento in (3, 4, 5)" % (ano, mes, dia))
+            # Verifica se é feriado ou pf, se for puxa o feriado/pf
+            feriado = banco.executarConsulta("select eventos_calendario.descricao, cat_letivo.descricao as tipo from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where '%s-%s-%s' in (data_inicial, data_final) and evento in (3, 4, 5, 13) and instancia_calendario = 0" % (ano, mes, dia))
 
             if len(feriado) > 0:
-                dias_com_fim_de_semana.append({'dia':dia, 'tipo':'FERIADO', 'obs':'VIDE VERSO', 'class':'red', 'tr-class':''})
+                dias_com_fim_de_semana.append({'dia':dia, 'tipo':feriado[0]['tipo'].upper(), 'obs':'VIDE VERSO', 'class':'red', 'tr-class':''})
                 verso_txt.append('Dia %02d - %s' % (dia, feriado[0]['descricao']))
             elif data.weekday() == 5:
                 dias_com_fim_de_semana.append({'dia':dia, 'tipo':'SÁBADO', 'obs':'', 'class':'', 'tr-class':''})
@@ -1134,6 +1134,7 @@ def render_lista():
     if request.method == 'GET':
         tipo = request.args.getlist('tipo')[0]
         num_classe = request.args.getlist('num_classe')[0]
+        order = request.args.getlist('order')[0]
         
         if tipo == 'turma':
             head = banco.executarConsulta('select ' + \
@@ -1178,7 +1179,7 @@ def render_lista():
                                 "from vinculo_alunos_turmas " + \
                                 'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
                                 'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
-                                "where num_classe = " + num_classe  + " order by num_chamada")                
+                                "where num_classe = " + num_classe  + " " + order)                
             else:
                 total = banco.executarConsulta('select (select count(*) from vinculo_alunos_turmas where num_classe = %s) as total, (select count(*) from vinculo_alunos_turmas where num_classe = %s and situacao = 6) as total_ativos' % (num_classe, num_classe))[0]
                 desc_total = 'aprovados'
@@ -1191,7 +1192,7 @@ def render_lista():
                                 "from vinculo_alunos_turmas " + \
                                 'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
                                 'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
-                                "where num_classe = " + num_classe  + " order by num_chamada")
+                                "where num_classe = " + num_classe  + " " + order)
 
 
             for item in alunos:
@@ -1459,7 +1460,7 @@ async def atualizar_lista_auto():
             fim_mat = "'" + converterDataMySQL(item['Data Fim Matrícula']) + "'"
 
 
-            aluno = {'ra':int(item['RA']), 'digito':"'" + item['Dig. RA'] + "'", 'nome':"'" + item['Nome do Aluno'] + "'", 'nascimento':nascimento, 'matricula':inicio_mat, 'num_chamada':item['Nº'], 'serie':item['Série'], 'situacao':getSituacao(item['Situação']), 'fim_mat':fim_mat, 'num_classe':turma['num_classe']}
+            aluno = {'ra':int(item['RA']), 'digito':"'" + item['Dig. RA'] + "'", 'nome':'"' + item['Nome do Aluno'] + '"', 'nascimento':nascimento, 'matricula':inicio_mat, 'num_chamada':item['Nº'], 'serie':item['Série'], 'situacao':getSituacao(item['Situação']), 'fim_mat':fim_mat, 'num_classe':turma['num_classe']}
             dados_extras = banco.executarConsulta("select ifnull(rg, '') as rg, ifnull(cpf, 'null') as cpf, sexo, ifnull(rm, 'null') as rm from aluno where ra = %s" % aluno['ra'])
             
             if len(dados_extras) > 0:
@@ -1576,7 +1577,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s' % (info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s' % (info['tipo'], info['turma'], info['order']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -1800,7 +1801,7 @@ async def gerar_pdf():
 
 
             # montar url para inserir os dados no render
-            url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0'
+            url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0&order=0'
             url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], ra, rg, cpf, sexo)
             url += '&nome=%s&nome_social=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), nome_social.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
             url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s&ano=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'], info['ano'])
@@ -3591,5 +3592,6 @@ def calendario():
 
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
-    app.run(debug=True, use_reloader=False, port=80)
+    #app.run(debug=True)
+    app.run(debug=True, use_reloader=True, port=80)
     #serve(app, host='0.0.0.0', port=80, threads=8)

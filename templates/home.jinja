@@ -375,7 +375,9 @@
         <div class="modal-dialog" style="max-width: 90%;" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal_lista_turma_ifLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarIf" class="btn btn-danger">Exportar PDF</button>
+                    <h1 class="modal-title fs-5" id="modal_lista_turma_ifLabel">Lista dos Alunos</h1>
+                    <span>&nbsp;</span>
+                    <button id="btnExportarIf" class="btn btn-danger">Exportar PDF</button>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -436,7 +438,15 @@
         <div class="modal-dialog" style="max-width: 90%;" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1><span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button>&nbsp;<button id="btnGerarCertificado" class="btn btn-success" style="display: none;">Gerar Certificados</button>
+                    <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1>
+                    <span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button>&nbsp;
+                    <select id="cb_pdf_order" class="form-select" style="width:30vw;margin-right:1vw;">
+                        <option value="order by num_chamada">Ordem númerica</option>
+                        <option value="order by nome">Ordem alfabética</option>
+                        <option value="order by sexo, nome">Primeiro meninas</option>
+                        <option value="order by sexo desc, nome">Primeiro meninos</option>
+                    </select>
+                    <button id="btnGerarCertificado" class="btn btn-success" style="display: none;">Gerar Certificados</button>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>                  
                 </div>
                 <div class="modal-body">
@@ -452,7 +462,7 @@
                         </div>  
                         <div class="col-sm-8">
                             <span class="fw-bold">Período: </span><span id="descPeriodo"></span>
-                        </div>                          
+                        </div>       
                         <div class="col-sm-2">
                             <span class="fw-bold">Duração: </span><span id="descDuracao"></span>
                         </div>                        
@@ -631,7 +641,7 @@
             $("#btnExportarTurma").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
             $("#btnExportarTurma").attr('disabled', '');
 
-            info = {'destino':1, 'turma':$("#numClasse").text(), 'tipo':'turma'}
+            info = {'destino':1, 'turma':$("#numClasse").text(), 'tipo':'turma', 'order':$("#cb_pdf_order").val()}
 
             $.ajax({
                 type: "POST",
