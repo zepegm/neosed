@@ -142,7 +142,9 @@
                     <tr>
                         <th style="width:25px">Nº</th>
                         <th style="width:360px;text-align:left;">&nbsp;NOME</th>
-                        <th>ASSINATURA RESP.</th>
+                        <th style="width:150px;">PROJ. DE VIDA</th>
+                        <th style="width:150px;">TUTORIA</th>
+                        <th style="width:150px;">ELETIVA</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -156,10 +158,14 @@
                         <td class="center">{{'%02d' % alunos[n]['num']}}</td>
                         <td>&nbsp;{{alunos[n]['nome']}}</td>
                         <td></td>
+                        <td></td>
+                        <td></td>
                     </tr>
                     {% else %}
                     <tr>
                         <td class="center">{{'%02d' % loop.index}}</td>
+                        <td></td>
+                        <td></td>
                         <td></td>
                         <td></td>
                     </tr>

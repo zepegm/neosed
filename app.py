@@ -53,6 +53,26 @@ def index():
 
     if request.method == 'POST':
 
+        if request.is_json:
+            num_classe = request.get_json()
+
+            data = banco.executarConsulta(f"select tipo, tipo_disc_matriz.descricao as desc_tipo, disc_disciplina as disc, disciplinas.descricao as desc_disc, area, ifnull(area_matriz.desc_curta, '-') as desc_area, qtd_aulas, minutos from matriz_curricular inner join disciplinas on disciplinas.codigo_disciplina = disc_disciplina inner join area_matriz on area_matriz.id = area inner join tipo_disc_matriz on tipo_disc_matriz.id = tipo where num_classe = {num_classe} order by tipo, area, disc_disciplina")
+            
+            return jsonify(data)
+
+        if 'matriz' in request.form:
+            matriz = json.loads(request.form['matriz'])
+            if banco.alterarMatriz(matriz):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação bem-sucedida!</strong> Matriz alterada com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar alterar matriz, verifique se foi tudo digitado corretamente.' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+
         if 'cbAno' in request.form:
             ano = int(request.form['cbAno'])
 
@@ -142,7 +162,7 @@ def index():
     anos = aux
 
     listaTurmas = []
-    print(listaTipos)
+    
     for item in listaTipos:
         
         if item['total'] > 0:
@@ -159,8 +179,12 @@ def index():
             listaTurmas.append({'tipo_ensino':item, 'lista':turmas, 'color':color})
 
 
+    # pegar dados para compor a matriz
+    tipo_disc = banco.executarConsulta('select id, descricao from tipo_disc_matriz')
+    area_conhecimento = banco.executarConsulta('select id, desc_curta from area_matriz where id > 0')
+    disc = banco.executarConsulta('select codigo_disciplina, descricao from disciplinas order by codigo_disciplina')
 
-    return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos)
+    return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos, tipo_disc=tipo_disc, area_conhecimento=area_conhecimento, disc=disc)
 
 @app.route('/relatorios', methods=['GET', 'POST'])
 def relatorios():
@@ -334,7 +358,7 @@ def render_livro_ponto():
     # ---------------------------------------------------------------------------
     # pegar a lista de professores
     sql = "select " + \
-          "instancia_calendario, nome, ifnull(di, '-') as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
+          "instancia_calendario, nome, if(di = 0, '-', di) as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
           "cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
           "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuída(s) ', (select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf), ' aula(s) nesta UE'), 'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
           "ifnull(FNREF, '') as FNREF, jornada_livro_ponto.descricao as jornada, jornada_livro_ponto.qtd as qtd_jornada, " + \
@@ -1263,7 +1287,7 @@ def render_lista():
                             "from vinculo_alunos_turmas " + \
                             'inner join aluno ON aluno.ra = vinculo_alunos_turmas.ra_aluno ' + \
                             'inner join situacao ON vinculo_alunos_turmas.situacao = situacao.id ' + \
-                            "where num_classe = " + num_classe  + " " + order)
+                            "where num_classe = " + num_classe  + " and situacao = 1 " + order)
             
             escola = banco.executarConsulta("select descricao from sede_livro_ponto where id = (select valor from config where id_config = 'ua_sede')")[0]['descricao']
 
@@ -1410,6 +1434,94 @@ def render_lista():
             print(ls_final)
 
             return render_template('render_pdf/render_ata_final.jinja', info=info, dados=ls_final, ls_keys=ls_keys)
+
+@app.route('/atualizar_matriz_auto', methods=['GET', 'POST'])
+async def atualizar_matriz_auto():
+
+    info = request.json
+
+    num_classe = info['num_classe']
+
+    browser = await launch(
+        {'headless': False},
+        handleSIGINT=False,
+        handleSIGTERM=False,
+        handleSIGHUP=False
+    )
+
+    page = await browser.newPage()
+    # Navigate the page to a URL
+    await page.goto('https://sed.educacao.sp.gov.br/')
+
+    # Set screen size
+    await page.setViewport({'width':1366, 'height':768})
+
+    await page.waitForSelector("#name")
+
+    # Type into login
+    await page.type('#name', 'rg490877795sp')
+    await page.type('#senha', 'BGarden@FF8')
+
+
+    await page.click("#botaoEntrar")
+
+    await page.waitForSelector("#decorMenuFilterTxt")    
+
+    await page.goto('https://sed.educacao.sp.gov.br//NCA/ColetaTurma/TurmaClasse/Index', {'waitUntil':'networkidle0'})
+
+    await page.waitForSelector('.blockUI', {'hidden':True})
+
+    await page.evaluate('''$("#divClasse").removeAttr('style');''')
+
+    await page.evaluate('''$("#divFiltros").attr('style', 'display:none');''')
+
+    await page.evaluate('''$("#tipoPesquisa").val('1');''')
+
+    await page.type('#numeroClassePesq', f'{num_classe}')
+
+    print(num_classe)
+
+    await page.click('#btnPesquisar')
+
+    await page.waitForSelector('#tabelaDados')
+
+    script = await page.evaluate('''$("#tabelaDados tbody td:eq(10) a").attr('onclick');''')
+
+    await page.evaluate(script)
+
+    await page.waitForSelector('.blockUI', {'hidden':True})
+
+    await page.waitForSelector('#btnEditarFundamento')
+
+    await page.evaluate('VisualizarFundamentoLegal();')
+
+    await page.waitForSelector('#divVisualizarFundamentoLegal')
+
+    rows = await page.evaluate('''() => {
+        const rows = document.querySelectorAll('#divVisualizarFundamentoLegal table tbody tr');
+        return Array.from(rows, row => {
+            const cells = row.querySelectorAll('td, th');
+            return Array.from(cells, cell => cell.innerText);
+        });
+    }''')
+
+    lista = []
+
+    for item in rows:
+        try:
+            tipo = banco.executarConsultaVetor(f"select id from tipo_disc_matriz where desc_completa like '{item[1]}'")[0]
+            disc = item[0].split(' - ')[0]
+            area = banco.executarConsultaVetor(f'select area from matriz_curricular where disc_disciplina = {disc} limit 1')[0]
+            qtd = item[2].replace('\n', '').replace(" ", "")
+
+            lista.append({'num_classe':num_classe, 'tipo':tipo, 'disc':disc, 'area':area, 'qtd':qtd, 'minutos':info['minutos']})
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
+
+    await browser.close()
+
+    return jsonify(lista)
+
 
 @app.route('/atualizar_lista_auto', methods=['GET', 'POST'])
 async def atualizar_lista_auto():

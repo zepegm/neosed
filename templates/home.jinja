@@ -29,7 +29,25 @@
             color:red;
         }   
 
-        
+        #txt_filtro {
+            width: 90%;
+            position: relative;
+            left: 5%;
+            border: solid black 1px;
+        }
+
+        .dropdown-item-text {
+            font-weight: bold;
+            font-size:large;
+        }        
+
+        .toggled { display: none; }
+
+        #selecionarDisc {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
     </style>
 
@@ -41,66 +59,186 @@
     {% endblock %}
 
     <!-- Modal -->
+    <div class="modal fade" id="matriz_modal" tabindex="-1" aria-labelledby="matriz_modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="matriz_modalLabel">Matriz Curricular</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-2">
+                            <label class="form-label" for="cb_tipo_matriz">Tipo:</label>
+                            <select id="cb_tipo_matriz" class="form-select" aria-label="Default select example">
+                                {% for item in tipo_disc %}
+                                <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-sm-2">
+                            <label class="form-label" for="cb_area_matriz">Área:</label>
+                            <select id="cb_area_matriz" class="form-select" aria-label="Default select example">
+                                {% for item in area_conhecimento %}
+                                <option value="{{item['id']}}">{{item['desc_curta']}}</option>
+                                {% endfor %}
+                            </select>                        
+                        </div>
+
+                        <div class="col-sm-3 d-flex align-items-end dropdown">
+                            <button class="btn btn-secondary dropdown-toggle w-100 d-block text-truncate" type="button" id="selecionarDisc" data-bs-toggle="dropdown" aria-expanded="false">
+                            Selecione a Disciplina
+                            </button>
+                            <ul id="ul_disc" class="dropdown-menu" aria-labelledby="selecionarDisc">
+                            <input type="text" id="txt_filtro">
+                            {% for item in disc %}              
+                            <li><a class="dropdown-item item-disc" href="#" data-id="{{item['codigo_disciplina']}}">{{item['codigo_disciplina']}} - {{item['descricao']}}</a></li>
+                            {% endfor %}
+                            <div class="dropdown-divider noResult toggled"></div>
+                            <span class="dropdown-item-text toggled noResult">Nenhum resultado</span>
+                            </ul>                                                             
+                        </div>
+
+                        <div class="col-sm-2">
+                            <label class="form-label" for="txt_qtd">Qtd. Aulas</label>
+                            <input type="number" class="form-control" id="txt_qtd" name="txt_qtd" value="0">
+                        </div>
+
+                        <div class="col-sm-2">
+                            <label class="form-label" for="txt_min">Minutos</label>
+                            <input type="number" class="form-control" id="txt_min" name="txt_min" value="45">
+                        </div>
+
+                        <div class="col-sm-1 d-flex align-items-end">
+                            <button id="btn_add_disc" class="btn btn-success"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Área</th>
+                                        <th>Disciplina</th>
+                                        <th>Qtd. Aulas</th>
+                                        <th>Minutos</th>
+                                        <th class="text-center">Excluir</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela_matriz"></tbody>
+                            </table>
+                        </div>
+                        <div class="col-sm-6">
+                            <table class="table">
+                                <thead class="table-warning">
+                                    <tr>
+                                        <th>Total Anual</th>
+                                        <th>Aulas</th>
+                                        <th>Horas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>FGB/BNC</td>
+                                        <td id="lb_aulas_fgb">0</td>
+                                        <td id="lb_horas_fgb">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>IF/DIV</td>
+                                        <td id="lb_aulas_if">0</td>
+                                        <td id="lb_horas_if">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total</th>
+                                        <td id="lb_total_aulas">0</td>
+                                        <td id="lb_total_horas">0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="btn_puxar_matriz">Puxar Matriz da SED</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn_salvar_matriz">Salvar Matriz</button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <form id="form-enviar-matriz" method="post" action="/">
+        <input type="hidden" name="matriz" id="hidden_matriz" value="">
+    </form>
+
+    <!-- Modal -->
     <div class="modal fade" id="nova_turma_modal" tabindex="-1" aria-labelledby="nova_turma_modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="nova_turma_modalLabel">Nova Turma</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="form-add-turma" action="{{ url_for('index') }}" method="post">
-            <input type="hidden" name="ano" id="hidden_year" value="">
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <label for="txtnumeroclasse">Número da Classe:</label>
-                        <input type="number" class="form-control" id="txtnumeroclasse" name="txtnumeroclasse" required>               
-                    </div>            
-                    <div class="col-sm-6">
-                        <label for="txtnometurma">Nome da turma:</label>
-                        <input type="text" class="form-control" id="txtnometurma" name="txtnometurma" required>               
-                    </div>
-
-                    <div class="col-sm-6">
-                        <label for="cbtipoensino">Tipo de Ensino:</label>
-                        <select id="cbtipoensino" name="cbtipoensino" class="form-select" aria-label="Default select example">
-                            {% for item in tipo_ensino %}
-                                <option value="{{item['id']}}">{{item['descricao']}}</option>
-                            {% endfor %}
-                        </select>                    
-                    </div>
-
-                    <div class="col-sm-6">
-                        <label for="cbperiodo">Período:</label>
-                        <select id="cbperiodo" name="cbperiodo" class="form-select" aria-label="Default select example">
-                            {% for item in periodo %}
-                                <option value="{{item['id']}}">{{item['descricao']}}</option>
-                            {% endfor %}
-                        </select>                    
-                    </div> 
-
-                    <div class="col-sm-4">
-                        <label for="cbduracao">Duração:</label>
-                        <select id="cbduracao" name="cbduracao" class="form-select" aria-label="Default select example">
-                            {% for item in duracao %}
-                                <option value="{{item['id']}}">{{item['descricao']}}</option>
-                            {% endfor %}
-                        </select>                    
-                    </div>
-
-                    <div class="col-sm-4 align-self-end">
-                        <div><span class="fw-bold">Início: </span><span id="infoinicio">{{calendario['1sem_inicio']}}</span></div>
-                        <div><span class="fw-bold">Fim: </span><span id="infofim">{{calendario['2sem_fim']}}</span></div>
-                    </div>
-
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="nova_turma_modalLabel">Nova Turma</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <input type="submit" class="btn btn-primary" value="Cadastrar Nova Turma" />
-                <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
-            </div>
-            </form>
+                <form id="form-add-turma" action="{{ url_for('index') }}" method="post">
+                <input type="hidden" name="ano" id="hidden_year" value="">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <label for="txtnumeroclasse">Número da Classe:</label>
+                            <input type="number" class="form-control" id="txtnumeroclasse" name="txtnumeroclasse" required>               
+                        </div>            
+                        <div class="col-sm-6">
+                            <label for="txtnometurma">Nome da turma:</label>
+                            <input type="text" class="form-control" id="txtnometurma" name="txtnometurma" required>               
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label for="cbtipoensino">Tipo de Ensino:</label>
+                            <select id="cbtipoensino" name="cbtipoensino" class="form-select" aria-label="Default select example">
+                                {% for item in tipo_ensino %}
+                                    <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                {% endfor %}
+                            </select>                    
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label for="cbperiodo">Período:</label>
+                            <select id="cbperiodo" name="cbperiodo" class="form-select" aria-label="Default select example">
+                                {% for item in periodo %}
+                                    <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                {% endfor %}
+                            </select>                    
+                        </div> 
+
+                        <div class="col-sm-4">
+                            <label for="cbduracao">Duração:</label>
+                            <select id="cbduracao" name="cbduracao" class="form-select" aria-label="Default select example">
+                                {% for item in duracao %}
+                                    <option value="{{item['id']}}">{{item['descricao']}}</option>
+                                {% endfor %}
+                            </select>                    
+                        </div>
+
+                        <div class="col-sm-4 align-self-end">
+                            <div><span class="fw-bold">Início: </span><span id="infoinicio">{{calendario['1sem_inicio']}}</span></div>
+                            <div><span class="fw-bold">Fim: </span><span id="infofim">{{calendario['2sem_fim']}}</span></div>
+                        </div>
+
+                    </div>
+                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <input type="submit" class="btn btn-primary" value="Cadastrar Nova Turma" />
+                        <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -564,7 +702,7 @@
                                 <td class="text-center">{{turma['num_classe']}}</td>
                                 <td class="text-center">{{turma['periodo']}}</td>
                                 <td class="text-center">{{turma['duracao']}}</td>
-                                <td class="text-center"><a href="javascript:abrirMatriz({{turma['num_classe']}})"><i class="fa-solid fa-table-list"></i></a></td>
+                                <td class="text-center"><a href="javascript:abrirMatriz({{turma['num_classe']}}, '{{turma['duracao']}}')"><i class="fa-solid fa-table-list"></i></a></td>
                                 {% if item['tipo_ensino']['id'] != 2 and item['tipo_ensino']['id'] != 5 %}
                                 <td class="text-center"><a href="javascript:consultar({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
                                 <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}})"><i class="fa-solid fa-edit"></i></a></td>
@@ -592,13 +730,201 @@
     <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
     <script>
 
+        var matriz_dias_anual = 0;
+        var num_classe_matriz = 0;
+
         var socket = io();
         socket.on('update_info', function(html) {
             $("#status_auto_update").html(html)
         }); 
 
-        function abrirMatriz(num_classe) {
+        $("#btn_puxar_matriz").on('click', function() {
+            $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+            $(this).attr('disabled');
+            $("#status_auto_update").html('<b>Aguarde...</b>')
+
+            $.ajax({
+                type: "POST",
+                url: "atualizar_matriz_auto",
+                contentType: "application/json",
+                data: JSON.stringify({'num_classe':num_classe_matriz, 'minutos':$("#txt_min").val()}),
+                dataType: "json",
+                success: function(data) {
+                    if (data.length > 0) {
+                        $("#hidden_matriz").val(JSON.stringify(data));
+                        $("#form-enviar-matriz").submit();
+                    } else {
+                        $("#btn_puxar_matriz").html('Erro na SED! Tente novamente!');
+                        $("#btn_puxar_matriz").removeAttr('disabled');
+                    }
+                    
+                },
+            });                 
+        });
+
+        $("#btn_salvar_matriz").on('click', function() {
+            var matriz = [];
+            $("#tabela_matriz tr").each(function() {
+                let tipo = $(this).find('td:eq(0)').attr('data-id');
+                let area = $(this).find('td:eq(1)').attr('data-id');
+                let disc = $(this).find('td:eq(2)').attr('data-id');
+                let qtd = $(this).find('td:eq(3)').text();
+                let minutos = $(this).find('td:eq(4)').text();
+                matriz.push({num_classe:num_classe_matriz, tipo: tipo, area: area, disc: disc, qtd: qtd, minutos: minutos});
+            });
+
+            $("#hidden_matriz").val(JSON.stringify(matriz));
+            $("#form-enviar-matriz").submit();
+        })
+
+        $("#btn_add_disc").on('click', function() {
+
+            var id_tipo = $("#cb_tipo_matriz").val();
+            let tipo = $("#cb_tipo_matriz option:selected").text();
+            var id_area = '0';
+            var area = $("#cb_area_matriz option:selected").text();
+            let disc = $(".item-disc.active").attr('data-id');
+            let disc_nome = $(".item-disc.active").text();
+            let qtd = $("#txt_qtd").val();
+            let minutos = $("#txt_min").val();
+
+            if (id_tipo == '1' || id_tipo == '3') {
+                id_area = $("#cb_area_matriz").val();
+            } else {
+                area  = '-';
+            }
+
+            let row = `<tr>`;
+            row += `<td data-id="${id_tipo}">${tipo}</td>`;
+            row += `<td data-id="${id_area}">${area}</td>`;
+            row += `<td data-id="${disc}">${disc_nome}</td>`;
+            row += `<td>${qtd}</td>`;
+            row += `<td>${minutos}</td>`;
+            row += '<td class="text-center"><a href="#" class="remover-disciplina"><i class="fa-solid fa-trash"></i></a></td>';
+            row += '</tr>';
+
+            $("#tabela_matriz").append(row);
+            calcularMatriz();
+        });
+
+        $("#cb_tipo_matriz").on('change', function() {
+
+            if ([1, 3].includes(parseInt($(this).val()))) {
+                $("#cb_area_matriz").removeAttr('disabled');
+            } else {
+                $("#cb_area_matriz").attr('disabled', '');              
+            }
+        });
+
+        function calcularMatriz() {
             
+            var total_aulas_fgb = 0;
+            var total_aulas_if = 0;
+
+            var total_horas_fgb = 0;
+            var total_horas_if = 0;
+
+            $("#tabela_matriz tr").each(function() {
+
+                if ($(this).find('td:eq(0)').text() == 'FGB' || $(this).find('td:eq(0)').text() == 'BNC') {
+                    total_aulas_fgb += parseInt($(this).find('td:eq(3)').text());
+                    total_horas_fgb += parseInt($(this).find('td:eq(3)').text()) * parseInt($(this).find('td:eq(4)').text()) / 60;
+                    console.log(total_horas_fgb);
+                } else {
+                    total_aulas_if += parseInt($(this).find('td:eq(3)').text());
+                    total_horas_if += parseInt($(this).find('td:eq(3)').text()) * parseInt($(this).find('td:eq(4)').text()) / 60;
+                }
+
+            });
+
+            // calcular o valor anual
+            total_aulas_fgb = total_aulas_fgb * matriz_dias_anual;
+            total_horas_fgb = total_horas_fgb * matriz_dias_anual;
+
+            total_aulas_if = total_aulas_if * matriz_dias_anual;
+            total_horas_if = total_horas_if * matriz_dias_anual;
+            
+            $("#lb_aulas_fgb").text(total_aulas_fgb);
+            $("#lb_horas_fgb").text(Math.round(total_horas_fgb));
+
+            $("#lb_aulas_if").text(total_aulas_if);
+            $("#lb_horas_if").text(Math.round(total_horas_if));
+            
+            $("#lb_total_aulas").text(total_aulas_fgb + total_aulas_if);
+            $("#lb_total_horas").text(Math.round(total_horas_fgb + total_horas_if));
+        }
+
+        $(document).on('click', '.remover-disciplina', function() {
+            $(this).closest('tr').remove();
+            calcularMatriz();
+        });
+
+        $(document).on('click', '.item-disc', function() {
+            $(".item-disc").removeClass('active');
+            $(this).addClass('active');
+            $("#selecionarDisc").text($(this).text());
+        });
+
+        $(document).on('keyup', '#txt_filtro', function() {
+            val = $(this).val().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+            $(".dropdown-item").each(function(index) {
+            //console.log($(this).text().toLowerCase().normalize("NFD") + " - " + val);
+            if ($(this).text().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(val) !== - 1) {
+                $(this).removeClass('toggled');
+            } else {
+                $(this).addClass('toggled');
+            }
+            });
+
+
+            // verificar estado das listas
+            let totalA = $(".dropdown-item").not('.toggled').length
+
+            if (totalA < 1) {
+                $(".noResult").removeClass('toggled');
+            } else {
+                $(".noResult").addClass('toggled');
+            }
+
+        });        
+
+        function abrirMatriz(num_classe, duracao) {
+
+            num_classe_matriz = num_classe;
+
+            if (duracao == 'Anual') {
+                matriz_dias_anual = 40;
+            } else {
+                matriz_dias_anual = 20;                
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('index') }}",
+                contentType: "application/json",
+                data: JSON.stringify(num_classe),
+                dataType: "json",
+                success: function(data) {
+                    $("#tabela_matriz").empty();
+
+                    for (let i = 0; i < data.length; i++) {
+                        let row = `<tr>`;
+                        row += `<td data-id="${data[i].tipo}">${data[i].desc_tipo}</td>`;
+                        row += `<td data-id="${data[i].area}">${data[i].desc_area}</td>`;
+                        row += `<td data-id="${data[i].disc}">${data[i].disc} - ${data[i].desc_disc}</td>`;
+                        row += `<td>${data[i].qtd_aulas}</td>`;
+                        row += `<td>${data[i].minutos}</td>`;
+                        row += '<td class="text-center"><a href="#" class="remover-disciplina"><i class="fa-solid fa-trash"></i></a></td>';
+                        row += '</tr>';
+                        $("#tabela_matriz").append(row);
+                    }
+
+                    calcularMatriz();
+                },
+            });              
+
+            $("#matriz_modal").modal('show');
         }
 
         $("#form-add-turma").on('submit', function() {

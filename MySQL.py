@@ -397,4 +397,29 @@ class db:
 
         except Exception as error:
             print("An exception occurred:", error) # An exception occurred: division by zero
-            return False        
+            return False 
+
+    def alterarMatriz(self, lista):
+        num_classe = lista[0]['num_classe']
+        
+        try:
+
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()        
+
+            # remover dados conflitantes
+            cur.execute('SET SQL_SAFE_UPDATES = 0')
+            cur.execute("DELETE FROM matriz_curricular WHERE num_classe = %s" % num_classe)
+            cur.execute('SET SQL_SAFE_UPDATES = 1')
+
+
+            for item in lista:
+                cur.execute(f"INSERT INTO matriz_curricular VALUES({item['num_classe']}, {item['disc']}, {item['area']}, {item['tipo']}, {item['qtd']}, {item['minutos']})")
+
+            database.commit()
+
+            return True
+
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
+            return False         
