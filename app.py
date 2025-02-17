@@ -186,6 +186,73 @@ def index():
 
     return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos, tipo_disc=tipo_disc, area_conhecimento=area_conhecimento, disc=disc)
 
+@app.route('/salvar_grade', methods=['GET', 'POST'])
+def salvar_grade():
+
+        if request.method == 'POST':
+
+            if request.is_json:
+
+                data = request.get_json()
+
+                if banco.alterarGrade(data['num_classe'], data['disciplinas']):
+                    msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                            '<strong>Operação bem-sucedida!</strong> Grade atualizada com sucesso!' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'
+                else:
+                    msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                            '<strong>Atenção!</strong> Erro ao tentar salvar grade, <strong>Contate o administrador!</strong>' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'
+                    
+                return jsonify({'msg':msg})
+
+
+@app.route('/grade', methods=['GET', 'POST'])
+def grade():
+
+    anos = banco.executarConsultaVetor('select ano from calendario order by ano desc')
+
+    ano = anos[0]
+
+    if request.method == 'POST':
+        if 'ano' in request.form:
+            ano = request.form['ano']
+
+        if request.is_json:
+            num_classe = request.get_json()
+
+            # pegar matriz curricular
+            matriz = banco.executarConsulta(f'select disc_disciplina as disc, qtd_aulas, disciplinas.descricao as abv, tipo from matriz_curricular inner join disciplinas on disciplinas.codigo_disciplina = matriz_curricular.disc_disciplina where num_classe = {num_classe}')
+
+            # verificar se é PEI, se for adiciona tutoria e clube
+            info = banco.executarConsulta(f'select tipo_ensino, ano from turma where num_classe = {num_classe}')[0]
+
+            horario = banco.executarConsultaVetor(f"select CONCAT(TIME_FORMAT(inicio, '%H:%i'), ' - ', TIME_FORMAT(fim, '%H:%i')) as horario from hora_aulas where ano = {info['ano']} and tipo_ensino = {info['tipo_ensino']} order by inicio")
+
+            # agora verificar se já existe uma grade cadastrada, se existir criar uma tulpa
+            grade_cadastrada = banco.executarConsulta(f'select seg, d_seg.descricao as seg_abv, ter, d_ter.descricao as ter_abv, qua, d_qua.descricao as qua_abv, qui, d_qui.descricao as qui_abv, sex, d_sex.descricao as sex_abv from grade inner join disciplinas as d_seg on d_seg.codigo_disciplina = seg inner join disciplinas as d_ter on d_ter.codigo_disciplina = ter inner join disciplinas as d_qua on d_qua.codigo_disciplina = qua inner join disciplinas as d_qui on d_qui.codigo_disciplina = qui inner join disciplinas as d_sex on d_sex.codigo_disciplina = sex where num_classe = {num_classe} order by pos')
+
+            if info['tipo_ensino'] == 1:
+                matriz.append({'disc':'-1', 'qtd_aulas':3, 'abv':'TUTORIA', 'tipo':1})
+                matriz.append({'disc':'-2', 'qtd_aulas':3, 'abv':'CLUBE', 'tipo':1})
+
+            return jsonify({'matriz':matriz, 'horario':horario, 'grade':grade_cadastrada})
+
+    ls_anos = []
+
+    for a in anos:
+        if int(a) == int(ano):
+            ls_anos.append({'ano':a, 'selected':'selected'})
+        else:
+            ls_anos.append({'ano':a, 'selected':''})
+
+    turmas = banco.executarConsulta(f'select num_classe, nome_turma, duracao.descricao as duracao from turma inner join duracao on duracao.id = turma.duracao where ano = {ano} order by turma.duracao, nome_turma')
+
+    return render_template('grade.jinja', anos=ls_anos, turmas=turmas)
+
+
 @app.route('/relatorios', methods=['GET', 'POST'])
 def relatorios():
 

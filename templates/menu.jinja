@@ -29,6 +29,16 @@
                 </li> 
                 {% endif %}
 
+                {% if url_for(request.endpoint) == '/grade' %}
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Grade Horária</a>
+                </li> 
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="../grade">Grade Horária</a>
+                </li> 
+                {% endif %}                
+
                 {% if url_for(request.endpoint) == '/declaracoes' %}
                 <li class="nav-item">
                     <a class="nav-link active" href="#">Declaração</a>

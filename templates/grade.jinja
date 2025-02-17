@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notas</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='datatable/datatables.min.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            text-align: center;
+            table-layout: fixed;            
+        }
+
+        #myTable th, #myTable td {
+            text-align: center;
+            border: 1px solid black;
+            height: 5vh;
+        }
+        
+        .dragging {
+            opacity: 0.1;
+        }
+
+        .drag_cell {
+            cursor: move;
+        }
+
+        #myTable, #tb_grade {
+            margin-top: 1vh;
+        }
+
+        .blue-primary {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .gray {
+            background-color: #747474;
+        }
+
+        .tb_1 { background-color: #becaa8; color: black; }
+        .tb_2 { background-color: #d084c0; color: black; }
+        .tb_3 { background-color: #c8b8ea; color: black; }
+        .tb_4 { background-color: #d9e9ac; color: black; }
+        .tb_5 { background-color: #96d8ad; color: black; }
+        .tb_6 { background-color: #e7a6c3; color: black; }
+        .tb_7 { background-color: #d8d796; color: black; }
+        .tb_8 { background-color: #9df2f3; color: black; }
+        .tb_9 { background-color: #ee9dc1; color: black; }
+        .tb_10 { background-color: #b1aaf7; color: black; }
+        .tb_11 { background-color: #f9cc87; color: black; }
+        .tb_12 { background-color: #afb3de; color: black; }
+        .tb_13 { background-color: #b3e29e; color: black; }
+        .tb_14 { background-color: #fce5bb; color: black; }
+        .tb_15 { background-color: #a5d4fe; color: black; }
+        .tb_16 { background-color: #cedfb5; color: black; }
+        .tb_17 { background-color: #c3b9af; color: black; }
+        .tb_18 { background-color: #d98deb; color: black; }
+        .tb_19 { background-color: #e2d3d2; color: black; }
+        .tb_20 { background-color: #b9e1d8; color: black; }
+        .tb_21 { background-color: #b99dc2; color: black; }
+        .tb_22 { background-color: #b6efeb; color: black; }
+        .tb_23 { background-color: #d3f98f; color: black; }
+        .tb_24 { background-color: #bbfeb9; color: black; }
+        .tb_25 { background-color: #a8e5f0; color: black; }
+        .tb_26 { background-color: #e98dbf; color: black; }
+        .tb_27 { background-color: #edcd93; color: black; }
+        .tb_28 { background-color: #a8bcab; color: black; }
+        .tb_29 { background-color: #96caac; color: black; }
+        .tb_30 { background-color: #97c4ac; color: black; }
+        .tb_31 { background-color: #b7a2fa; color: black; }
+        .tb_32 { background-color: #c582cf; color: black; }
+        .tb_33 { background-color: #cd8eb9; color: black; }
+        .tb_34 { background-color: #8cff84; color: black; }
+        .tb_35 { background-color: #e5d180; color: black; }
+        .tb_36 { background-color: #bd8ff2; color: black; }
+        .tb_37 { background-color: #c98ce9; color: black; }
+        .tb_38 { background-color: #94fcb6; color: black; }
+        .tb_39 { background-color: #bcbaf9; color: black; }
+        .tb_40 { background-color: #b7c8a7; color: black; }
+        .tb_41 { background-color: #dbe7cf; color: black; }
+        .tb_42 { background-color: #e1d2af; color: black; }
+        .tb_43 { background-color: #e4cac3; color: black; }
+        .tb_44 { background-color: #fdb0db; color: black; }
+        .tb_45 { background-color: #dfad80; color: black; }
+        .tb_46 { background-color: #adf6eb; color: black; }
+        .tb_47 { background-color: #a4eebd; color: black; }
+        .tb_48 { background-color: #8f86b4; color: black; }
+        .tb_49 { background-color: #93c3ae; color: black; }
+        .tb_50 { background-color: #a2b5da; color: black; }
+
+    </style>
+</head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    {% block menu_superior %}
+      {% include 'menu.jinja' %}
+    {% endblock %}  
+
+    <main class="container-xxl">
+        <form id="form_ano" action="/grade" method="post">
+            <div class="row mb-3">
+                <div class="col-sm-2">
+                    <div class="form-inline">
+                        <div class="form-group">
+                            <div class="input-group">            
+                                <div class="input-group-text">Ano:</div>
+                                <select class="form-select" id="cb_ano" name="ano">
+                                    {% for ano in anos %}
+                                    <option value="{{ano['ano']}}" {{ano['selected']}}>{{ano['ano']}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="row">
+            <div class="col-sm-3">
+                <div id="lista_geral" class="list-group">
+                    {% for turma in turmas %}
+                    <a data-duracao="{{turma['duracao']}}" href="#" class="list-group-item list-group-item-action" data-id="{{turma['num_classe']}}">
+                        {{turma['nome_turma']}} - {{turma['duracao']}}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="painel_Grade" class="col-sm-9">
+            
+            </div>
+        </div>
+    </main>
+
+    <!-- <table id="myTable">
+        <tr>
+            <td draggable="true">Cell 1</td>
+            <td draggable="true">Cell 2</td>
+            <td draggable="true">Cell 3</td>
+        </tr>
+        <tr>
+            <td draggable="true">Cell 4</td>
+            <td draggable="true">Cell 5</td>
+            <td draggable="true">Cell 6</td>
+        </tr>
+        <tr>
+            <td draggable="true">&nbsp;</td>
+            <td draggable="true">&nbsp;</td>
+            <td draggable="true">&nbsp;</td>
+        </tr>
+    </table> -->
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='datatable/datatables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='jspdf/jspdf.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='font-custom/BebasKai-normal.js') }}"></script>
+    <script src="{{ url_for('static', filename='font-custom/GreatVibes-Regular-normal.js') }}"></script>  
+    <script src="{{ url_for('static', filename='js/gerador-pdf.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap-multiselect/popper.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap-multiselect/bootstrap-multiselect.js') }}"></script>
+
+    <script>
+
+        const semanas_dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
+
+        function addDrag(name_table) {
+            const table = document.getElementById(name_table);
+            let draggedCell = null;
+
+            table.addEventListener('dragstart', (event) => {
+                draggedCell = event.target;
+                event.target.classList.add('dragging');
+            });
+
+            table.addEventListener('dragend', (event) => {
+                event.target.classList.remove('dragging');
+            });
+
+            table.addEventListener('dragover', (event) => {
+                event.preventDefault();
+            });
+
+            table.addEventListener('drop', (event) => {
+                event.preventDefault();
+                if (event.target.tagName === 'TD' && event.target !== draggedCell) {
+                    const draggedHTML = draggedCell.innerHTML;
+                    const draggedClass = draggedCell.className;
+                    const draggedDataId = draggedCell.getAttribute('data-id');
+                    const draggedStatus = draggedCell.getAttribute('draggable');
+
+                    draggedCell.innerHTML = event.target.innerHTML;
+                    draggedCell.className = event.target.className;
+                    draggedCell.setAttribute('data-id', event.target.getAttribute('data-id'));
+                    draggedCell.setAttribute('draggable', event.target.getAttribute('draggable'));
+
+                    event.target.innerHTML = draggedHTML;
+                    event.target.className = draggedClass;
+                    event.target.setAttribute('data-id', draggedDataId);
+                    event.target.setAttribute('draggable', draggedStatus);
+
+                    // Remove the dragging class from the dragged cell
+                    event.target.classList.remove('dragging');
+                }
+            });
+        }
+
+
+        $("#cb_ano").change(function() {
+            $("#form_ano").submit();
+        });
+
+        $(".list-group").on('click', 'a', function() {
+
+            $("#painel_Grade").empty();
+            $("#painel_Grade").append('<div id="status"></div>');
+
+            $(this).addClass('active').siblings().removeClass('active');
+            var num_classe = $(this).attr('data-id');
+            
+            $.ajax({
+                type: "POST",
+                url: "grade",
+                contentType: "application/json",
+                data: JSON.stringify(num_classe),
+                dataType: "json",
+                success: function(data) {
+
+                    var cont_cols = 0;
+                    var cont_disc = 1;
+                    var qtd_itens = 0;
+
+                    $("#painel_Grade").append('<b>Aulas Disponíveis:</b>');
+                    
+                    html = '<table id="myTable">';
+                    html += '<tbody>';
+                    html += '<tr>';
+
+                    $.each(data['matriz'], function(index, value) {
+                        for (let i = 0; i < value['qtd_aulas']; i++) {
+                            html += `<td draggable="true" class='tb_${cont_disc} drag_cell' data-id='${value['disc']}'>${value['abv']}</td>`;
+
+                            cont_cols++;
+                            qtd_itens++;
+
+                            if (cont_cols == 6) {
+                                html += '</tr>';
+                                html += '<tr>';
+                                cont_cols = 0;
+                            }                            
+                        }
+
+                        cont_disc++;
+
+                    });
+
+                    html += '</tr>';
+                    html += '</tbody>';
+                    html += '</table>';
+
+                    $("#painel_Grade").append(html);
+
+                    // adicionar outra tabela
+                    $("#myTable").append('<tbody><tr><th class="fw-bold" colspan="5" style="text-align:left;border:none;">Grade Atual:</th></tr></tbody>');
+
+                    grade_html = '<tbody>';
+                    grade_html += '<tr>';
+                    grade_html += '<th class="blue-primary">Horário</th>';
+                    grade_html += '<th class="blue-primary">Seg</th>';
+                    grade_html += '<th class="blue-primary">Ter</th>';
+                    grade_html += '<th class="blue-primary">Qua</th>';
+                    grade_html += '<th class="blue-primary">Qui</th>';
+                    grade_html += '<th class="blue-primary">Sex</th>';
+                    grade_html += '</tr>';
+                    grade_html += '</tbody>';
+                    grade_html += '<tbody id="tbody_grade"></tbody>';
+
+                    $("#myTable").append(grade_html);
+
+                    qtd_linhas = Math.floor(qtd_itens / 5);
+
+                    cont_disc = 1;
+
+                    for (let i = 0; i < qtd_linhas; i++) {
+                        if (data['grade'].length > i) {
+                            $("#tbody_grade").append(`<tr><th draggable="false">${data['horario'][i]}</th><td class="tb_${cont_disc}" data-id="${data['grade'][i]['seg']}" draggable="true">${data['grade'][i]['seg_abv']}</td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td></tr>`);
+                        } else {
+                            $("#tbody_grade").append(`<tr><th draggable="false">${data['horario'][i]}</th><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td></tr>`);
+                        }
+                    }
+
+                    $("#painel_Grade").append('<button id="btn_salvar" class="mt-3 btn btn-primary">Salvar</button>&nbsp;');
+                    $("#painel_Grade").append('<button id="btn_limpar" class="mt-3 btn btn-secondary">Limpar Grade</button>');
+
+                    addDrag('myTable');
+                },
+            });              
+        });
+
+        $(document).on('click', '#btn_salvar', function() {
+            var horarios = [];
+            var disciplinas = [];
+
+            $("#tbody_grade tr").each(function() {
+                var dia = {};
+
+                var pos_sem = 0;
+
+                $(this).find('td').each(function() {
+
+                    let disc = $(this).attr('data-id');
+
+                    if (disc == undefined) {
+                        disc = 'null';
+                    }
+
+                    dia[semanas_dias[pos_sem]] = disc;
+
+                    pos_sem++;
+                });
+
+                disciplinas.push(dia);
+            });
+
+            var num_classe = $(".list-group-item.active").attr('data-id');
+
+            $.ajax({
+                type: "POST",
+                url: "salvar_grade",
+                contentType: "application/json",
+                data: JSON.stringify({num_classe: num_classe, disciplinas: disciplinas}),
+                dataType: "json",
+                success: function(data) {
+                    $("#status").html(data['msg']);
+                },
+            });
+        });
+
+    </script>
+</body>
+</html>
