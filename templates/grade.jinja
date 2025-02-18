@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Notas</title>
+    <title>Grade Horária</title>
     <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
 
     <!-- Custom styles for this template -->
@@ -49,56 +49,9 @@
             background-color: #747474;
         }
 
-        .tb_1 { background-color: #becaa8; color: black; }
-        .tb_2 { background-color: #d084c0; color: black; }
-        .tb_3 { background-color: #c8b8ea; color: black; }
-        .tb_4 { background-color: #d9e9ac; color: black; }
-        .tb_5 { background-color: #96d8ad; color: black; }
-        .tb_6 { background-color: #e7a6c3; color: black; }
-        .tb_7 { background-color: #d8d796; color: black; }
-        .tb_8 { background-color: #9df2f3; color: black; }
-        .tb_9 { background-color: #ee9dc1; color: black; }
-        .tb_10 { background-color: #b1aaf7; color: black; }
-        .tb_11 { background-color: #f9cc87; color: black; }
-        .tb_12 { background-color: #afb3de; color: black; }
-        .tb_13 { background-color: #b3e29e; color: black; }
-        .tb_14 { background-color: #fce5bb; color: black; }
-        .tb_15 { background-color: #a5d4fe; color: black; }
-        .tb_16 { background-color: #cedfb5; color: black; }
-        .tb_17 { background-color: #c3b9af; color: black; }
-        .tb_18 { background-color: #d98deb; color: black; }
-        .tb_19 { background-color: #e2d3d2; color: black; }
-        .tb_20 { background-color: #b9e1d8; color: black; }
-        .tb_21 { background-color: #b99dc2; color: black; }
-        .tb_22 { background-color: #b6efeb; color: black; }
-        .tb_23 { background-color: #d3f98f; color: black; }
-        .tb_24 { background-color: #bbfeb9; color: black; }
-        .tb_25 { background-color: #a8e5f0; color: black; }
-        .tb_26 { background-color: #e98dbf; color: black; }
-        .tb_27 { background-color: #edcd93; color: black; }
-        .tb_28 { background-color: #a8bcab; color: black; }
-        .tb_29 { background-color: #96caac; color: black; }
-        .tb_30 { background-color: #97c4ac; color: black; }
-        .tb_31 { background-color: #b7a2fa; color: black; }
-        .tb_32 { background-color: #c582cf; color: black; }
-        .tb_33 { background-color: #cd8eb9; color: black; }
-        .tb_34 { background-color: #8cff84; color: black; }
-        .tb_35 { background-color: #e5d180; color: black; }
-        .tb_36 { background-color: #bd8ff2; color: black; }
-        .tb_37 { background-color: #c98ce9; color: black; }
-        .tb_38 { background-color: #94fcb6; color: black; }
-        .tb_39 { background-color: #bcbaf9; color: black; }
-        .tb_40 { background-color: #b7c8a7; color: black; }
-        .tb_41 { background-color: #dbe7cf; color: black; }
-        .tb_42 { background-color: #e1d2af; color: black; }
-        .tb_43 { background-color: #e4cac3; color: black; }
-        .tb_44 { background-color: #fdb0db; color: black; }
-        .tb_45 { background-color: #dfad80; color: black; }
-        .tb_46 { background-color: #adf6eb; color: black; }
-        .tb_47 { background-color: #a4eebd; color: black; }
-        .tb_48 { background-color: #8f86b4; color: black; }
-        .tb_49 { background-color: #93c3ae; color: black; }
-        .tb_50 { background-color: #a2b5da; color: black; }
+        {% for item in css_disc %}
+            .tb_{{item['disc']}} { background-color: {{item['cor']}}; color: black; }
+        {% endfor %}
 
     </style>
 </head>
@@ -140,9 +93,13 @@
             </div>
 
             <div id="painel_Grade" class="col-sm-9">
-            
+                <div id="status">{{msg}}</div>
             </div>
         </div>
+
+        <form id="form_limpar" action="/grade" method="post">
+            <input type="hidden" id="num_classe" name="num_classe" value="">
+        </form>
     </main>
 
     <!-- <table id="myTable">
@@ -241,8 +198,6 @@
                 success: function(data) {
 
                     var cont_cols = 0;
-                    var cont_disc = 1;
-                    var qtd_itens = 0;
 
                     $("#painel_Grade").append('<b>Aulas Disponíveis:</b>');
                     
@@ -252,10 +207,9 @@
 
                     $.each(data['matriz'], function(index, value) {
                         for (let i = 0; i < value['qtd_aulas']; i++) {
-                            html += `<td draggable="true" class='tb_${cont_disc} drag_cell' data-id='${value['disc']}'>${value['abv']}</td>`;
+                            html += `<td draggable="true" class='tb_${value['disc']} drag_cell' data-id='${value['disc']}'>${value['abv']}</td>`;
 
                             cont_cols++;
-                            qtd_itens++;
 
                             if (cont_cols == 6) {
                                 html += '</tr>';
@@ -263,8 +217,6 @@
                                 cont_cols = 0;
                             }                            
                         }
-
-                        cont_disc++;
 
                     });
 
@@ -291,13 +243,27 @@
 
                     $("#myTable").append(grade_html);
 
-                    qtd_linhas = Math.floor(qtd_itens / 5);
+                    qtd_linhas = data['qtd_linhas'];
 
-                    cont_disc = 1;
+                    cont_disc = 0;
 
                     for (let i = 0; i < qtd_linhas; i++) {
                         if (data['grade'].length > i) {
-                            $("#tbody_grade").append(`<tr><th draggable="false">${data['horario'][i]}</th><td class="tb_${cont_disc}" data-id="${data['grade'][i]['seg']}" draggable="true">${data['grade'][i]['seg_abv']}</td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td></tr>`);
+                            var html = `<tr><th draggable="false">${data['horario'][i]}</th>`;
+                            
+                            for (let j = 0; j < 5; j++) {
+                                console.log(data['grade'][cont_disc]);
+                                if (data['grade'][cont_disc]['disciplina'] != null) {
+                                    html += `<td class="tb_${data['grade'][cont_disc]['disciplina']}" data-id="${data['grade'][cont_disc]['disciplina']}" draggable="true">${data['grade'][cont_disc]['abv']}</td>`;
+                                } else {
+                                    html += `<td class="gray" draggable="false"></td>`;
+                                }
+                                cont_disc++;
+                            }
+
+
+                            html += '</tr>'
+                            $("#tbody_grade").append(html);
                         } else {
                             $("#tbody_grade").append(`<tr><th draggable="false">${data['horario'][i]}</th><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td><td class="gray" draggable="false"></td></tr>`);
                         }
@@ -309,6 +275,13 @@
                     addDrag('myTable');
                 },
             });              
+        });
+
+        $(document).on('click', '#btn_limpar', function() {
+            var num_classe = $(".list-group-item.active").attr('data-id');
+
+            $("#num_classe").val(num_classe);
+            $("#form_limpar").submit();
         });
 
         $(document).on('click', '#btn_salvar', function() {

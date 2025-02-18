@@ -212,6 +212,8 @@ def salvar_grade():
 @app.route('/grade', methods=['GET', 'POST'])
 def grade():
 
+    msg = ''
+
     anos = banco.executarConsultaVetor('select ano from calendario order by ano desc')
 
     ano = anos[0]
@@ -220,11 +222,26 @@ def grade():
         if 'ano' in request.form:
             ano = request.form['ano']
 
+        if 'num_classe' in request.form:
+            num_classe = request.form['num_classe']
+
+            # limpar matriz curricular
+            if banco.executeBasicSQL('delete from grade where num_classe = %s' % num_classe):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação bem-sucedida!</strong> Grade limpa com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar limpar grade, <strong>Contate o administrador!</strong>' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+
         if request.is_json:
             num_classe = request.get_json()
 
             # pegar matriz curricular
-            matriz = banco.executarConsulta(f'select disc_disciplina as disc, qtd_aulas, disciplinas.descricao as abv, tipo from matriz_curricular inner join disciplinas on disciplinas.codigo_disciplina = matriz_curricular.disc_disciplina where num_classe = {num_classe}')
+            matriz = banco.executarConsulta(f'select disc_disciplina as disc, qtd_aulas - (select count(disciplina) from grade where num_classe = {num_classe} and disciplina = disc) as qtd_aulas, disciplinas.descricao as abv, tipo from matriz_curricular inner join disciplinas on disciplinas.codigo_disciplina = matriz_curricular.disc_disciplina where num_classe = {num_classe}')
 
             # verificar se é PEI, se for adiciona tutoria e clube
             info = banco.executarConsulta(f'select tipo_ensino, ano from turma where num_classe = {num_classe}')[0]
@@ -232,13 +249,17 @@ def grade():
             horario = banco.executarConsultaVetor(f"select CONCAT(TIME_FORMAT(inicio, '%H:%i'), ' - ', TIME_FORMAT(fim, '%H:%i')) as horario from hora_aulas where ano = {info['ano']} and tipo_ensino = {info['tipo_ensino']} order by inicio")
 
             # agora verificar se já existe uma grade cadastrada, se existir criar uma tulpa
-            grade_cadastrada = banco.executarConsulta(f'select seg, d_seg.descricao as seg_abv, ter, d_ter.descricao as ter_abv, qua, d_qua.descricao as qua_abv, qui, d_qui.descricao as qui_abv, sex, d_sex.descricao as sex_abv from grade inner join disciplinas as d_seg on d_seg.codigo_disciplina = seg inner join disciplinas as d_ter on d_ter.codigo_disciplina = ter inner join disciplinas as d_qua on d_qua.codigo_disciplina = qua inner join disciplinas as d_qui on d_qui.codigo_disciplina = qui inner join disciplinas as d_sex on d_sex.codigo_disciplina = sex where num_classe = {num_classe} order by pos')
+            grade_cadastrada = banco.executarConsulta(f'select pos, semana, disciplina, disciplinas.descricao as abv from grade left join disciplinas on disciplinas.codigo_disciplina = disciplina where num_classe = {num_classe} order by pos, semana')
+            qtd_linhas = banco.executarConsultaVetor(f'select sum(qtd_aulas) as linhas from matriz_curricular where num_classe = {num_classe}')[0]
 
-            if info['tipo_ensino'] == 1:
+            if info['tipo_ensino'] == 1 or info['tipo_ensino'] == 6:
                 matriz.append({'disc':'-1', 'qtd_aulas':3, 'abv':'TUTORIA', 'tipo':1})
                 matriz.append({'disc':'-2', 'qtd_aulas':3, 'abv':'CLUBE', 'tipo':1})
+                qtd_linhas += 6
 
-            return jsonify({'matriz':matriz, 'horario':horario, 'grade':grade_cadastrada})
+            qtd_linhas = math.floor(qtd_linhas / 5)
+
+            return jsonify({'matriz':matriz, 'horario':horario, 'grade':grade_cadastrada, 'qtd_linhas':qtd_linhas})
 
     ls_anos = []
 
@@ -250,7 +271,22 @@ def grade():
 
     turmas = banco.executarConsulta(f'select num_classe, nome_turma, duracao.descricao as duracao from turma inner join duracao on duracao.id = turma.duracao where ano = {ano} order by turma.duracao, nome_turma')
 
-    return render_template('grade.jinja', anos=ls_anos, turmas=turmas)
+    disciplinas = banco.executarConsultaVetor('select codigo_disciplina from disciplinas order by codigo_disciplina')
+    cores = ['#becaa8', '#d084c0', '#c8b8ea', '#d9e9ac', '#96d8ad', '#e7a6c3', '#d8d796', '#9df2f3', '#ee9dc1', '#b1aaf7', '#f9cc87', '#afb3de', '#b3e29e', '#fce5bb', '#a5d4fe', '#cedfb5', '#c3b9af', '#d98deb', '#e2d3d2', '#b9e1d8', '#b99dc2', '#b6efeb', '#d3f98f', '#bbfeb9', '#a8e5f0', '#e98dbf', '#edcd93', '#a8bcab', '#96caac', '#97c4ac', '#b7a2fa', '#c582cf', '#cd8eb9', '#8cff84', '#e5d180', '#bd8ff2', '#c98ce9', '#94fcb6', '#bcbaf9', '#b7c8a7', '#dbe7cf', '#e1d2af', '#e4cac3', '#fdb0db', '#dfad80', '#adf6eb', '#a4eebd', '#8f86b4', '#93c3ae', '#a2b5da']
+
+    css_disc = []
+    contador = 0
+
+    for item in disciplinas:
+        try:
+            css_disc.append({'disc':item, 'cor':cores[contador]})
+            contador += 1
+        except: 
+            contador = 0
+            css_disc.append({'disc':item, 'cor':cores[contador]})
+            contador += 1
+
+    return render_template('grade.jinja', anos=ls_anos, turmas=turmas, css_disc=css_disc, msg=msg)
 
 
 @app.route('/relatorios', methods=['GET', 'POST'])

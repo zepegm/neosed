@@ -442,7 +442,11 @@ class db:
             pos = 1
 
             for item in lista:
-                cur.execute(f"INSERT INTO grade VALUES({num_classe}, {pos}, {item['Seg']}, {item['Ter']}, {item['Qua']}, {item['Qui']}, {item['Sex']})")
+                cur.execute(f"INSERT INTO grade VALUES({num_classe}, {pos}, 2, {item['Seg']})")
+                cur.execute(f"INSERT INTO grade VALUES({num_classe}, {pos}, 3, {item['Ter']})")
+                cur.execute(f"INSERT INTO grade VALUES({num_classe}, {pos}, 4, {item['Qua']})")
+                cur.execute(f"INSERT INTO grade VALUES({num_classe}, {pos}, 5, {item['Qui']})")
+                cur.execute(f"INSERT INTO grade VALUES({num_classe}, {pos}, 6, {item['Sex']})")
                 pos += 1
 
             database.commit()
