@@ -127,6 +127,8 @@
                                         <th>Disciplina</th>
                                         <th>Qtd. Aulas</th>
                                         <th>Minutos</th>
+                                        <th>Professor</th>
+                                        <th>Apelido</th>
                                         <th class="text-center">Excluir</th>
                                     </tr>
                                 </thead>
@@ -732,6 +734,7 @@
 
         var matriz_dias_anual = 0;
         var num_classe_matriz = 0;
+        var professores = {{professores}};
 
         var socket = io();
         socket.on('update_info', function(html) {
@@ -798,8 +801,11 @@
             row += `<td data-id="${id_tipo}">${tipo}</td>`;
             row += `<td data-id="${id_area}">${area}</td>`;
             row += `<td data-id="${disc}">${disc_nome}</td>`;
-            row += `<td>${qtd}</td>`;
-            row += `<td>${minutos}</td>`;
+            row += `<td class="text-center">${qtd}</td>`;
+            row += `<td class="text-center">${minutos}</td>`;
+
+            row += `<td class="text-center">-</td><td class="text-center">-</td>`;
+
             row += '<td class="text-center"><a href="#" class="remover-disciplina"><i class="fa-solid fa-trash"></i></a></td>';
             row += '</tr>';
 
@@ -853,6 +859,11 @@
             $("#lb_total_aulas").text(total_aulas_fgb + total_aulas_if);
             $("#lb_total_horas").text(Math.round(total_horas_fgb + total_horas_if));
         }
+
+        $(document).on('dblclick', '.cb-professor-matriz', function() {
+            $(this).removeAttr('disabled');
+            console.log('teste');
+        });
 
         $(document).on('click', '.remover-disciplina', function() {
             $(this).closest('tr').remove();
@@ -913,8 +924,17 @@
                         row += `<td data-id="${data[i].tipo}">${data[i].desc_tipo}</td>`;
                         row += `<td data-id="${data[i].area}">${data[i].desc_area}</td>`;
                         row += `<td data-id="${data[i].disc}">${data[i].disc} - ${data[i].desc_disc}</td>`;
-                        row += `<td>${data[i].qtd_aulas}</td>`;
-                        row += `<td>${data[i].minutos}</td>`;
+                        row += `<td class="text-center">${data[i].qtd_aulas}</td>`;
+                        row += `<td class="text-center">${data[i].minutos}</td>`;
+                        
+                        row += `<td><select class="form-select cb-professor-matriz" disabled>`;
+                        row += '<option value="0">Selecione o professor</option>';
+                        for (let j = 0; j < professores.length; j++) {
+                            row += `<option value="${professores[j].id}">${professores[j].nome}</option>`;
+                        }
+                        row += '</select></td>'
+                        row += '<td class="apelido-edit"></td>'
+
                         row += '<td class="text-center"><a href="#" class="remover-disciplina"><i class="fa-solid fa-trash"></i></a></td>';
                         row += '</tr>';
                         $("#tabela_matriz").append(row);

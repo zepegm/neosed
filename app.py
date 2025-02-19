@@ -183,8 +183,9 @@ def index():
     tipo_disc = banco.executarConsulta('select id, descricao from tipo_disc_matriz')
     area_conhecimento = banco.executarConsulta('select id, desc_curta from area_matriz where id > 0')
     disc = banco.executarConsulta('select codigo_disciplina, descricao from disciplinas order by codigo_disciplina')
+    professores = banco.executarConsulta('select nome, cpf from professor_livro_ponto order by nome')
 
-    return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos, tipo_disc=tipo_disc, area_conhecimento=area_conhecimento, disc=disc)
+    return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos, tipo_disc=tipo_disc, area_conhecimento=area_conhecimento, disc=disc, professores=professores)
 
 @app.route('/salvar_grade', methods=['GET', 'POST'])
 def salvar_grade():
@@ -1537,6 +1538,17 @@ def render_lista():
             print(ls_final)
 
             return render_template('render_pdf/render_ata_final.jinja', info=info, dados=ls_final, ls_keys=ls_keys)
+        
+        elif tipo == 'grade':
+
+            tipo_ensino = request.args.getlist('num_classe')[0]
+            ano = request.args.getlist('order')[0]
+
+            turmas = banco.executarConsulta(f'select nome_turma, num_classe from turma where tipo_ensino in {tipo_ensino} and ano = {ano} order by nome_turma')
+
+            segunda = banco.executarConsulta(f'select grade.num_classe, turma.nome_turma, pos, semana, disciplina, disciplinas.abv from grade inner join turma on turma.num_classe = grade.num_classe inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina where semana = 2 and turma.tipo_ensino in {tipo_ensino} order by pos, nome_turma')
+
+            return turmas
 
 @app.route('/atualizar_matriz_auto', methods=['GET', 'POST'])
 async def atualizar_matriz_auto():
