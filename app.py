@@ -6,7 +6,7 @@ from waitress import serve
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL
+from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar
 from flask_socketio import SocketIO, emit
 import pandas as pd
 import os
@@ -56,7 +56,7 @@ def index():
         if request.is_json:
             num_classe = request.get_json()
 
-            data = banco.executarConsulta(f"select tipo, tipo_disc_matriz.descricao as desc_tipo, disc_disciplina as disc, disciplinas.descricao as desc_disc, area, ifnull(area_matriz.desc_curta, '-') as desc_area, qtd_aulas, minutos from matriz_curricular inner join disciplinas on disciplinas.codigo_disciplina = disc_disciplina inner join area_matriz on area_matriz.id = area inner join tipo_disc_matriz on tipo_disc_matriz.id = tipo where num_classe = {num_classe} order by tipo, area, disc_disciplina")
+            data = banco.executarConsulta(f"select distinct tipo, tipo_disc_matriz.descricao as desc_tipo, disc_disciplina as disc, disciplinas.descricao as desc_disc, area, ifnull(area_matriz.desc_curta, '-') as desc_area, qtd_aulas, minutos, ifnull(professor_livro_ponto.nome, '-') as nome, ifnull(professor_livro_ponto.cpf, 0) as cpf, ifnull(prof_ele.nome, '-') as nome_2, ifnull(prof_ele.cpf, 0) as cpf_2 from matriz_curricular inner join disciplinas on disciplinas.codigo_disciplina = disc_disciplina inner join area_matriz on area_matriz.id = area inner join tipo_disc_matriz on tipo_disc_matriz.id = tipo left join professor_livro_ponto on professor_livro_ponto.cpf = matriz_curricular.cpf_professor left join professor_livro_ponto as prof_ele on prof_ele.cpf = matriz_curricular.cpf_professor_2 where num_classe = {num_classe} order by tipo, area, disc_disciplina")
             
             return jsonify(data)
 
@@ -183,7 +183,7 @@ def index():
     tipo_disc = banco.executarConsulta('select id, descricao from tipo_disc_matriz')
     area_conhecimento = banco.executarConsulta('select id, desc_curta from area_matriz where id > 0')
     disc = banco.executarConsulta('select codigo_disciplina, descricao from disciplinas order by codigo_disciplina')
-    professores = banco.executarConsulta('select nome, cpf from professor_livro_ponto order by nome')
+    professores = banco.executarConsulta('select distinct nome, cpf from professor_livro_ponto where ativo = 1 order by nome')
 
     return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos, tipo_disc=tipo_disc, area_conhecimento=area_conhecimento, disc=disc, professores=professores)
 
@@ -1255,6 +1255,35 @@ def render_conselho_bimestre():
 
 
         return render_template('render_pdf/render_conselho_bimestre.jinja', alunos=alunos, turma=turma, disciplinas=disciplinas, freq=freq, total=total, bimestre=bimestre, fim_bimestre=fim_bimestre, dificuldades=dificuldades, turmas_if=turmas_if, colspan_if=colspan_if, lista_conceito_final=lista_conceito_final, situacao_final=situacao_final)
+
+@app.route('/confirmar_senha', methods=['GET', 'POST'])
+def confirmar_senha():
+
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.get_json()
+            senha_sha256 = encriptar(data['senha'])
+            
+            result = banco.executarConsultaVetor("select id_config from config where valor = '%s'" % (senha_sha256))
+            
+            if len(result) > 0:
+                return jsonify({'status':True})
+            else:
+                return jsonify({'status':False})
+
+@app.route('/atualizar_professor_matriz', methods=['GET', 'POST'])
+def atualizar_professor_matriz():
+
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.get_json()
+            
+            sql = 'update matriz_curricular set %s = %s where num_classe = %s and disc_disciplina = %s ' % (data['coluna'], data['cpf'], data['num_classe'], data['disc'])
+            if banco.executeBasicSQL(sql):
+                return jsonify({'status':True})
+            else:
+                return jsonify({'status':False})
+
 
 @app.route('/render_lista', methods=['GET', 'POST'])
 def render_lista():

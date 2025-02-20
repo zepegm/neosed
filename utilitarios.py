@@ -1,4 +1,5 @@
 from datetime import datetime
+from hashlib import sha256
 
 meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
 series_fund = {9:'6º ano', 10:'7º ano', 11:'8º ano', 12:'9º ano'}
@@ -50,3 +51,6 @@ def getAnoFund(serie):
 
 def converterDataMySQL(data_original):
     return data_original[-4:] + '-' + data_original[3:5] + '-' +  data_original[:2]
+
+def encriptar(value):
+    return sha256(value.encode('utf-8')).hexdigest()

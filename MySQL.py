@@ -414,7 +414,7 @@ class db:
 
 
             for item in lista:
-                cur.execute(f"INSERT INTO matriz_curricular VALUES({item['num_classe']}, {item['disc']}, {item['area']}, {item['tipo']}, {item['qtd']}, {item['minutos']})")
+                cur.execute(f"INSERT INTO matriz_curricular(num_classe, disc_disciplina, area, tipo, qtd_aulas, minutos) VALUES({item['num_classe']}, {item['disc']}, {item['area']}, {item['tipo']}, {item['qtd']}, {item['minutos']})")
 
             database.commit()
 

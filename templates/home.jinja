@@ -49,6 +49,10 @@
             white-space: nowrap;
         }
 
+        .modal-xxl {
+            max-width: 90%; /* Ajuste a porcentagem conforme necessário */
+        }        
+
     </style>
 
   </head>
@@ -59,8 +63,38 @@
     {% endblock %}
 
     <!-- Modal -->
+    <div class="modal fade" id="confirmar_edicao_modal" tabindex="-1" aria-labelledby="confirmar_edicao_modalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="confirmar_edicao_modalLabel">Habilitar Edição</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="row">
+                        <div id="feedback" class="col-sm-12"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <label for="txtnumeroclasse">Senha</label>
+                            <input type="password" class="form-control" id="txt_senha">               
+                        </div>
+                    </div>
+                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btn_habilitar_edicao_confirm">Confirmar</button>
+                        <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+                    </div>
+            </div>
+        </div>
+    </div>    
+
+    <!-- Modal -->
     <div class="modal fade" id="matriz_modal" tabindex="-1" aria-labelledby="matriz_modalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-xxl" style="width:1900px !important;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="matriz_modalLabel">Matriz Curricular</h1>
@@ -69,9 +103,9 @@
                 
                 <div class="modal-body">
                     <div class="row mb-3">
-                        <div class="col-sm-2">
+                        <div class="col-sm-1">
                             <label class="form-label" for="cb_tipo_matriz">Tipo:</label>
-                            <select id="cb_tipo_matriz" class="form-select" aria-label="Default select example">
+                            <select id="cb_tipo_matriz" class="form-select" aria-label="Default select example" disabled>
                                 {% for item in tipo_disc %}
                                 <option value="{{item['id']}}">{{item['descricao']}}</option>
                                 {% endfor %}
@@ -80,15 +114,15 @@
 
                         <div class="col-sm-2">
                             <label class="form-label" for="cb_area_matriz">Área:</label>
-                            <select id="cb_area_matriz" class="form-select" aria-label="Default select example">
+                            <select id="cb_area_matriz" class="form-select" aria-label="Default select example" disabled>
                                 {% for item in area_conhecimento %}
                                 <option value="{{item['id']}}">{{item['desc_curta']}}</option>
                                 {% endfor %}
                             </select>                        
                         </div>
 
-                        <div class="col-sm-3 d-flex align-items-end dropdown">
-                            <button class="btn btn-secondary dropdown-toggle w-100 d-block text-truncate" type="button" id="selecionarDisc" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="col-sm-2 d-flex align-items-end dropdown">
+                            <button class="btn btn-secondary dropdown-toggle w-100 d-block text-truncate" type="button" id="selecionarDisc" data-bs-toggle="dropdown" aria-expanded="false" disabled>
                             Selecione a Disciplina
                             </button>
                             <ul id="ul_disc" class="dropdown-menu" aria-labelledby="selecionarDisc">
@@ -101,19 +135,21 @@
                             </ul>                                                             
                         </div>
 
-                        <div class="col-sm-2">
+                        <div class="col-sm-1">
                             <label class="form-label" for="txt_qtd">Qtd. Aulas</label>
-                            <input type="number" class="form-control" id="txt_qtd" name="txt_qtd" value="0">
+                            <input type="number" class="form-control" id="txt_qtd" name="txt_qtd" value="0" disabled>
                         </div>
 
-                        <div class="col-sm-2">
+                        <div class="col-sm-1">
                             <label class="form-label" for="txt_min">Minutos</label>
-                            <input type="number" class="form-control" id="txt_min" name="txt_min" value="45">
+                            <input type="number" class="form-control" id="txt_min" name="txt_min" value="45" disabled>
                         </div>
 
-                        <div class="col-sm-1 d-flex align-items-end">
-                            <button id="btn_add_disc" class="btn btn-success"><i class="fa-solid fa-plus"></i></button>
+                        <div class="col-sm-2 d-flex align-items-end">
+                            <button id="btn_add_disc" class="btn btn-success" disabled><i class="fa-solid fa-plus"></i></button>&nbsp;
+                            <button id="btn_habilitar_edicao" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#confirmar_edicao_modal">Habilitar Edição</button>
                         </div>
+
 
                     </div>
 
@@ -125,10 +161,10 @@
                                         <th>Tipo</th>
                                         <th>Área</th>
                                         <th>Disciplina</th>
-                                        <th>Qtd. Aulas</th>
-                                        <th>Minutos</th>
+                                        <th class="text-center">Qtd. Aulas</th>
+                                        <th class="text-center">Minutos</th>
                                         <th>Professor</th>
-                                        <th>Apelido</th>
+                                        <th>Professor 2 (Eletiva)</th>
                                         <th class="text-center">Excluir</th>
                                     </tr>
                                 </thead>
@@ -167,9 +203,9 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success" id="btn_puxar_matriz">Puxar Matriz da SED</button>
+                    <button type="button" class="btn btn-success" id="btn_puxar_matriz" disabled>Puxar Matriz da SED</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btn_salvar_matriz">Salvar Matriz</button>
+                    <button type="button" class="btn btn-primary" id="btn_salvar_matriz" disabled>Salvar Matriz</button>
                 </div>
                 
             </div>
@@ -741,6 +777,35 @@
             $("#status_auto_update").html(html)
         }); 
 
+        $("#btn_habilitar_edicao_confirm").on('click', function() {
+            let senha = $("#txt_senha").val();
+            $.ajax({
+                type: "POST",
+                url: "confirmar_senha",
+                contentType: "application/json",
+                data: JSON.stringify({'senha':senha}),
+                dataType: "json",
+                success: function(data) {
+                    if (data['status']) {
+                        // fechar o modal
+                        $("#confirmar_edicao_modal").modal('hide');
+                        $("#btn_puxar_matriz").removeAttr('disabled');
+                        $("#btn_salvar_matriz").removeAttr('disabled');
+                        $("#btn_add_disc").removeAttr('disabled');
+                        $("#selecionarDisc").removeAttr('disabled');
+                        $("#txt_qtd").removeAttr('disabled');
+                        $("#txt_min").removeAttr('disabled');
+                        $("#cb_tipo_matriz").removeAttr('disabled');
+                        $("#cb_area_matriz").removeAttr('disabled');
+                        $("#btn_habilitar_edicao").remove();
+                        $("#matriz_modal").modal('show');
+                    } else {
+                        $("#feedback").html('<div class="alert alert-danger alert-dismissible fade show" role="alert">Senha incorreta!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+                    }
+                },
+            });
+        });
+
         $("#btn_puxar_matriz").on('click', function() {
             $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
             $(this).attr('disabled');
@@ -835,7 +900,6 @@
                 if ($(this).find('td:eq(0)').text() == 'FGB' || $(this).find('td:eq(0)').text() == 'BNC') {
                     total_aulas_fgb += parseInt($(this).find('td:eq(3)').text());
                     total_horas_fgb += parseInt($(this).find('td:eq(3)').text()) * parseInt($(this).find('td:eq(4)').text()) / 60;
-                    console.log(total_horas_fgb);
                 } else {
                     total_aulas_if += parseInt($(this).find('td:eq(3)').text());
                     total_horas_if += parseInt($(this).find('td:eq(3)').text()) * parseInt($(this).find('td:eq(4)').text()) / 60;
@@ -860,9 +924,49 @@
             $("#lb_total_horas").text(Math.round(total_horas_fgb + total_horas_if));
         }
 
-        $(document).on('dblclick', '.cb-professor-matriz', function() {
-            $(this).removeAttr('disabled');
-            console.log('teste');
+        $(document).on('dblclick', '.cb-professor-matriz-edit', function() {
+            if ($("#btn_habilitar_edicao").length == 0) {
+                let parent = $(this).parent();
+                let id = $(this).attr('data-id');
+                $(this).remove();
+
+                let select = '<select class="form-select cb_professor_matriz">';
+                
+                for (let i = 0; i < professores.length; i++) {
+                    if (professores[i].cpf == id) {
+                        select += `<option value="${professores[i].cpf}" selected>${professores[i].nome}</option>`;
+                    } else {
+                        select += `<option value="${professores[i].cpf}">${professores[i].nome}</option>`;
+                    }
+                }
+                select += '</select>';
+
+                parent.html(select);
+            }
+        });
+
+        $(document).on('change', '.cb_professor_matriz', function() {
+            let num_classe = num_classe_matriz;
+            let cpf = $(this).val();
+            let disc = $(this).closest('tr').find('td:eq(2)').attr('data-id');
+            let nome = $(this).find('option:selected').text();
+            let coluna = $(this).closest('td').attr('data-col');
+
+            let parent = $(this).parent();
+
+            $.ajax({
+                type: "POST",
+                url: "atualizar_professor_matriz",
+                contentType: "application/json",
+                data: JSON.stringify({'num_classe':num_classe, 'cpf':cpf, 'disc':disc, 'coluna':coluna}),
+                dataType: "json",
+                success: function(data) {
+                    if (data) {
+                        parent.empty(); 
+                        parent.html('<div data-id="' + cpf + '" class="cb-professor-matriz-edit"><i class="fa-solid fa-pen"></i>&nbsp;'+nome+'</div>');
+                    }
+                },
+            });
         });
 
         $(document).on('click', '.remover-disciplina', function() {
@@ -927,13 +1031,13 @@
                         row += `<td class="text-center">${data[i].qtd_aulas}</td>`;
                         row += `<td class="text-center">${data[i].minutos}</td>`;
                         
-                        row += `<td><select class="form-select cb-professor-matriz" disabled>`;
-                        row += '<option value="0">Selecione o professor</option>';
-                        for (let j = 0; j < professores.length; j++) {
-                            row += `<option value="${professores[j].id}">${professores[j].nome}</option>`;
+                        row += `<td data-col="cpf_professor"><div data-id="${data[i]['cpf']}" class="cb-professor-matriz-edit"><i class="fa-solid fa-pen"></i>&nbsp;${data[i]['nome']}</div></td>`;
+                        if (data[i]['disc'] == 8465) {
+                            row += `<td data-col="cpf_professor_2"><div data-id="${data[i]['cpf_2']}" class="cb-professor-matriz-edit"><i class="fa-solid fa-pen"></i>&nbsp;${data[i]['nome_2']}</div></td>`;
+                        } else {
+                            row += `<td>-</td>`;
                         }
-                        row += '</select></td>'
-                        row += '<td class="apelido-edit"></td>'
+                        
 
                         row += '<td class="text-center"><a href="#" class="remover-disciplina"><i class="fa-solid fa-trash"></i></a></td>';
                         row += '</tr>';
@@ -1083,7 +1187,7 @@
 
                         var linha = "";
 
-                        console.log(response['turma'][item]['sit']);
+                        //console.log(response['turma'][item]['sit']);
 
                         if (response['turma'][item]['sit'] != "ATIVO" && response['turma'][item]['sit'] != "APROV") {
                             linha += '<tr class="red">'
