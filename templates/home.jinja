@@ -232,10 +232,15 @@
                             <label for="txtnumeroclasse">Número da Classe:</label>
                             <input type="number" class="form-control" id="txtnumeroclasse" name="txtnumeroclasse" required>               
                         </div>            
-                        <div class="col-sm-6">
+                        <div class="col-sm-3">
                             <label for="txtnometurma">Nome da turma:</label>
                             <input type="text" class="form-control" id="txtnometurma" name="txtnometurma" required>               
                         </div>
+
+                        <div class="col-sm-3">
+                            <label for="txtnometurma">Apelido:</label>
+                            <input type="text" class="form-control" id="txtapelidoturma" name="txtapelidoturma" required>               
+                        </div>                        
 
                         <div class="col-sm-6">
                             <label for="cbtipoensino">Tipo de Ensino:</label>
@@ -498,10 +503,15 @@
                         <label for="txtnumeroclasse_edit">Numéro da Classe:</label>
                         <input type="number" class="form-control" id="txtnumeroclasse_edit" name="txtnumeroclasse_edit" required>               
                     </div>            
-                    <div class="col-sm-6">
+                    <div class="col-sm-3">
                         <label for="txtnometurma_edit">Nome da turma:</label>
                         <input type="text" class="form-control" id="txtnometurma_edit" name="txtnometurma_edit" required>               
                     </div>
+
+                        <div class="col-sm-3">
+                            <label for="txtnometurma">Apelido:</label>
+                            <input type="text" class="form-control" id="txtapelidoturma_edit" name="txtapelidoturma_edit" required>               
+                        </div>                      
 
                     <div class="col-sm-6">
                         <label for="cbtipoensino_edit">Tipo de Ensino:</label>
@@ -743,7 +753,7 @@
                                 <td class="text-center"><a href="javascript:abrirMatriz({{turma['num_classe']}}, '{{turma['duracao']}}')"><i class="fa-solid fa-table-list"></i></a></td>
                                 {% if item['tipo_ensino']['id'] != 2 and item['tipo_ensino']['id'] != 5 %}
                                 <td class="text-center"><a href="javascript:consultar({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
-                                <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}})"><i class="fa-solid fa-edit"></i></a></td>
+                                <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}}, '{{turma['apelido']}}')"><i class="fa-solid fa-edit"></i></a></td>
                                 {% else %}
                                 <td class="text-center"><a href="javascript:consultarIf({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
                                 <td class="text-center"><a href="javascript:editarIf({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}}, {{turma['categoria']}})"><i class="fa-solid fa-edit"></i></a></td>                            
@@ -1331,12 +1341,13 @@
 
         }
 
-        function editar(id, nome, ensino, periodo, duracao) {
+        function editar(id, nome, ensino, periodo, duracao, apelido) {
             $("#txtnumeroclasse_edit").val(id);
             $("#txtnometurma_edit").val(nome);
             $("#cbtipoensino_edit").val(ensino);
             $("#cbperiodo_edit").val(periodo);
             $("#cbduracao_edit").val(duracao);
+            $("#txtapelidoturma_edit").val(apelido);
             $("#editar_turma_modal").modal('show');
         }
 

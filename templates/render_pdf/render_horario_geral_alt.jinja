@@ -20,22 +20,13 @@
                 background-color: white;
             }
 
-            .paginas_cont {
-                width: 729px;
-                height: 1057px;
-                border-width: 2px;
-                border-style: solid;
-                margin-top: 30px;
-                margin-left: 22px;              
-            }
-
             #tb-principal {
                 width: 100%;
                 height: 100%;
                 border-collapse: collapse;
                 font-family: Arial, Helvetica, sans-serif;
                 font-size: 12px;
-                border: 4px solid black;
+                /*border: 4px solid black;*/
             }
 
             #tb-principal th {
@@ -49,10 +40,18 @@
                 background-color: white;
                 border: 1px solid black;
                 text-align: center;
-                /*padding: 3px;*/
+                padding: 3px;
                 font-family: Arial, Helvetica, sans-serif;
                 font-size: 11px;
-            }        
+            }    
+
+            #tb-principal td:last-of-type {
+                border-right: 4px solid black !important;
+            }
+
+            #tb-principal tr:last-of-type td {
+                border-bottom: 4px solid black !important;
+            }            
 
             .vertical-text {
                 writing-mode: vertical-rl; /* or vertical-lr */
@@ -73,6 +72,10 @@
                 background-color: rgb(255, 242, 204) !important;
             }
 
+            .d-none {
+                background-color: orange !important;
+            }
+
             .d-5 {
                 background-color: rgb(204, 255, 204) !important;
             }
@@ -81,19 +84,25 @@
                 border-top: 4px solid black !important;
             }
 
+            .first-head {
+                border-top: 2px solid black !important;
+            }
+
             .blue {
                 color:white;
                 background-color: #0070C0 !important;
                 font-weight: bold;
-                height: 2px;
-                font-size: 10px !important;
             }
 
             .titulo {
                 font-family:'BebasKai', sans-serif !important;
                 font-size: 22px;
                 font-weight: normal;    
-                padding: 4px !important;
+                padding: 8px !important;
+                border-top: 4px solid black !important;
+                border-bottom: 2px solid black !important;
+                border-left: 4px solid black !important;
+                border-right: 4px solid black !important;
             }
 
             .red {
@@ -102,7 +111,9 @@
 
             .head {
                 height: 5px !important;
-                padding: 4px !important;
+                padding: 8px !important;
+                font-weight: bold;
+                font-size: 13px !important;
             }
 
             .foot {
@@ -133,27 +144,33 @@
                 display: inline-block;
             }
 
-            /* disciplinas com cores específicas */
-
-            .ELETIVA {
-                background-color: rgb(254, 222, 255) !important;
+            .semana_2 {
+                background-color: #DBE9F6 !important;
             }
 
-            .TUTORIA {
-                background-color: orange !important;
-            }
+            .semana_3 {
+                background-color: #F1CEEE !important;
+            }        
 
-            .CLUBE {
-                background-color: rebeccapurple !important;
-                color: white;
-            }      
+            .semana_4 {
+                background-color: #FCE2D5 !important;
+            }        
 
-            /* professores com cores específicas */
-            {% for item in profs %}
-            .prof_{{item['cpf_professor']}} {
-                background-color: {{item['cor']}} !important;
-            }
-            {% endfor %}
+            .semana_5 {
+                background-color: #D8F4CC !important;
+            }        
+
+            .semana_6 {
+                background-color: #92DEF5 !important;
+            }  
+
+            .interval {
+                height: 20px;
+                border-left: 1px solid white !important;
+                border-right: 1px solid white !important;
+                border-top: 4px solid black !important;
+                border-bottom:none;
+            }                      
 
         </style>
     </head>
@@ -167,10 +184,10 @@
                     </tr>
 
                     <tr>
-                        <th class="gray head">Dia</th>
-                        <th class="gray head">Horário</th>
+                        <td class="yellow head" style="border-left: 4px solid black;">Dia</td>
+                        <td class="yellow head">Horário</td>
                         {% for item in turmas %}
-                        <th class="gray head">{{item['nome_turma']}}</th>
+                        <td class="yellow head">{{item['nome_turma']}}</td>
                         {% endfor %}
                     </tr>
                 </thead>
@@ -185,27 +202,42 @@
                         {% for item in horario %}
                         <tr>
                             {% if loop.index == 1 %}
-                                <td class="first-line gray" rowspan="{{horario|length}}"><span class="vertical-text">{{dias_semana[n - 2]}}</span></td>
-                                <td class="gray first-line">{{item['horario']}}</td>
+                                <td class="{{'first-line' if n != 2 else 'first-head'}} semana_{{n}}" rowspan="{{rowspan}}" style="border-left: 4px solid black;border-bottom: 4px solid black;"><span class="vertical-text">{{dias_semana[n - 2]}}</span></td>
+                                <td class="semana_{{n}} {{'first-line' if n != 2 else 'first-head'}}">{{item['horario']}}</td>
 
                                 <!-- Agora se inicia o processo de inclusão das disciplinas -->
                                 {% for turma in turmas %}
-                                <td class="prof_{{grade[n][count.value]['cpf_professor']}} {{grade[n][count.value]['abv']}} first-line">{{grade[n][count.value]['abv']}} {{grade[n][count.value]['nome']}}</td>
+                                <td class="semana_{{n}} {{'first-line' if n != 2 else 'first-head'}}">{{grade[n][count.value]['abv']}} {{grade[n][count.value]['nome']}}</td>
                                 {% set count.value = count.value + 1 %}
                             {% endfor %}
 
                             {% else %}
-                                <td class="gray">{{item['horario']}}</td>
+                                <td class="semana_{{n}}">{{item['horario']}}</td>
 
                                 {% for turma in turmas %}
-                                <td class="prof_{{grade[n][count.value]['cpf_professor']}} {{grade[n][count.value]['abv']}}">{{grade[n][count.value]['abv']}} {{grade[n][count.value]['nome']}}</td>
+                                <td class="semana_{{n}}">{{grade[n][count.value]['abv']}} {{grade[n][count.value]['nome']}}</td>
                                 {% set count.value = count.value + 1 %}
                                 {% endfor %}
 
                             {% endif %}
 
                         </tr>
+
+                        {% if item['intervalo'] %}
+                        <tr>
+                            <td class="blue">{{item['intervalo']}}</td><td class="blue" colspan="{{turmas|length}}">INTERVALO</td>
+                        </tr>
+                        {% endif %}
+
                         {% endfor %}
+
+
+                    {% if n < 6 %}
+                    <tr>
+                        <th class="interval" colspan="{{turmas|length + 2}}"></th>
+                    </tr>
+                    {% endif %}
+
 
                     {% endfor %}
 
@@ -215,6 +247,5 @@
             </table>
 
         </div>
-
     </body>
 </htmL>

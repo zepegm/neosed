@@ -17,6 +17,7 @@ import locale
 import math
 import calendar
 from jinja_try_catch import TryCatchExtension
+from PyPDF2 import PdfMerger
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -115,7 +116,7 @@ def index():
         #print('yes')
         if 'txtnumeroclasse' in request.form:
 
-            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':request.form['ano']}
+            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':request.form['ano'], 'apelido':request.form['txtapelidoturma']}
             
             if banco.inserirNovaTurma(classe):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -130,7 +131,7 @@ def index():
 
 
         if 'txtnumeroclasse_edit' in request.form:
-            classe = {'num_classe':request.form['txtnumeroclasse_edit'], 'nome_turma':"'" + request.form['txtnometurma_edit'] + "'", 'duracao':request.form['cbduracao_edit'], 'tipo_ensino':request.form['cbtipoensino_edit'], 'periodo':request.form['cbperiodo_edit']}
+            classe = {'num_classe':request.form['txtnumeroclasse_edit'], 'nome_turma':"'" + request.form['txtnometurma_edit'] + "'", 'duracao':request.form['cbduracao_edit'], 'tipo_ensino':request.form['cbtipoensino_edit'], 'periodo':request.form['cbperiodo_edit'], 'apelido':f"'{request.form['txtapelidoturma_edit']}'"}
             
             if banco.alterarTurma(classe):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -170,7 +171,7 @@ def index():
             color = 'table-dark'
 
             if item['id'] != 2 and item['id'] != 5:
-                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo, turma.apelido from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
             else:
                 turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
                 print('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
@@ -287,7 +288,9 @@ def grade():
             css_disc.append({'disc':item, 'cor':cores[contador]})
             contador += 1
 
-    return render_template('grade.jinja', anos=ls_anos, turmas=turmas, css_disc=css_disc, msg=msg)
+    hoje = datetime.today().strftime("%Y-%m-%d")
+
+    return render_template('grade.jinja', anos=ls_anos, turmas=turmas, css_disc=css_disc, msg=msg, data=hoje)
 
 
 @app.route('/relatorios', methods=['GET', 'POST'])
@@ -464,9 +467,9 @@ def render_livro_ponto():
     sql = "select " + \
           "instancia_calendario, nome, if(di = 0, '-', di) as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
           "cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
-          "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuída(s) ', (select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf), ' aula(s) nesta UE'), 'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
+          "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuída(s) ', (select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) + (select sum(qtd_aulas) from matriz_curricular where cpf_professor = professor_livro_ponto.cpf), ' aula(s) nesta UE'), 'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
           "ifnull(FNREF, '') as FNREF, jornada_livro_ponto.descricao as jornada, jornada_livro_ponto.qtd as qtd_jornada, " + \
-          "(select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) as total_aulas, " + \
+          "(select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) + (select sum(qtd_aulas) from matriz_curricular where cpf_professor = professor_livro_ponto.cpf) as total_aulas, " + \
           "ifnull(professor_livro_ponto.afastamento, '') as afastamento, " + \
           "ifnull(disciplinas.descricao, 'Não Possui') as disciplina, ifnull(obs, '') as obs, " + \
           'ifnull(aulas_outra_ue, 0) as aulas_outra_ue, ' + \
@@ -479,6 +482,7 @@ def render_livro_ponto():
           "left join disciplinas on disciplinas.codigo_disciplina = professor_livro_ponto.disciplina " + \
           "inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto ON afastamento_livro_ponto.id = professor_livro_ponto.afastamento inner join jornada_livro_ponto on jornada_livro_ponto.id = professor_livro_ponto.jornada where ativo = 1 " + condicao_extra + " order by rg"
 
+    print(sql)
     professores = banco.executarConsulta(sql)
 
     pos_inicial = 2278
@@ -570,10 +574,77 @@ def render_livro_ponto():
         professor['quadro'] = quadro
 
         # criar quadro de aulas do professor
-        professor['quadro_aula'] = banco.executarConsulta(r"select periodo_livro_ponto.descricao as periodo, DATE_FORMAT(inicio, '%H:%i') as inicio, DATE_FORMAT(fim, '%H:%i') as fim, ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sab, ifnull(dom, '') as dom from horario_livro_ponto inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo where cpf_professor = " + aux + ' ORDER BY inicio')
+
+        if professor['afastamento'] in ('292', '411'):
+            silaba = "'-'"
+        else:
+            silaba = "''"
+
+        sql =   'SELECT distinct ' \
+	            r'''inicio, fim, concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario, ''' \
+                '''CASE WHEN inicio < '12:00:00' THEN 'Manhã' WHEN inicio < '19:00:00' THEN 'Tarde' ELSE 'Noite' END as periodo, ''' \
+                'ifnull( ' \
+		        f'''(select seg from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 2 and turma.ano = hora_aulas.ano), {silaba})''' \
+                ') as seg, ' \
+                'ifnull( ' \
+		        f'''(select ter from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 3 and turma.ano = hora_aulas.ano), {silaba}) ''' \
+                ') as ter, ' \
+                'ifnull( ' \
+		        f'''(select qua from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 4 and turma.ano = hora_aulas.ano), {silaba}) ''' \
+                ') as qua, ' \
+                'ifnull( ' \
+		        f'''(select qui from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 5 and turma.ano = hora_aulas.ano), {silaba}) ''' \
+                ') as qui, ' \
+                'ifnull( ' \
+		        f'''(select sex from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 6 and turma.ano = hora_aulas.ano), {silaba}) ''' \
+                ') as sex, ' \
+                'ifnull( ' \
+		        f'''(select sab from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 7 and turma.ano = hora_aulas.ano), {silaba}) ''' \
+                ') as sáb, ' \
+                'ifnull( ' \
+		        f'''(select dom from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 1 and turma.ano = hora_aulas.ano), {silaba}) ''' \
+                ') as dom ' \
+                f'FROM hora_aulas WHERE hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux}) ' \
+                'UNION ' \
+                'select ' \
+	            'CONVERT(inicio, TIME) as inicio, ' \
+                'CONVERT(fim, TIME) as fim, ' \
+                r'''concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario, ''' \
+                'periodo_livro_ponto.descricao as periodo, ' \
+                '''ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sáb, ifnull(dom, '') as dom ''' \
+                'from horario_livro_ponto ' \
+                'inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo ' \
+                f'where cpf_professor = {aux} ' \
+                f'and CONVERT(inicio, TIME) not in (select distinct hora_aulas.inicio from grade inner join hora_aulas on hora_aulas.pos = grade.pos and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux})) ' \
+                'ORDER BY inicio'
+
+        professor['quadro_aula'] = banco.executarConsulta(sql)
+
+
+        if professor['afastamento'] in ('292', '411'):
+            professor['qtd_aulas_semanais'] = {'seg':9, 'ter':9, 'qua':9, 'qui':9, 'sex':9, 'sáb':0, 'dom':0}
+        else:
+            professor['qtd_aulas_semanais'] = banco.executarConsulta(f'select (select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor = {aux} where semana = 2) as seg, ' \
+                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 3) as ter, ' \
+                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 4) as qua, ' \
+                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 5) as qui, ' \
+                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 6) as sex, ' \
+                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 7) as sáb, ' \
+                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 1) as dom')[0]
+
+        
+
+
 
         # após processar as informações do professor, ainda preciso criar uma tulpa com a quantidade de aulas por dia da semana
-        professor['qtd_aulas_semanais'] = banco.executarConsulta('select count(seg) as seg, count(ter) as ter, count(qua) as qua, count(qui) as qui, count(sex) as sex, count(sab) as sáb, count(dom) as dom from horario_livro_ponto where cpf_professor = %s' % aux)[0]
+        #professor['qtd_aulas_semanais'] = banco.executarConsulta('select count(seg) as seg, count(ter) as ter, count(qua) as qua, count(qui) as qui, count(sex) as sex, count(sab) as sáb, count(dom) as dom from horario_livro_ponto where cpf_professor = %s' % aux)[0]
 
         aulas_ue = banco.executarConsulta('select * from aulas_outra_ue_livro_ponto where cpf_professor = %s' % aux)
         aulas_outra_ue = {}
@@ -1568,16 +1639,92 @@ def render_lista():
 
             return render_template('render_pdf/render_ata_final.jinja', info=info, dados=ls_final, ls_keys=ls_keys)
         
-        elif tipo == 'grade':
+        elif tipo in ['grade', 'grade_alt', 'grade_salas']:
+
+            destino = tipo
 
             tipo_ensino = request.args.getlist('num_classe')[0]
             ano = request.args.getlist('order')[0]
+            data_horario = request.args.getlist('data')[0]
 
-            turmas = banco.executarConsulta(f'select nome_turma, num_classe from turma where tipo_ensino in {tipo_ensino} and ano = {ano} order by nome_turma')
+            turmas = banco.executarConsulta(f'select nome_turma, num_classe, tipo_ensino.descricao from turma inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where tipo_ensino in {tipo_ensino} and ano = {ano} order by nome_turma')
+            horario = banco.executarConsulta(f'''select distinct inicio, fim, concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario from hora_aulas where tipo_ensino in {tipo_ensino} and ano = {ano} order by inicio''')
+            grade = banco.executarConsulta(f'select distinct grade.num_classe, turma.nome_turma, pos, semana, grade.disciplina, disciplinas.abv, professor_livro_ponto.nome, matriz_curricular.cpf_professor, matriz_curricular.tipo from grade left join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and matriz_curricular.disc_disciplina = grade.disciplina left join professor_livro_ponto on professor_livro_ponto.cpf = matriz_curricular.cpf_professor inner join turma on turma.num_classe = grade.num_classe inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina where turma.tipo_ensino in {tipo_ensino} and turma.ano = {ano} order by semana, pos, nome_turma')
+            tipo = banco.executarConsultaVetor(f"SELECT CAST(GROUP_CONCAT(descricao SEPARATOR ' + ') AS CHAR) as texto FROM tipo_ensino where id in {tipo_ensino}")[0]
+            legenda = banco.executarConsulta(f'select distinct tipo, tipo_disc_matriz.desc_completa as descricao from matriz_curricular inner join tipo_disc_matriz on tipo_disc_matriz.id = matriz_curricular.tipo inner join turma on turma.num_classe = matriz_curricular.num_classe where turma.tipo_ensino in {num_classe} and turma.ano = {ano}')
 
-            segunda = banco.executarConsulta(f'select grade.num_classe, turma.nome_turma, pos, semana, disciplina, disciplinas.abv from grade inner join turma on turma.num_classe = grade.num_classe inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina where semana = 2 and turma.tipo_ensino in {tipo_ensino} order by pos, nome_turma')
+            grade_final = {}
+            semana = grade[0]['semana']
+            temp = []
 
-            return turmas
+            cont = 0
+
+            # parametrizar nomes dos professores
+            for item in grade:
+                try:
+                    aux = item['nome'].split(' ')
+                    if len(aux[0]) < 4:
+                        item['nome'] = "(" + aux[0] + ' ' + aux[1] + ")"
+                    else:
+                        item['nome'] = "(" + aux[0] + ")"
+                except:
+                    item['nome'] = ''
+
+                # parametrizar eletiva
+                if item['disciplina'] == 8465:
+                    item['abv'] = 'ELETIVA'
+                    item['cpf_professor'] = ''
+                    item['nome'] = ''
+
+
+                if item['semana'] != semana:
+                    grade_final[semana] = temp
+                    temp = []
+                    semana = item['semana']
+            
+                temp.append(item)
+
+            grade_final[semana] = temp
+
+            horario_final = []
+            rowspan = len(horario)
+
+            #parametrizar horário
+            for n in range(0, len(horario)):
+                try:
+                    if horario[n]['fim'] == horario[n+1]['inicio']:
+                        horario_final.append({'horario':horario[n]['horario'], 'intervalo':None})
+                    else:
+                        inicio = datetime(1, 1, 1) + horario[n+1]['inicio']
+                        fim = datetime(1, 1, 1) + horario[n]['fim']
+                        horario_final.append({'horario':horario[n]['horario'], 'intervalo':f"{fim.strftime('%H:%M')} - {inicio.strftime('%H:%M')}"})
+                        rowspan += 1
+                except:
+                    horario_final.append({'horario':horario[n]['horario'], 'intervalo':None})
+
+
+            dias_semana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
+
+            cores = ['#becaa8', '#d084c0', '#c8b8ea', '#d9e9ac', '#96d8ad', '#e7a6c3', '#d8d796', '#9df2f3', '#ee9dc1', '#b1aaf7', '#f9cc87', '#afb3de', '#b3e29e', '#fce5bb', '#a5d4fe', '#cedfb5', '#c3b9af', '#d98deb', '#e2d3d2', '#b9e1d8', '#b99dc2', '#b6efeb', '#d3f98f', '#bbfeb9', '#a8e5f0', '#e98dbf', '#edcd93', '#a8bcab', '#96caac', '#97c4ac', '#b7a2fa', '#c582cf', '#cd8eb9', '#8cff84', '#e5d180', '#bd8ff2', '#c98ce9', '#94fcb6', '#bcbaf9', '#b7c8a7', '#dbe7cf', '#e1d2af', '#e4cac3', '#fdb0db', '#dfad80', '#adf6eb', '#a4eebd', '#8f86b4', '#93c3ae', '#a2b5da']
+            profs = banco.executarConsulta(f'select distinct matriz_curricular.cpf_professor from grade left join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and matriz_curricular.disc_disciplina = grade.disciplina left join professor_livro_ponto on professor_livro_ponto.cpf = matriz_curricular.cpf_professor inner join turma on turma.num_classe = grade.num_classe inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina where turma.tipo_ensino in {tipo_ensino} and turma.ano = {ano} and matriz_curricular.cpf_professor is not null')
+
+            cont = 0
+
+            for item in profs:
+                try:
+                    item['cor'] = cores[cont]
+                    cont += 1
+                except:
+                    cont = 0
+                    item['cor'] = cores[cont]
+
+
+            if destino == 'grade_alt':
+                return render_template('render_pdf/render_horario_geral_alt.jinja', turmas=turmas, horario=horario_final, grade=grade_final, dias_semana=dias_semana, rowspan=rowspan, tipo=tipo, legenda=legenda, data=data_horario)    
+            elif destino == 'grade_salas':
+                return render_template('render_pdf/render_horario_salas.jinja', turmas=turmas, horario=horario_final, grade=grade_final, dias_semana=dias_semana, rowspan=rowspan, tipo=tipo, legenda=legenda, data=data_horario, profs=profs)
+
+            return render_template('render_pdf/render_horario_geral.jinja', turmas=turmas, horario=horario_final, grade=grade_final, dias_semana=dias_semana, rowspan=rowspan, tipo=tipo, legenda=legenda, data=data_horario, profs=profs)
 
 @app.route('/atualizar_matriz_auto', methods=['GET', 'POST'])
 async def atualizar_matriz_auto():
@@ -2220,6 +2367,41 @@ async def gerar_pdf():
         await browser.close()
 
         return jsonify(pdf_path)
+
+    elif info['destino'] == 15: #horário geral com legenda
+        pdf_path_1 = 'static/docs/horario_horizontal.pdf'
+        pdf_path_2 = 'static/docs/horario_turmas.pdf'
+        pdf_path = 'static/docs/horario_geral.pdf'
+
+        ano = info['ano']
+        estilo = info['estilo']
+        ensino = info['ensino']
+        data = info['data']
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (estilo, ensino, ano, data), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path_1, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+
+        await page.goto('http://localhost/render_lista?tipo=grade_salas&num_classe=%s&order=%s&data=%s' % (ensino, ano, data), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path_2, 'format':'A4', 'landscape': True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+
+        await browser.close()
+
+        # Mesclar os PDFs
+        merger = PdfMerger()
+        merger.append(pdf_path_1)
+        merger.append(pdf_path_2)
+        merger.write(pdf_path)
+        merger.close()        
+
+        return jsonify(pdf_path)
+
 
 
 
