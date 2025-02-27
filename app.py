@@ -36,9 +36,9 @@ app.jinja_env.add_extension(TryCatchExtension)
 
 #locale.setlocale(locale.LC_ALL, "")
 
-banco = db({'host':"localhost",    # your host, usually localhost
-            'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+banco = db({'host':"neosed.net",    # your host, usually localhost
+            'user':"username",         # your username
+            'passwd':"password",  # your password
             'db':"neosed"})
 
 
@@ -467,9 +467,9 @@ def render_livro_ponto():
     sql = "select " + \
           "instancia_calendario, nome, if(di = 0, '-', di) as di, rg, ifnull(digito, '') as digito, ifnull(rs, '-') as rs, ifnull(pv, '') as pv, cpf, " + \
           "cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
-          "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuída(s) ', (select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) + (select sum(qtd_aulas) from matriz_curricular where cpf_professor = professor_livro_ponto.cpf), ' aula(s) nesta UE'), 'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
+          "(CASE WHEN afastamento IS NULL THEN REPLACE(concat('Atribuída(s) ', (select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) + ifnull((select sum(qtd_aulas) from matriz_curricular where cpf_professor = professor_livro_ponto.cpf), 0), ' aula(s) nesta UE'), 'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas') ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao) END) AS situacao, " + \
           "ifnull(FNREF, '') as FNREF, jornada_livro_ponto.descricao as jornada, jornada_livro_ponto.qtd as qtd_jornada, " + \
-          "(select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) + (select sum(qtd_aulas) from matriz_curricular where cpf_professor = professor_livro_ponto.cpf) as total_aulas, " + \
+          "(select count(case when seg != 'ATPC' then 1 end) + count(case when ter != 'ATPC' then 1 end) + count(case when qua != 'ATPC' then 1 end) + count(case when qui != 'ATPC' then 1 end) + count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = professor_livro_ponto.cpf) + ifnull((select sum(qtd_aulas) from matriz_curricular where cpf_professor = professor_livro_ponto.cpf), 0) as total_aulas, " + \
           "ifnull(professor_livro_ponto.afastamento, '') as afastamento, " + \
           "ifnull(disciplinas.descricao, 'Não Possui') as disciplina, ifnull(obs, '') as obs, " + \
           'ifnull(aulas_outra_ue, 0) as aulas_outra_ue, ' + \
@@ -482,7 +482,6 @@ def render_livro_ponto():
           "left join disciplinas on disciplinas.codigo_disciplina = professor_livro_ponto.disciplina " + \
           "inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria left join afastamento_livro_ponto ON afastamento_livro_ponto.id = professor_livro_ponto.afastamento inner join jornada_livro_ponto on jornada_livro_ponto.id = professor_livro_ponto.jornada where ativo = 1 " + condicao_extra + " order by rg"
 
-    print(sql)
     professores = banco.executarConsulta(sql)
 
     pos_inicial = 2278
@@ -492,6 +491,10 @@ def render_livro_ponto():
     # ---------------------------------------------------------------------------
     # processar as informações de cada professor
     for professor in professores:
+        
+        print(professor['nome'])
+        print(professor['total_aulas'])
+        print('--------------------------')
 
         sumario.append({'professor':professor['nome'], 'pag':cont_pag})
         cont_pag += 1
@@ -3614,8 +3617,6 @@ def boletim():
             sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 2 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 2 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
             sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 3 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 3 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
             sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 4 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 4 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as aulas_dadas ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
-
-            print(sql)
 
             aulas_dadas = banco.executarConsulta(sql)[0]['aulas_dadas']
             try:
