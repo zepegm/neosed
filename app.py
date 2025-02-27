@@ -576,8 +576,12 @@ def render_livro_ponto():
 
         if professor['afastamento'] in ('292', '411'):
             silaba = "'-'"
+            end_sql = f'FROM hora_aulas WHERE hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux}) '
+            end_sql_2 = f'(select distinct hora_aulas.inicio from grade inner join hora_aulas on hora_aulas.pos = grade.pos and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux}))'
         else:
             silaba = "''"
+            end_sql = f'FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {aux} or cpf_professor_2 = {aux}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux}) '
+            end_sql_2 = f'(select distinct hora_aulas.inicio FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {aux} or cpf_professor_2 = {aux}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux}))'
 
         sql =   'SELECT distinct ' \
 	            r'''inicio, fim, concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario, ''' \
@@ -609,8 +613,7 @@ def render_livro_ponto():
                 'ifnull( ' \
 		        f'''(select dom from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
 		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 1 and turma.ano = hora_aulas.ano), '') ''' \
-                ') as dom ' \
-                f'FROM hora_aulas WHERE hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux}) ' \
+                f') as dom {end_sql}' \
                 'UNION ' \
                 'select ' \
 	            'CONVERT(inicio, TIME) as inicio, ' \
@@ -621,11 +624,12 @@ def render_livro_ponto():
                 'from horario_livro_ponto ' \
                 'inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo ' \
                 f'where cpf_professor = {aux} ' \
-                f'and CONVERT(inicio, TIME) not in (select distinct hora_aulas.inicio from grade inner join hora_aulas on hora_aulas.pos = grade.pos and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux})) ' \
+                f'and CONVERT(inicio, TIME) not in  {end_sql_2}' \
                 'ORDER BY inicio'
 
         if professor['assina_livro'] == 1:
             professor['quadro_aula'] = banco.executarConsulta(sql)
+            print(sql)
         else:
             professor['quadro_aula'] = []
 
