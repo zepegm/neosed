@@ -491,10 +491,6 @@ def render_livro_ponto():
     # ---------------------------------------------------------------------------
     # processar as informações de cada professor
     for professor in professores:
-        
-        print(professor['nome'])
-        print(professor['total_aulas'])
-        print('--------------------------')
 
         sumario.append({'professor':professor['nome'], 'pag':cont_pag})
         cont_pag += 1
@@ -608,11 +604,11 @@ def render_livro_ponto():
                 ') as sex, ' \
                 'ifnull( ' \
 		        f'''(select sab from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 7 and turma.ano = hora_aulas.ano), {silaba}) ''' \
-                ') as sáb, ' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 7 and turma.ano = hora_aulas.ano), '') ''' \
+                ') as sab, ' \
                 'ifnull( ' \
 		        f'''(select dom from horario_livro_ponto where cpf_professor = {aux} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 1 and turma.ano = hora_aulas.ano), {silaba}) ''' \
+		        f'''IFNULL((SELECT turma.apelido from grade inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {aux} or matriz_curricular.cpf_professor_2 = {aux}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 1 and turma.ano = hora_aulas.ano), '') ''' \
                 ') as dom ' \
                 f'FROM hora_aulas WHERE hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux}) ' \
                 'UNION ' \
@@ -628,19 +624,26 @@ def render_livro_ponto():
                 f'and CONVERT(inicio, TIME) not in (select distinct hora_aulas.inicio from grade inner join hora_aulas on hora_aulas.pos = grade.pos and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {aux})) ' \
                 'ORDER BY inicio'
 
-        professor['quadro_aula'] = banco.executarConsulta(sql)
-
-
-        if professor['afastamento'] in ('292', '411'):
-            professor['qtd_aulas_semanais'] = {'seg':9, 'ter':9, 'qua':9, 'qui':9, 'sex':9, 'sáb':0, 'dom':0}
+        if professor['assina_livro'] == 1:
+            professor['quadro_aula'] = banco.executarConsulta(sql)
         else:
-            professor['qtd_aulas_semanais'] = banco.executarConsulta(f'select (select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor = {aux} where semana = 2) as seg, ' \
-                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 3) as ter, ' \
-                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 4) as qua, ' \
-                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 5) as qui, ' \
-                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 6) as sex, ' \
-                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 7) as sáb, ' \
-                                                                    f'(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 1) as dom')[0]
+            professor['quadro_aula'] = []
+
+
+        if professor['assina_livro'] == 0:
+            professor['qtd_aulas_semanais'] = {'seg':0, 'ter':0, 'qua':0, 'qui':0, 'sex':0, 'sáb':0, 'dom':0}
+
+        elif professor['afastamento'] in ('292', '411'):
+            professor['qtd_aulas_semanais'] = {'seg':9, 'ter':9, 'qua':9, 'qui':9, 'sex':9, 'sáb':0, 'dom':0}
+
+        else:
+            professor['qtd_aulas_semanais'] = banco.executarConsulta(f"select (select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor = {aux} where semana = 2) + (select count(case when seg != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = {aux}) as seg, " \
+                                                                    f"(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 3) + (select count(case when ter != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = {aux}) as ter, " \
+                                                                    f"(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 4) + (select count(case when qua != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = {aux}) as qua, " \
+                                                                    f"(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 5) + (select count(case when qui != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = {aux}) as qui, " \
+                                                                    f"(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 6) + (select count(case when sex != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = {aux}) as sex, " \
+                                                                    f"(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 7) + (select count(case when sab != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = {aux}) as sáb, " \
+                                                                    f"(select count(*) from grade inner join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and grade.disciplina = matriz_curricular.disc_disciplina and matriz_curricular.cpf_professor =  {aux} where semana = 1) + (select count(case when dom != 'ATPC' then 1 end) from horario_livro_ponto where cpf_professor = {aux}) as dom")[0]
 
         
 
@@ -699,12 +702,12 @@ def render_livro_ponto():
                             top_deixou += ((i - 1) * 16)
                             cont_deixou += 1
                         else:
-                            cont_deixou += 1
+                            cont_deixou += 1    
                             height_deixou = cont_deixou * 16
                             professor['extra_red'] = '<div class="red-line-extra-min" style="top: %spx; height: %spx"></div>' % (top_deixou, height_deixou)
                             
 
-                    if evento[0]['qtd_letivo'] < 1 and (evento[0]['id'] < 7 or evento[0]['id'] in (10, 11, 12)): # significa que é feriado ou dia não letivo e não é replanejamento
+                    if evento[0]['qtd_letivo'] < 1 and (evento[0]['id'] < 7 or evento[0]['id'] > 9): # significa que é feriado ou dia não letivo e não é replanejamento
                         dias.append({'dia':'%02d' % i, 'Assinatura':evento[0]['descricao'].replace("Sem vínculo", '').replace('Deixou de ministrar aulas nesta U.E.', ''), 'semana':date_aux.strftime("%a"), 'class-bg':'gray', 'class-txt':'black', 'evento':evento[0]['id']})
                     else:
                         dias.append({'dia':'%02d' % i, 'Assinatura':'', 'semana':date_aux.strftime("%a"), 'class-bg':'', 'class-txt':'black', 'evento':evento[0]['id']})
@@ -738,7 +741,7 @@ def render_livro_ponto():
         linhas = 5 + (30 - len(dias))
 
         # criar um texto citando os eventos mensais de acordo com o calendário pedagógico
-        eventos = banco.executarConsulta('select data_inicial, data_final, cat_letivo.descricao as cat, eventos_calendario.descricao, eventos_calendario.evento as id_evento from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where MONTH(data_inicial) = %s and YEAR(data_inicial) = %s and instancia_calendario = %s and eventos_calendario.evento != 11 order by data_inicial' % (mes, ano, professor['instancia_calendario']))
+        eventos = banco.executarConsulta('select data_inicial, data_final, cat_letivo.descricao as cat, eventos_calendario.descricao, eventos_calendario.evento as id_evento from eventos_calendario inner join cat_letivo on cat_letivo.id = eventos_calendario.evento where MONTH(data_inicial) <= %s and MONTH(data_final) >= %s and YEAR(data_inicial) = %s and instancia_calendario = %s and eventos_calendario.evento != 11 order by data_inicial' % (mes, mes, ano, professor['instancia_calendario']))
         txt_eventos = ''
 
         lst_final_eventos = []
@@ -772,7 +775,7 @@ def render_livro_ponto():
                 if evento['data_inicial'] == evento['data_final']: # evento de apenas um dia
                     txt_eventos += 'Dia %s: %s, ' % (evento['data_inicial'].strftime('%d'), txt_descricao)
                 else: # evento de período
-                    txt_eventos += 'De %s até %s: %s, ' % (evento['data_inicial'].strftime('%d'), evento['data_final'].strftime('%d'), txt_descricao)
+                    txt_eventos += 'De %s até %s: %s, ' % (evento['data_inicial'].strftime('%d/%m'), evento['data_final'].strftime('%d/%m/%Y'), txt_descricao)
 
             if len(txt_eventos) > 100:
                 lst_final_eventos.append(txt_eventos[:-2])
@@ -1125,7 +1128,7 @@ def render_conselho_bimestre():
         ativos = 0
         maximo = 0
         for aluno in alunos:
-            print(aluno)
+            
             if aluno['fim_mat'] == '' or aluno['mat'] == 'APROV' or aluno['mat'] == 'RETD':
                 ativos += 1
             maximo += 1
@@ -1608,7 +1611,6 @@ def render_lista():
                 medio = '&nbsp;'
 
             # teste in http://localhost/render_lista?tipo=ficha_mat&num_classe=0&rm=5610&ra=109.789.948-2&rg=68.645.560-5&cpf=598.165.948-38&sexo=F&nome=GABRIELLA+GUIMAR%C3%83ES+PRADO&pai=DOUGLAS+PEREIRA+PRADO&mae=FERNANDA+DE+ALMEIDA+GUIMARAES&cidade=GUARATINGUET%C3%81&estado=SP&nascimento=29/07/2006&endereco=Rua+Dois,+65,+Compl.A,+Pit%C3%A9u,+Cachoeira+Paulista&telefone=(12)+99251-4094&email=leticiavictoria9035@gmail.com&serie=9%C2%BA+ANO&fund=X&medio=
-            print(ano)
 
             return render_template('render_pdf/render_ficha_matricula.jinja', rm=rm, ra=ra, rg=rg, cpf=cpf, cor='white', sexo=sexo, nome=nome, nome_social=nome_social, pai=pai, mae=mae, cidade=cidade, estado=estado, nascimento=nascimento, endereco=endereco, telefone=telefone, email=email, serie=serie_desc, fund=fund, medio=medio, hoje=hojePorExtenso(), serie_simples=serie_simples, ano=ano)
         
@@ -1638,7 +1640,6 @@ def render_lista():
 
 
                 ls_final.append(dict)
-            print(ls_final)
 
             return render_template('render_pdf/render_ata_final.jinja', info=info, dados=ls_final, ls_keys=ls_keys)
         

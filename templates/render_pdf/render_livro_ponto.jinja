@@ -513,7 +513,7 @@
                             <td class="{{dia['class-txt']}}">{{dia['dia']}}</td>
                             <td class="{{dia['class-txt']}}">{{dia['semana']}}</td>
 
-                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] not in (10, 12) %}
+                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] == 0 and professor['assina_livro'] == 1 %}
                             <td class="blue">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
                             {% else %}
                             <td></td>
@@ -521,7 +521,7 @@
 
                             <td></td><td></td>
 
-                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] not in (10, 12) %}
+                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] == 0 and professor['assina_livro'] == 1 %}
                             <td class="blue right-strong-border">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
                             {% else %}
                             <td class = 'right-strong-border'></td>
