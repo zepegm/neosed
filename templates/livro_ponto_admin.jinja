@@ -418,7 +418,9 @@
         }        
 
         $(".imprimir").on('click', function() {
-            $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+            var button = $(this);
+            button.removeClass('imprimir');
+            button.html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
             var cpf = $(this).attr('data-id');
             var ano = $("#txt_ano").val();
             var mes = $("#cb_mes").val();
@@ -431,8 +433,8 @@
                 dataType: "json",
                 success: function(data) {
                     window.open(data);
-                    /*$("#btn_gerar_pdf").html('Gerar PDF');
-                    $("#btn_gerar_pdf").removeAttr('disabled');*/
+                    button.html("<i class='fa-solid fa-print'></i>");
+                    button.addClass('imprimir');
                 },
             });            
         });
