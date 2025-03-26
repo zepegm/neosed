@@ -817,8 +817,7 @@
             $(this).attr('disabled');
             $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
 
-            const date = new Date();
-            const currentYear = date.getFullYear();
+            const currentYear = $("#cb_ano").val();
 
             info = {'destino':6, 'bimestre':$('#bimestre_ata_completa').val(), 'ano':currentYear}
 
