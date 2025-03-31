@@ -164,7 +164,7 @@
                                         <th class="text-center">Qtd. Aulas</th>
                                         <th class="text-center">Minutos</th>
                                         <th>Professor</th>
-                                        <th>Professor 2 (Eletiva)</th>
+                                        <th>Professor 2 (Eletiva ou Substituído)</th>
                                         <th class="text-center">Excluir</th>
                                     </tr>
                                 </thead>
@@ -658,10 +658,20 @@
                         <div class="col-sm-8">
                             <span class="fw-bold">Fim da Turma: </span><span id="fimTurma"></span>
                         </div>
-                        <div class="col-sm-8">
+                        <div class="col-sm-12">
                             <span class="fw-bold">Total: </span><span id="descTotal"></span>
-                        </div>                                                                                                                
-                        <div class="col-sm-12">&nbsp;</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="input-group mb-3 mt-3">
+                                <span class="input-group-text" id="basic-addon1">Imprimir Lista de Chamada do mês de</span>
+                                <select class="form-select" id="cb_mes_chamada">
+                                    {% for mes in meses %}
+                                    <option value="{{mes['value']}}" {{mes['selected']}}>{{mes['mes']}}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-danger" id="gerar_pdf_chamada">Imprimir</button>
+                            </div>                        
+                        </div>
                         <div id="tabelaAlunos" class="col-sm-12">
                             <table id="tabela_alunos" class="table table-hover"> 
                             <thead class="table-dark">
@@ -1042,11 +1052,7 @@
                         row += `<td class="text-center">${data[i].minutos}</td>`;
                         
                         row += `<td data-col="cpf_professor"><div data-id="${data[i]['cpf']}" class="cb-professor-matriz-edit"><i class="fa-solid fa-pen"></i>&nbsp;${data[i]['nome']}</div></td>`;
-                        if (data[i]['disc'] == 8465) {
-                            row += `<td data-col="cpf_professor_2"><div data-id="${data[i]['cpf_2']}" class="cb-professor-matriz-edit"><i class="fa-solid fa-pen"></i>&nbsp;${data[i]['nome_2']}</div></td>`;
-                        } else {
-                            row += `<td>-</td>`;
-                        }
+                        row += `<td data-col="cpf_professor_2"><div data-id="${data[i]['cpf_2']}" class="cb-professor-matriz-edit"><i class="fa-solid fa-pen"></i>&nbsp;${data[i]['nome_2']}</div></td>`;
                         
 
                         row += '<td class="text-center"><a href="#" class="remover-disciplina"><i class="fa-solid fa-trash"></i></a></td>';
@@ -1101,6 +1107,28 @@
                 $("#alert_error_if_edit").append('<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Atenção!</strong> Favor selecionar as turmas que terão vínculo com a classe do Itinerário.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
             }
         });        
+
+        $("#gerar_pdf_chamada").on('click', function(e) {
+
+            $("#gerar_pdf_chamada").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            $("#gerar_pdf_chamada").attr('disabled', '');
+
+            info = {'destino':16, 'turma':$("#numClasse").text(), 'tipo':'chamada', 'order':'order by nome', 'mes':$("#cb_mes_chamada").val()}
+            
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $("#gerar_pdf_chamada").html('Exportar PDF');
+                $("#gerar_pdf_chamada").removeAttr('disabled');
+                },
+            });
+
+        });
 
         $("#btnExportarTurma").on('click', function(e) {
 

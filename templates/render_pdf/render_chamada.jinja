@@ -1,0 +1,137 @@
+<html>
+    <head>
+        <title>Lista Chamada - {{dados['ano']}}</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                height: 689px;
+                width: 1057px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: black;
+                position: absolute;
+                top:70px;
+                left: 30px;
+            }
+
+            .red {
+                color: #E15261;
+            }
+
+            #head {
+                font-family: bebaskai;
+                text-align: center;
+                font-size: 35px;
+                margin-top: 30px;
+                border-bottom: solid 2px black;
+            }
+
+            table, th, td {
+                font-family: 'Helvetica', 'sans-serif';
+                border: 1px solid;
+                border-color: black;
+                border-collapse: collapse;
+                font-size: 11px;
+            }
+
+            .center {
+                text-align: center;
+            }
+
+            #tb_principal {
+                height: 100%;
+                width: 100%;
+            }
+
+            .border-strong {
+                border-right: 3px solid black;
+            }
+
+            .border-normal,
+            .border-strong {
+                width: 25px;
+            }
+
+            .green {
+                background-color: #E2EFDA;
+            }
+
+            .yellow {
+                background-color: #FFF2CC;
+            }
+
+            .blue {
+                background-color: #9BE5FF;
+            }
+
+            .orange {
+                background-color: #FCE4D6;
+            }
+
+            .border-bottom {
+                border-bottom: 2px solid black;
+            }
+
+            .border-right {
+                border-right: 3px solid black;
+            }
+
+            .bg-gray {
+                background-color: rgb(187, 187, 187);
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="pagina">
+            <table id="tb_principal">
+                <thead>
+                    <tr>
+                        <td id="head" colspan="{{2 + dias_uteis|length}}">E.E. Profª Alice Vilela Galvão - <span class="red">Chamada {{dados['nome_turma']}}</span> - {{desc_mes}} de {{dados['ano']}}</td>
+                    </tr>
+                    <tr>
+                        <th rowspan="2" class="center border-bottom">Nº</th>
+                        <th rowspan="2" class="border-bottom border-right" style="text-align: left; padding-left:4px;">Nome:</th>
+                        {% for dia in dias_uteis %}
+                        <th class="border-{{dia[2]}} {{dia[3]}}">{{dia[1]}}</th>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for dia in dias_uteis %}
+                        <td class="center border-{{dia[2]}} {{dia[3]}} border-bottom">{{"%02d" % dia[0]}}</td>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(0, alunos|length + limite) %}
+                    <tr {{'class="bg-gray"' if (i + 1) % 2!= 0 else '' }}>
+                        {% if i < alunos|length %}
+                        <td class="center">{{alunos[i]['num_chamada']}}</td>
+                        <td class="border-right" style="padding-left:4px;">{{alunos[i]['nome']}}</td>
+                            {% for dia in dias_uteis %}
+                            <td class="border-{{dia[2]}} center">{{'-' if dia[4] == 0 else ''}}</td>
+                            {% endfor %}  
+                        {% else %}
+                        <td>&nbsp;</td>
+                        <td class="border-right">&nbsp;</td>
+                            {% for dia in dias_uteis %}
+                            <td class="border-{{dia[2]}} center">{{'-' if dia[4] == 0 else ''}}</td>
+                            {% endfor %}                        
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+
+    </body>
+</htmL>

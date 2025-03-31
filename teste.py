@@ -1,7 +1,4 @@
-from excel import xls
+import calendar
 
-planilha = xls()
-
-for i in range(1, 66):
-    texto = planilha.getValCell(f'A{i}')
-    print(texto)
+for dia in range(1, calendar.monthrange(2025, 4)[1] + 1):
+    print(dia)
