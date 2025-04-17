@@ -19,6 +19,12 @@ class open_xls:
     def getCell(self, r, c):
         cell_obj = self.sheet_obj.cell(row=r, column=c)
         return cell_obj.value
+    
+    def getTotalRows(self):
+        return self.sheet_obj.max_row
+    
+    def getTotalColumns(self):
+        return self.sheet_obj.max_column
 
 class xls:
     def __init__(self, planilha=False):

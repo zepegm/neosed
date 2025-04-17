@@ -86,7 +86,7 @@
             }  
 
             .if_head {
-                background-color: beige;
+                background-color: rgb(252, 252, 185);
                 height: 30px;
             }
 
@@ -110,6 +110,14 @@
 
             .row-disc {
                 height: 25px;
+            }
+
+            .cl-1 {
+                background-color: rgb(231, 231, 231);
+            }
+
+            .cl-2 {
+                background-color: beige;
             }
 
         </style>
@@ -147,12 +155,23 @@
                         </tr>
                     </thead>
                     <tbody>
+
+                        {% set flags = namespace(classificacao_2_exibido=false) %}
+
                         {% for disc in disciplinas %}
-                        <tr>
+
+                            {% if disc['classificacao'] == 2 and not flags.classificacao_2_exibido %}
+                            <tr>
+                                <td class="if_head" colspan="15"><b>ITINERÁFIO FORMATIVO / PARTE DIVERSIFICADA</b></td>
+                            </tr>
+                            {% set flags.classificacao_2_exibido = true %}
+                            {% endif %}
+
+                        <tr class="{{'cl-' + disc['classificacao']|string if loop.index % 2 == 0 else '' }}">
                             <td class="border left medium-size row-disc">&nbsp;&nbsp;{{disc['disc']}}</td>
                             {% for n in range(1,5) %}
                                 {% try %}
-                                <td class="border-basic {{'red' if aluno['notas'][disc['disciplina']][n]['n']|int < 5 else '' }}">{{aluno['notas'][disc['disciplina']][n]['n']}}</td>
+                                <td class="border-basic {{'red' if aluno['notas'][disc['disciplina']][n]['n']|int < 5 and aluno['notas'][disc['disciplina']][n]['n'] not in ('ET', 'ES', 'EP') else '' }}">{{aluno['notas'][disc['disciplina']][n]['n']}}</td>
                                 <td class="border-basic">{{aluno['notas'][disc['disciplina']][n]['f']}}</td>
                                     {% if aluno['notas'][disc['disciplina']][n]['ac'] > 0 %}
                                         <td class="border">{{aluno['notas'][disc['disciplina']][n]['ac']}}</td>

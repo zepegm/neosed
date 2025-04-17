@@ -383,7 +383,7 @@
                         </select> 
                     </div> 
                     <div class="col-sm-8 d-flex align-items-end">
-                        <input class="form-control" type="file" id="file" name="file" accept=".xls" disabled>
+                        <input class="form-control" type="file" id="file" name="file" accept=".xls, .xlsx" disabled>
                     </div>
                     <div class="col-sm-12">&nbsp;</div>  
                     <div class="col-sm-12 align-items-end">
@@ -567,6 +567,7 @@
                                 $("#tb-mapao tbody .aluno" + index).append("<td style='border-right-width:4px;' class='" + excessao + "''>" + response['lista'][item]['medias'][id]['M'] + "</td>");
                             } else {
                                 array_nota.push({'ra':$(this).attr('data-ra'), 'disc':response['lista'][item]['disc'], 'N':response['lista'][item]['notas'][id]['N'], 'F':parseInt(response['lista'][item]['notas'][id]['F'].replace('-', '0')), 'AC':parseInt(response['lista'][item]['notas'][id]['AC'].replace('-', '0'))});
+                                
 
                                 var excessao = "";
 

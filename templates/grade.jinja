@@ -91,6 +91,29 @@
         </div>
     </div>
 
+    <form action="/grade" method="post" enctype="multipart/form-data">
+    <div class="modal fade" id="importar_planilha_urania" tabindex="-1" aria-labelledby="importar_planilha_uraniaLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="importar_planilha_uraniaLabel">Importar Planilha do Urânia</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <input type="file" class="form-control" id="txt_planilha_urania" name="file" accept=".xlsx, .xls, .csv" required>
+                    <input type="hidden" class="form-control" id="txt_num_classe" name="num_classe_import" required>
+                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="input" class="btn btn-primary" id="btn_habilitar_edicao_confirm">Confirmar</button>
+                        <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+                    </div>
+            </div>
+        </div>
+    </div> 
+    </form>   
+
 
     <main class="container-xxl">
         <form id="form_ano" action="/grade" method="post">
@@ -420,7 +443,9 @@
                         $("#confirmar_edicao_modal").modal('hide');
                         $("#btn_habilitar_edicao").remove();
                         $("#painel_Grade").append('<button id="btn_salvar" class="mt-3 btn btn-primary">Salvar</button>&nbsp;');
-                        $("#painel_Grade").append('<button id="btn_limpar" class="mt-3 btn btn-secondary">Limpar Grade</button>');
+                        $("#painel_Grade").append('<button id="btn_limpar" class="mt-3 btn btn-secondary">Limpar Grade</button>&nbsp;');
+                        $("#painel_Grade").append('<button id="btn_importar" class="mt-3 btn btn-success" data-bs-toggle="modal" data-bs-target="#importar_planilha_urania">Importar Planilha do Urânia</button>');
+                        $("#txt_num_classe").val($(".list-group-item.active").attr('data-id'));
                     } else {
                         $("#feedback").html('<div class="alert alert-danger alert-dismissible fade show" role="alert">Senha incorreta!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
                     }

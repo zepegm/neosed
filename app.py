@@ -6,7 +6,7 @@ from waitress import serve
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar
+from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar, extrair_numeros
 from flask_socketio import SocketIO, emit
 import pandas as pd
 import os
@@ -35,6 +35,8 @@ app.jinja_env.add_extension(TryCatchExtension)
 
 
 #locale.setlocale(locale.LC_ALL, "")
+
+#banco = db({'host':"localhost", 'user':'root', 'passwd':'Yasmin', 'db':'neosed'})
 
 banco = db({'host':"neosed.net",    # your host, usually localhost
             'user':"username",         # your username
@@ -231,6 +233,63 @@ def grade():
     if request.method == 'POST':
         if 'ano' in request.form:
             ano = request.form['ano']
+
+        if 'num_classe_import' in request.form:
+            num_classe = request.form['num_classe_import']
+
+            # pegar disciplinas da turma
+            disciplinas = banco.executarConsulta('select distinct abv, codigo_disciplina from disciplinas inner join matriz_curricular on matriz_curricular.disc_disciplina = codigo_disciplina and matriz_curricular.num_classe = %s' % num_classe)
+
+            # converter lista de disciplinas para json
+            disc_dict = {}
+            for item in disciplinas:
+                disc_dict[item['abv']] = int(item['codigo_disciplina'])
+
+            disc_dict['CLUBE'] = -2
+            disc_dict['TUTORIA'] = -1
+
+            try:
+
+                # importar grade
+                file = request.files['file']
+
+                if file:
+                    excel = open_xls(file)
+
+                    total_rows = excel.getTotalRows()
+                    first_row = 5
+                    first_col = 3
+
+                    lista = []
+
+                    for i in range(first_row, total_rows + 1):
+                        if excel.getCell(i, first_col) not in ('Intervalo', '', None, 'Segunda-feira'):
+                            linha = {}
+                            linha['Seg'] = disc_dict[excel.getCell(i, first_col)]
+                            linha['Ter'] = disc_dict[excel.getCell(i, first_col + 1)]
+                            linha['Qua'] = disc_dict[excel.getCell(i, first_col + 2)]
+                            linha['Qui'] = disc_dict[excel.getCell(i, first_col + 3)]
+                            linha['Sex'] = disc_dict[excel.getCell(i, first_col + 4)]
+                        
+                            lista.append(linha)
+
+                    if banco.alterarGrade(num_classe, lista):
+                        msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                                '<strong>Operação bem-sucedida!</strong> Grade atualizada com sucesso!' \
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                                '</div>'
+                    else:
+                        msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                                '<strong>Atenção!</strong> Erro ao tentar salvar grade, <strong>Contate o administrador!</strong>' \
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                                '</div>'
+                        
+            except Exception as e:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar importar grade, <strong>Verifique se exportou a planilha da turma certa!</strong>' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+                print(e)
 
         if 'num_classe' in request.form:
             num_classe = request.form['num_classe']
@@ -3389,18 +3448,22 @@ def notas():
         elif bool(request.files.get('mapao', False)) == True:
 
             isthisFile = request.files.get('mapao')
-            file_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'mapao.xls')
+            file_extension = os.path.splitext(isthisFile.filename)[1]
+            file_dir = os.path.join(app.config['UPLOAD_FOLDER'], f'mapao{file_extension}')
             isthisFile.save(file_dir)
 
-            data = pd.read_html(file_dir)
-            print(data)
-            #df2 = data[0].sum()
+            if file_extension == '.xlsx':
+                excel = open_xls(file_dir)
+            else:
+                data = pd.read_html(file_dir)
+                #print(data)
+                #df2 = data[0].sum()
             
-            #coluna = 1
-            total = (len(data[0].axes[1]) - 1) / 5
-            total_r = (len(data[0].axes[0])) - 2
-            #print(len(data[0].axes[1]))
-            #print(total)
+                #coluna = 1
+                total = (len(data[0].axes[1]) - 1) / 5
+                total_r = (len(data[0].axes[0])) - 2
+                #print(len(data[0].axes[1]))
+                #print(total)
             
             coluna = 1
             bimestre_final = 0
@@ -3412,55 +3475,85 @@ def notas():
 
             lista = []
 
-            print(total)
-            for i in range(0, int(math.ceil(total))):
-                item = {'disc':data[0][coluna][12]}
-                print(item)
-                
-                if str(item['disc']).isnumeric():
+            if file_extension == '.xlsx':
 
-                    if data[0][31][6] == "Tipo de Fechamento: CONSELHO FINAL (QUINTO CONCEITO)":
+                total_linha = excel.getTotalRows()
+                total_coluna = int(excel.getTotalColumns() / 4)
 
-                        professor = item['professor'] = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+                linha_inicial = 11
+                coluna_inicial = 1
 
-                        if len(professor) > 0:
-                            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                for i in range(1, total_coluna + 1):
+                    item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
+                    
+                    if item['disc'].isnumeric():
+                        ad = int(excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', ''))
                         
-                            medias = {}
-                            
-                            for j in range(15, total_r):
-                                medias[data[0][coluna][j]] = {'M':data[0][coluna + 1][j]}
-
-                            item['medias'] = medias
-                            item['professor'] = professor[0]['nome']
-
-                            lista.append(item)
-
-                        coluna += 3
-                    else:
-                        ad = int(data[0][coluna][total_r].replace('Aulas Dadas: ', ''))
-
                         if ad > 0:
-                            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                            item['AD'] = excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', '')
 
+                            # percorrer a lista
                             notas = {}
-
-                            for j in range(15, total_r):
-                                notas[data[0][coluna][j]] = {'N':data[0][coluna + 1][j], 'F':data[0][coluna + 2][j], 'AC':data[0][coluna + 3][j]}
-
-                            #print(total_r + 1)
-
-                            item['AD'] = data[0][coluna][total_r].replace('Aulas Dadas: ', '')
-
+                            
+                            for j in range(linha_inicial + 2, total_linha):
+                                notas[str(excel.getCell(j, coluna_inicial)).zfill(2)] = {'N':excel.getCell(j, coluna_inicial + 1), 'F':excel.getCell(j, coluna_inicial + 2), 'AC':excel.getCell(j, coluna_inicial + 3)}
 
                             item['notas'] = notas
-                            lista.append(item)  
 
-                        coluna += 5
+                            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                            
+                            lista.append(item)
+
+                    coluna_inicial += 4
+
+            else:
+                for i in range(0, int(math.ceil(total))):
+                    item = {'disc':data[0][coluna][12]}
+                    print(item)
+                    
+                    if str(item['disc']).isnumeric():
+
+                        if data[0][31][6] == "Tipo de Fechamento: CONSELHO FINAL (QUINTO CONCEITO)":
+
+                            professor = item['professor'] = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+
+                            if len(professor) > 0:
+                                item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                            
+                                medias = {}
+                                
+                                for j in range(15, total_r):
+                                    medias[data[0][coluna][j]] = {'M':data[0][coluna + 1][j]}
+
+                                item['medias'] = medias
+                                item['professor'] = professor[0]['nome']
+
+                                lista.append(item)
+
+                            coluna += 3
+                        else:
+                            ad = int(data[0][coluna][total_r].replace('Aulas Dadas: ', ''))
+
+                            if ad > 0:
+                                item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+
+                                notas = {}
+
+                                for j in range(15, total_r):
+                                    notas[data[0][coluna][j]] = {'N':data[0][coluna + 1][j], 'F':data[0][coluna + 2][j], 'AC':data[0][coluna + 3][j]}
+
+                                #print(total_r + 1)
+
+                                item['AD'] = data[0][coluna][total_r].replace('Aulas Dadas: ', '')
+
+
+                                item['notas'] = notas
+                                lista.append(item)  
+
+                            coluna += 5
 
 
             professores = banco.executarConsulta('select rg, nome_ata from vinculo_turma_prof INNER JOIN professor ON professor.rg = vinculo_turma_prof.rg_prof where id_turma = %s order by nome_ata' % request.form.getlist('num_classe')[0])
-            #print(lista)
 
             #verificar se já existe professores vinculados a disciplina e se existir criar uma lista
             professores_atuais = banco.executarConsulta('select rg_prof, disciplina from vinculo_prof_disc where bimestre = %s and num_classe = %s' % (request.form.getlist('bimestre')[0], request.form.getlist('num_classe')[0]))
