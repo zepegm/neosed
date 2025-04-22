@@ -379,22 +379,46 @@
             }
         });
 
-        $("#btn_declaracao_transferencia").on('click', function(e) {
-            /*nome = $("#txtnome").text();
-            rg = $("#txtrg").text();
-            cpf = $("#txtcpf").text();
-            ra = $("#txtra").text();
-            nasc = $("#txtnasc").text()
+        $("#btn_confirmar_preview_transf").on('click', function(e) {
 
-            if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
-                serie = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text();
-                ensino = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
-            } else {
-                serie = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(2)").text();
-                ensino = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
+            let tipo = $("#cb_tipo_declaracao").val();
+
+            ra = $("#txtra").text();
+            
+            if (tipo == 1) {
+                nome = $("#txtnome").text();
+                rg = $("#txtrg").text();
+                cpf = $("#txtcpf").text();
+                nasc = $("#txtnasc").text()
+
+                if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
+                    serie = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text();
+                    ensino = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
+                } else {
+                    serie = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(2)").text();
+                    ensino = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
+                }
+
+                declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino);
+            } else if (tipo == 2 || tipo == 4) {
+                nome_resp = $("#txt_nome_resp").val();
+                rg_resp = $("#txt_rg_resp").val();
+
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':nome_resp, 'rg_resp':rg_resp, 'tipo':tipo}),
+                    dataType: "json",
+                    success: function(data) {
+                        window.open(data);
+                        /*$("#btn_declaracao_matricula_freq").html('Declaração de Matrícula com Freq (%)');
+                        $("#btn_declaracao_matricula_freq").removeAttr('disabled');*/
+                    },
+                });                  
             }
 
-            declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino);*/
+
         });
 
         $("#btn_declaracao_matricula_freq").on('click', function() {

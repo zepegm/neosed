@@ -12,7 +12,7 @@
             }
 
             #pagina {
-                width: 729px;
+                width: 731px;
                 height: 1057px;
                 border-width: 2px;
                 border-style: solid;
@@ -142,9 +142,9 @@
                     <tr>
                         <th style="width:25px">Nº</th>
                         <th style="width:360px;text-align:left;">&nbsp;NOME</th>
-                        <th style="width:150px;">PROJ. DE VIDA</th>
-                        <th style="width:150px;">TUTORIA</th>
-                        <th style="width:150px;">ELETIVA</th>
+                        {% for coluna in colunas %}
+                        <th style="width:{{450 / colunas|length}}px;">{{coluna}}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
@@ -157,17 +157,17 @@
                     {% endif %}
                         <td class="center">{{'%02d' % alunos[n]['num']}}</td>
                         <td>&nbsp;{{alunos[n]['nome']}}</td>
+                        {% for coluna in colunas %}
                         <td></td>
-                        <td></td>
-                        <td></td>
+                        {% endfor %}
                     </tr>
                     {% else %}
                     <tr>
                         <td class="center">{{'%02d' % loop.index}}</td>
                         <td></td>
+                        {% for coluna in colunas %}
                         <td></td>
-                        <td></td>
-                        <td></td>
+                        {% endfor %}
                     </tr>
                     {% endif %}
                 {% endfor %}

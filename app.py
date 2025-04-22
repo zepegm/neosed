@@ -43,6 +43,12 @@ banco = db({'host':"neosed.net",    # your host, usually localhost
             'passwd':"password",  # your password
             'db':"neosed"})
 
+# configuração do server principal
+#banco = db({'host':"localhost",    # your host, usually localhost
+            #'user':"root",         # your username
+            #'passwd':"admin",  # your password
+            #'db':"neosed"})
+
 
 home_directory = os.path.expanduser( '~' )
 aux_info = None
@@ -247,6 +253,7 @@ def grade():
 
             disc_dict['CLUBE'] = -2
             disc_dict['TUTORIA'] = -1
+            disc_dict['Eletiva'] = 8465
 
             try:
 
@@ -272,7 +279,7 @@ def grade():
                             linha['Sex'] = disc_dict[excel.getCell(i, first_col + 4)]
                         
                             lista.append(linha)
-
+                    
                     if banco.alterarGrade(num_classe, lista):
                         msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
                                 '<strong>Operação bem-sucedida!</strong> Grade atualizada com sucesso!' \
@@ -1589,6 +1596,7 @@ def render_lista():
 
         elif tipo == 'assinatura':
             titulo = request.args.getlist('titulo')[0]
+            colunas = request.args.getlist('colunas')[0].split(';')
 
             info = banco.executarConsulta('select ' + \
                                         'CASE ' + \
@@ -1619,7 +1627,7 @@ def render_lista():
             for item in alunos:
                 item['nome'] = item['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
 
-            return render_template('render_pdf/render_lista_assinatura.jinja', titulo=titulo, alunos=alunos, escola=escola.upper(), nome_turma=nome_turma)
+            return render_template('render_pdf/render_lista_assinatura.jinja', titulo=titulo, alunos=alunos, escola=escola.upper(), nome_turma=nome_turma, colunas=colunas)
 
         elif tipo == 'declaracao':
             global aux_info
@@ -1682,6 +1690,11 @@ def render_lista():
                     list_serie = list(serie)
                     list_serie[-5] = '.'
                     texto += ' é alun%s regularmente matriculad%s %s' % (pronome, pronome, "".join(list_serie))
+
+            elif aux_info['tipo'] == 5: # declaração de desistência de vaga para ensino profissionalizante para menor de idade
+                titulo = 'DECLARAÇÃO DE DESISTÊNCIA – Ensino Profissionalizante'
+
+                texto = f'Eu, <b>{aux_info['nome_resp']}</b>, RG: {aux_info['rg_resp']}, responsável pel{pronome} estudante {aux_info['nome']}, matriculad{pronome} na '
 
                 
             data_atual = datetime.now()
@@ -2538,6 +2551,49 @@ async def gerar_pdf():
         await browser.close()
 
         return jsonify(pdf_path)
+
+    elif info['destino'] == 17:
+        pdf_path = 'static/docs/assinatura.pdf'
+
+        num_classe = info['turma']
+        tipo = info['tipo']
+        order = info['order']
+        titulo = info['titulo']
+        colunas = info['colunas']
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )        
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (tipo, num_classe, order, titulo, colunas), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)    
+
+    elif info['destino'] == 18:
+        pdf_path = 'static/docs/declaracao.pdf'
+
+        aluno = banco.executarConsulta('select nome, rg, sexo from aluno where ra = %s' % info['ra'].replace('.', '')[:9])[0]
+
+        aux_info = {'tipo':int(info['tipo']) + 3, 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'anos':None, 'nome_resp':info['nome_resp'], 'rg_resp':info['rg_resp']}
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )        
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)        
+
 
 
 

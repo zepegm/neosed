@@ -672,6 +672,19 @@
                                 <button type="button" class="btn btn-danger" id="gerar_pdf_chamada">Imprimir</button>
                             </div>                        
                         </div>
+
+                        <div class="col-sm-1">&nbsp;</div>
+
+                        <div class="col-sm-7">
+                            <div class="input-group mb-3 mt-3">
+                                <span class="input-group-text" id="basic-addon1">Título:</span>
+                                <input type="text" class="form-control" id="txt_titulo_assinatura" placeholder="Título da Lista" aria-label="Título da Lista" aria-describedby="basic-addon1" value="Entrega de Livros">
+                                <span class="input-group-text" id="basic-addon1">Colunas (separar por ";"):</span>
+                                <input type="text" class="form-control" id="txt_colunas_assinatura" placeholder="Colunas da Lista" aria-label="Colunas da Lista" aria-describedby="basic-addon1" value="Livro 1;Livro 2">
+                                <button type="button" class="btn btn-danger" id="gerar_pdf_assinatura">Imprimir Lista de Assinatura Simples</button>
+                            </div>                        
+                        </div>
+
                         <div id="tabelaAlunos" class="col-sm-12">
                             <table id="tabela_alunos" class="table table-hover"> 
                             <thead class="table-dark">
@@ -1106,7 +1119,27 @@
                 e.preventDefault();
                 $("#alert_error_if_edit").append('<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Atenção!</strong> Favor selecionar as turmas que terão vínculo com a classe do Itinerário.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
             }
-        });        
+        });      
+
+        $("#gerar_pdf_assinatura").on('click', function(e) {
+            $("#gerar_pdf_assinatura").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            $("#gerar_pdf_assinatura").attr('disabled', '');
+
+            info = {'destino':17, 'turma':$("#numClasse").text(), 'tipo':'assinatura', 'order':'order by nome', 'titulo':$("#txt_titulo_assinatura").val(), 'colunas':$("#txt_colunas_assinatura").val()}
+            
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $("#gerar_pdf_assinatura").html('Imprimir Lista de Assinatura Simples');
+                $("#gerar_pdf_assinatura").removeAttr('disabled');
+                },
+            });
+        });
 
         $("#gerar_pdf_chamada").on('click', function(e) {
 
