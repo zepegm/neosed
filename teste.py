@@ -7,32 +7,32 @@ banco = db({'host':"neosed.net",    # your host, usually localhost
             'passwd':"password",  # your password
             'db':"neosed"})
 
-excel = open_xls(r'C:\Users\giuseppe.manzella\Documents\GitHub\neosed\staticFiles\uploads\mapao.xlsx')
+horario = banco.executarConsulta('select distinct inicio, fim from hora_aulas where ano = 2025 order by inicio')
+intervalos = []
 
-total_linha = excel.getTotalRows()
-total_coluna = int(excel.getTotalColumns() / 4)
+for i in range(0, len(horario)):
+    if i == len(horario) - 1:
+        break
 
-linha_inicial = 11
-coluna_inicial = 1
-
-for i in range(1, total_coluna + 1):
-    item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
-    
-    if item['disc'].isnumeric():
-        ad = int(excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', ''))
+    if horario[i]['fim'] != horario[i + 1]['inicio']:
+        diferenca = horario[i + 1]['inicio'] - horario[i]['fim']
+        diferenca_em_minutos = diferenca.total_seconds() / 60
         
-        if ad > 0:
-            item['AD'] = ad
+        if diferenca_em_minutos < 40:
+            intervalo = {
+                'horario': horario[i + 1]['inicio'],
+                'tipo': 'intervalo',
+                'descricao': 'INTERVALO DOS ALUNOS',
+            }
+            intervalos.append(intervalo)
+        elif diferenca_em_minutos < 120:
+            intervalo = {
+                'horario': horario[i + 1]['inicio'],
+                'tipo': 'almoco',
+                'descricao': 'ALMOÇO',
+            }
+            intervalos.append(intervalo)
+        
 
-            # percorrer a lista
-            notas = {}
-            
-            for j in range(linha_inicial + 2, total_linha + 1):
-                notas[excel.getCell(j, coluna_inicial)] = {'N':excel.getCell(j, coluna_inicial + 1), 'F':excel.getCell(j, coluna_inicial + 2), 'AC':excel.getCell(j, coluna_inicial + 3)}
-
-            item['notas'] = notas
-
-            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
-            print(item['abv'])
-
-    coluna_inicial += 4
+for item in intervalos:
+    print(f"Horário: {item['horario']}, Tipo: {item['tipo']}, Descrição: {item['descricao']}")

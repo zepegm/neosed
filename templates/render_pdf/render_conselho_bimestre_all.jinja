@@ -307,6 +307,11 @@
                 text-align: center;
             }
 
+            .nota-small {
+                font-size: 7px;
+                text-align: center;
+            }
+
             .nota_final {
                 font-size: 12px;
                 text-align: center;                
@@ -381,7 +386,14 @@
                 font-size: 9px;
             }
 
+            .head-map-small {
+                font-size: 10px;
+            }
+
         </style>
+
+
+
     </head>
     <body>
         <div id="capa">
@@ -463,14 +475,14 @@
                     <tr>
                         <th style="border-top:solid 2px;border-bottom:solid 2px;border-right:solid 2px;" rowspan="2" colspan="2">Nº</th>
                         {% for item in turma['disciplinas'] %}
-                            <td style="border-top:solid 2px;border-right:solid 2px;" colspan="3" class="center">{{item['desc_disc']}}</td>    
+                            <td style="border-top:solid 2px;{{'border-right:solid 2px;' if turma['disciplinas']|length < 18 else ''}}" colspan="3" class="center {{'head-map-small' if turma['disciplinas']|length > 17 else ''}}">{{item['desc_disc']}}</td>    
                         {% endfor %}
                     </tr>
                     <tr>
                         {% for item in turma['disciplinas'] %}
-                            <td style="border-bottom:solid 2px;" class="center nota">N</td>
-                            <td style="border-bottom:solid 2px;" class="center nota">F</td>
-                            <td style="border-bottom:solid 2px;border-right:solid 2px;" class="center ac">AC</td>
+                            <td style="border-bottom:solid 2px;" class="center {{'nota' if turma['disciplinas']|length < 18 else 'nota-small'}}">N</td>
+                            <td style="border-bottom:solid 2px;" class="center {{'nota' if turma['disciplinas']|length < 18 else 'nota-small'}}">F</td>
+                            <td style="border-bottom:solid 2px;{{'border-right:solid 2px;' if turma['disciplinas']|length < 18 else ''}}" class="center ac">AC</td>
                         {% endfor %}                    
                     </tr>
                 </thead>
@@ -482,14 +494,14 @@
                             {% for disc in turma['disciplinas'] %}
                                 {% if turma['alunos'][n]['fim_mat'] == '' %}
                                     {% if disc['notas'][turma['alunos'][n]['ra_bruto']]['nota']|int < 5 %}
-                                    <td class="center nota red" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['nota']}}</td>
+                                    <td class="center {{'nota' if turma['disciplinas']|length < 18 else 'nota-small'}} red" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['nota']}}</td>
                                     {% else %}
-                                    <td class="center nota" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['nota']}}</td>
+                                    <td class="center {{'nota' if turma['disciplinas']|length < 18 else 'nota-small'}}" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['nota']}}</td>
                                     {% endif %}
-                                    <td class="center nota" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['falta']}}</td>
-                                    <td style="border-right:solid 2px;" class="center nota" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['ac']}}</td>
+                                    <td class="center {{'nota' if turma['disciplinas']|length < 18 else 'nota-small'}}" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['falta']}}</td>
+                                    <td style="{{'border-right:solid 2px;' if turma['disciplinas']|length < 18 else ''}}" class="center {{'nota' if turma['disciplinas']|length < 18 else 'nota-small'}}" style="width: 100%;">{{disc['notas'][turma['alunos'][n]['ra_bruto']]['ac']}}</td>
                                 {% else %}
-                                    <td style="border-right:solid 2px rgb(0,0,0);" colspan="3" class="red center nota">{{turma['alunos'][n]['mat']}}</td>
+                                    <td style="{{'border-right:solid 2px rgb(0,0,0);' if turma['disciplinas']|length < 18 else ''}};" colspan="3" class="red center nota">{{turma['alunos'][n]['mat']}}</td>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
@@ -497,7 +509,7 @@
                             {% for disc in turma['disciplinas'] %}
                                 <td></td>
                                 <td></td>
-                                <td style="border-right:solid 2px;"></td>
+                                <td style="{{'border-right:solid 2px;' if turma['disciplinas']|length < 18 else ''}}"></td>
                             {% endfor %}
                         {% endif %}
                         </tr>
@@ -507,13 +519,13 @@
                     <tr>
                         <th style="border-top:solid 2px;border-right:solid 2px;" class="nota" colspan="2">Prof</th>
                         {% for disc in turma['disciplinas'] %}
-                            <td style="border-top:solid 2px;border-right:solid 2px;" class="nota" colspan="3">{{disc['nome_ata']}}</td>
+                            <td style="border-top:solid 2px;{{'border-right:solid 2px;' if turma['disciplinas']|length < 18 else ''}}" class="nota" colspan="3">{{disc['nome_ata']}}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <th style="border-right:solid 2px;" class="nota" colspan="2">AD</th>
                         {% for disc in turma['disciplinas'] %}
-                            <td style="border-right:solid 2px;" class="nota" colspan="3">{{disc['aulas_dadas']}}</td>
+                            <td style="{{'border-right:solid 2px;' if turma['disciplinas']|length < 18 else ''}}" class="nota" colspan="3">{{disc['aulas_dadas']}}</td>
                         {% endfor %}                        
                     </tr>
                 </tfoot>

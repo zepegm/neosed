@@ -1,0 +1,112 @@
+<html>
+    <head>
+        <title>Render Horário Individual</title>
+        <style>
+
+            .thead {
+                font-family: Arial, Helvetica, sans-serif;
+            }
+
+            .dark {
+                background-color: #333;
+                color: white;
+                border-right: white solid 1px;
+            }
+
+            table {
+                width: 729px;
+                height: 340px;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+                border: solid black 2px;
+            }
+
+            .aula {
+                text-align: center;
+                font-family: Arial, Helvetica, sans-serif;  
+                border: solid black 1px;
+            }
+
+            .info-ROE,
+            .info-Atpg,
+            .info-Atpa {
+                background-color: #ffea97;
+            }
+
+            .info-PCA {
+                background-color: #fff3c1;
+            }
+
+            .info-Tut {
+                background-color: #FFA500;
+            }
+
+            .info-ELE {
+                background-color: #FEDEFF;
+            }
+
+            .intervalo {
+                background-color: #0070C0;
+                color: white;
+                text-align: center;
+                font-weight: bold;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+
+            .almoco {
+                background-color: #663399;
+                color: white;
+                text-align: center;
+                font-weight: bold;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            
+        </style>
+    </head>
+    <body>
+        {% for professor in professores %}
+        <table>
+            <thead>
+                <tr>
+                    <td colspan="6" class="thead" style="padding-top:10px;padding-left:10px;"><b>Professor(a):</b> {{ professor.nome }}</td>
+                </tr>
+                <tr>
+                    <td colspan="6" class="thead" style="padding-left:10px;padding-bottom:10px;"><b>Quantidade de Aulas:</b> {{ professor['qtd_aulas'] }}</td>
+                </tr>
+                <tr>
+                    <th class="thead dark" style="width:104px;">Horário</th>
+                    <th class="thead dark" style="width:125px;">Segunda</th>
+                    <th class="thead dark" style="width:125px;">Terça</th>
+                    <th class="thead dark" style="width:125px;">Quarta</th>
+                    <th class="thead dark" style="width:125px;">Quinta</th>
+                    <th class="thead dark" style="width:125px;">Sexta</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aula in professor['quadro'] %}
+
+                    {% set is_first_externo = loop.first %}
+
+                    {% for item in intervalos %}
+                        {% if item['horario'] == aula['inicio'] and not is_first_externo %}
+                        <tr>
+                            <td class="{{item['tipo']}}">{{item['inicio']|formatar_timedelta}} - {{aula['inicio']|formatar_timedelta}}</td>
+                            <td class="{{item['tipo']}}" colspan="5">{{item['descricao']}}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+
+                <tr>
+                    <td class="aula">{{aula['horario']}}</td>
+                    <td class="aula info-{{aula['seg']}}">{{aula['seg']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')}}</td>
+                    <td class="aula info-{{aula['ter']}}">{{aula['ter']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')}}</td>
+                    <td class="aula info-{{aula['qua']}}">{{aula['qua']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')}}</td>
+                    <td class="aula info-{{aula['qui']}}">{{aula['qui']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')}}</td>
+                    <td class="aula info-{{aula['sex']}}">{{aula['sex']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </body>
+</html>

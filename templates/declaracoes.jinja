@@ -48,7 +48,7 @@
                 </select>
             </div>                   
         </div>
-        <div class="row">
+        <div class="row mt-3">
             <div class="col-sm-4">
                 <label for="cb_ensino">Tipo de Ensino</label>
                 <select class="form-select" id="cb_ensino" name="cb_ensino">
@@ -66,10 +66,12 @@
                     <option>2ª série</option>
                     <option>3ª série</option>
                 </select>
-            </div>                   
+            </div>             
+
         </div>
-        <div class="row">
-            <div class="col-sm-3">
+
+        <div class="row mt-3">
+            <div class="col-sm-2">
                 <label for="cb_tipo">Tipo de Declaração</label>
                 <select class="form-select" id="cb_tipo" name="cb_tipo">
                     <option value="0">Conclusão</option>
@@ -77,10 +79,22 @@
                     <option value="2">Solicitação de vaga</option>
                 </select>                
             </div>
-            <div class="col-sm-2">
+
+            <div class="col-sm-1">
                 <label for="txt_ano">Ano:</label>
                 <input type="number" class="form-control" id="txt_ano" name="txt_ano">  
+            </div>  
+
+            <div class="col-sm-2">
+                <label for="cb_serie">Assinatura</label>
+                <select class="form-select" id="cb_assinatura" name="cb_assinatura">
+                    <option value="0">Sem assinatura</option>
+                    {% for nome in funcionarios %}
+                    <option value="{{nome['cpf']}}">{{nome['nome']}}</option>
+                    {% endfor %}
+                </select>
             </div>
+
             <div class="col-sm-4 align-self-end">
                 <button id="btn_visualizar" class="btn btn-primary">Visualizar Declaração</button>
                 <button id="btn_gerar_pdf" class="btn btn-danger" disabled><i class="fa-solid fa-file-pdf"></i>&nbsp;Gerar PDF</button>
@@ -106,6 +120,7 @@
             info['ano'] = $("#txt_ano").val();
             info['destino'] = 3;
             info['anos'] = ''
+            info['assinatura'] = $("#cb_assinatura").val();
 
             $.ajax({
                 type: "POST",
