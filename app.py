@@ -1470,6 +1470,7 @@ def render_lista():
 
             dados = banco.executarConsulta(f'select ano, nome_turma from turma where num_classe = {num_classe}')[0]
             mes = request.args.getlist('mes')[0]
+            cor = request.args.getlist('cor')[0]
 
             alunos = banco.executarConsulta(f'select num_chamada, aluno.nome from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = {num_classe} and situacao = 1 order by nome')
 
@@ -1507,7 +1508,7 @@ def render_lista():
                         if pointer_color > 3:
                             pointer_color = 0
 
-            return render_template('render_pdf/render_chamada.jinja', dados=dados, mes=mes, desc_mes = getMes(mes), alunos=alunos, dias_uteis=dias_uteis, limite=limite)
+            return render_template('render_pdf/render_chamada.jinja', dados=dados, mes=mes, desc_mes = getMes(mes), alunos=alunos, dias_uteis=dias_uteis, limite=limite, cor=cor)
         
         if tipo == 'turma':
             head = banco.executarConsulta('select ' + \
@@ -2656,6 +2657,8 @@ async def gerar_pdf():
         mes = info['mes']
         order = info['order']
         num_classe = info['turma']
+        cor = info['cor'].replace("#", '')
+
 
         browser = await launch(
             handleSIGINT=False,
@@ -2664,7 +2667,7 @@ async def gerar_pdf():
         )        
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s' % (num_classe, order, mes), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (num_classe, order, mes, cor), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
         await browser.close()
 

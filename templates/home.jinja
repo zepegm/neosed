@@ -663,12 +663,14 @@
                         </div>
                         <div class="col-sm-4">
                             <div class="input-group mb-3 mt-3">
-                                <span class="input-group-text" id="basic-addon1">Imprimir Lista de Chamada do mês de</span>
+                                <span class="input-group-text" id="basic-addon1">Lista de Chamada de</span>
                                 <select class="form-select" id="cb_mes_chamada">
                                     {% for mes in meses %}
                                     <option value="{{mes['value']}}" {{mes['selected']}}>{{mes['mes']}}</option>
                                     {% endfor %}
                                 </select>
+                                <span class="input-group-text" id="basic-addon2">Cor das Linhas</span>
+                                <input type="color" id="color_line" class="form-control" style="height: 38px;" value="#BBBBBB">
                                 <button type="button" class="btn btn-danger" id="gerar_pdf_chamada">Imprimir</button>
                             </div>                        
                         </div>
@@ -1146,7 +1148,9 @@
             $("#gerar_pdf_chamada").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
             $("#gerar_pdf_chamada").attr('disabled', '');
 
-            info = {'destino':16, 'turma':$("#numClasse").text(), 'tipo':'chamada', 'order':'order by nome', 'mes':$("#cb_mes_chamada").val()}
+            $("#color_line").css('height', '50px');
+
+            info = {'destino':16, 'turma':$("#numClasse").text(), 'tipo':'chamada', 'order':'order by nome', 'mes':$("#cb_mes_chamada").val(), 'cor':$("#color_line").val()}
             
             $.ajax({
                 type: "POST",
@@ -1158,6 +1162,7 @@
                 window.open(data);
                 $("#gerar_pdf_chamada").html('Exportar PDF');
                 $("#gerar_pdf_chamada").removeAttr('disabled');
+                $("#color_line").css('height', '38px');
                 },
             });
 
