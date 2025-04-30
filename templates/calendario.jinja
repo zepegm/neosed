@@ -26,7 +26,7 @@
       {% include 'menu.jinja' %}
     {% endblock %}   
 
-    <div class="modal fade" id="modal_instancias" tabindex="-1" aria-labelledby="modal_instanciasLabel" aria-hidden="true">
+    <!-- <div class="modal fade" id="modal_instancias" tabindex="-1" aria-labelledby="modal_instanciasLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
             <form action="{{url_for('calendario')}}" method="POST">
@@ -41,12 +41,12 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <input type="submit" class="btn btn-primary" value="Cadastrar" />
-                    <!-- <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button> -->
+                    <button type="button" class="btn btn-primary">Cadastrar Nova Turma</button>
                 </div>
             </form>
             </div>
         </div>
-    </div>
+    </div>-->
 
     <form id="form_change_inst" action="{{url_for('calendario')}}" method="POST">
         <input id="var_instancia" type="hidden" name="cb_instancias" value="{{instancia}}">
@@ -62,7 +62,7 @@
                     <option value="{{item['id']}}" {{ "selected" if item['id'] == instancia else "" }}>{{item['descricao']}}</option>
                     {% endfor %}
                 </select>
-                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal_instancias"><i class="fa-solid fa-plus"></i></button>
+                <!-- <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal_instancias"><i class="fa-solid fa-plus"></i></button> -->
             </div>
             <div class="col-sm-12">{{status}}</div>
             <div class="col-sm-12">

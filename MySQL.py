@@ -397,7 +397,32 @@ class db:
 
         except Exception as error:
             print("An exception occurred:", error) # An exception occurred: division by zero
+            return False
+        
+
+    def inserirLicenca(self, cpf, lista):
+        try:
+
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()
+
+            # remover dados conflitantes
+            cur.execute('SET SQL_SAFE_UPDATES = 0')
+            cur.execute("DELETE FROM licenca_professores WHERE cpf = %s" % cpf)
+            cur.execute('SET SQL_SAFE_UPDATES = 1')
+
+
+            for item in lista:
+                cur.execute("INSERT INTO licenca_professores VALUES(%s, '%s', '%s', '%s', %s)" % (cpf, item['inicio'], item['fim'], item['desc'], item['tipo']))
+
+            database.commit()
+
+            return True
+
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
             return False 
+                
 
     def alterarMatriz(self, lista):
         num_classe = lista[0]['num_classe']
