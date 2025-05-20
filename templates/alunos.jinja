@@ -120,49 +120,6 @@
         </div>
     </div>    
 
-    <div class="modal fade" id="modal_transf" tabindex="-1" aria-labelledby="modal_painel_headLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal_painel_headLabel">Painel de Transferência</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-sm-9 align-self-end">
-                            <label for="cb_tipo_declaracao">Tipo:</label>
-                            <select class="form-select" id="cb_tipo_declaracao">
-                                <option value="1">Declaração Simples</option>
-                                <option value="2">Desistência de Vaga - Ensino Profissionalizante (menor de idade)</option>
-                                <option value="3">Desistência de Vaga - Ensino Profissionalizante (maior de idade)</option>
-                                <option value="4">Solicitação de Baixa (menor de idade)</option>
-                                <option value="5">Solicitação de Baixa (maior de idade)</option>
-                            </select>                        
-                        </div>
-                        <div class="col-sm-3 align-self-end d-flex">
-                            <button class="btn btn-danger" id="btn_confirmar_preview_transf">Confirmar</button>
-                        </div>
-                    </div>
-
-                    <div class="row" id="painel_dados_resp" hidden>
-                        <div class="col-sm-9 pt-2">
-                            <label for="txt_nome_resp">Nome do Responsável:</label>
-                            <input class="form-control" type="input" id="txt_nome_resp">
-                        </div>
-                        <div class="col-sm-9 pt-2">
-                            <label for="txt_rg_resp">RG do Responsável:</label>
-                            <input class="form-control" type="input" id="txt_rg_resp">
-                        </div>                        
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <!-- <button id="btn-importar_if" class="btn btn-warning">Importar Alunos</button> -->
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="modal fade" id="modal_detalhe_aluno" tabindex="-1" aria-labelledby="modal_lista_turma_ifLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -212,11 +169,33 @@
                                 <tbody id="alunos_dados_dinamicos"></tbody>
                             </table>
                         </div>
+
                         <div class="col-sm-12">
-                            <button id="btn_declaracao_matricula" class="btn btn-primary" hidden>Declaração de Matrícula</button>
-                            <button id="btn_declaracao_matricula_freq" class="btn btn-success" hidden>Declaração de Matrícula com Freq (%)</button>
-                            <button id="btn_declaracao_transferencia" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal_transf" hidden>Declaração de Transferência</button>
+                            <div id="pn_declaracao" class="input-group mb-3 mt-3" hidden>
+                                <span class="input-group-text" id="basic-addon1">Gerar Declaração de:</span>
+                                <select class="form-select" id="cb_tipo_declaracao_padrao" name="cb_tipo_declaracao_padrao">
+                                </select>
+                                <span class="input-group-text" id="basic-addon2">Assinatura</span>
+                                <select class="form-select" id="cb_assinatura" name="cb_assinatura">
+                                    <option value="0" data-rg="" data-cargo="">Sem assinatura</option>
+                                    {% for nome in funcionarios %}
+                                    <option value="{{nome['cpf']}}" data-rg="{{nome['rg']}}" data-cargo="{{nome['cargo']}}">{{nome['nome']}}</option>
+                                    {% endfor %}
+                                </select>                                
+                                <button type="button" class="btn btn-danger" id="gerar_pdf">Gerar</button>
+                            </div>                         
                         </div>
+
+                        <div class="col-sm-6" id="pnl_nome_resp" hidden>
+                            <label class="form-label" for="txt_nome_resp">Nome do Responsável:</label>
+                            <input type="text" class="form-control" placeholder="Nome Completo do Responsável" name="txt_nome_resp" id="txt_nome_resp">
+                        </div>
+
+                        <div class="col-sm-6" id="pnl_rg_resp" hidden>
+                            <label class="form-label" for="txt_rg_resp">Nome do Responsável:</label>
+                            <input type="text" class="form-control" placeholder="RG do Responsável" name="txt_rg_resp" id="txt_rg_resp">                        
+                        </div>
+
                         <div class="col-sm-12 mt-3">
                             <button id="btn_declaracao_matricula_five" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_five" hidden>Declaração de Últimos 5 anos</button>
                         </div>                        
@@ -324,6 +303,10 @@
 
             $("#alunos_dados_dinamicos").empty();
 
+            $("#cb_assinatura").removeAttr('disabled');
+            $("#pnl_nome_resp").attr('hidden', '');
+            $("#pnl_rg_resp").attr('hidden', '');               
+
             $("#modal_detalhe_aluno").modal('show');
 
             $.ajax({
@@ -338,19 +321,39 @@
                     }
 
                     if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
-                        $("#btn_declaracao_matricula").removeAttr('hidden');
-                        $("#btn_declaracao_matricula_freq").removeAttr('hidden');
-                        $("#btn_declaracao_transferencia").removeAttr('hidden');
-                        $("#btn_declaracao_matricula_five").removeAttr('hidden');
+
+                        $("#cb_tipo_declaracao_padrao").empty();
+                        $("#cb_tipo_declaracao_padrao").append('<option value="mat">Matrícula</option>');
+                        $("#cb_tipo_declaracao_padrao").append('<option value="mat_freq">Matrícula com Freq.(%)</option>');
+                        $("#cb_tipo_declaracao_padrao").append('<option value="mat_horario">Matrícula com Horário</option>');
+                        $("#cb_tipo_declaracao_padrao").append('<option value="trans">Transferência</option>');
+
+                        if (idade < 18) {
+                            $("#cb_tipo_declaracao_padrao").append('<option value="des_menor">Desistência Ensino Profissionalizante (menor)</option>');
+                            $("#cb_tipo_declaracao_padrao").append('<option value="baixa_menor">Solicitação de Baixa (menor)</option>');                            
+                        } else {
+                            $("#cb_tipo_declaracao_padrao").append('<option value="des_maior">Desistência Ensino Profissionalizante (maior)</option>');
+                            $("#cb_tipo_declaracao_padrao").append('<option value="baixa_maior">Solicitação de Baixa (maior)</option>')
+                        }
+
+                        $("#pn_declaracao").removeAttr('hidden');
+
                     } else {
-                        $("#btn_declaracao_matricula").attr('hidden', '');
-                        $("#btn_declaracao_matricula_freq").attr('hidden', '');
-                        $("#btn_declaracao_matricula_five").attr('hide', '');
+                        $("#pn_declaracao").attr('hidden', '');
 
                         if ($("#alunos_dados_dinamicos tr .TRAN").length > 0) {
-                            $("#btn_declaracao_transferencia").removeAttr('hidden');
-                        } else {
-                            $("#btn_declaracao_transferencia").attr('hidden', '');
+                            $("#cb_tipo_declaracao_padrao").empty();
+                            $("#cb_tipo_declaracao_padrao").append('<option value="trans">Transferência</option>');
+
+                            if (idade < 18) {
+                                $("#cb_tipo_declaracao_padrao").append('<option value="des_menor">Desistência Ensino Profissionalizante (menor)</option>');
+                                $("#cb_tipo_declaracao_padrao").append('<option value="baixa_menor">Solicitação de Baixa (menor)</option>');                            
+                            } else {
+                                $("#cb_tipo_declaracao_padrao").append('<option value="des_maior">Desistência Ensino Profissionalizante (maior)</option>');
+                                $("#cb_tipo_declaracao_padrao").append('<option value="baixa_maior">Solicitação de Baixa (maior)</option>')
+                            }
+
+                            $("#pn_declaracao").removeAttr('hidden');
                         }
                     }
 
@@ -364,32 +367,51 @@
 
         }
 
+        $("#gerar_pdf").on('click', function() {
+            let tipo = $("#cb_tipo_declaracao_padrao").val();
+            let assinatura_rg = $("#cb_assinatura option:selected").data('rg');
+            let nome_assinatura = $("#cb_assinatura option:selected").text();
+            let cargo_assinatura = $("#cb_assinatura option:selected").data('cargo');
+            let assinatura = $("#cb_assinatura").val();
 
-        $("#btn_declaracao_matricula").on('click', function(e) {
-            declaracaoMatricula("{{url_for('static', filename='images/brasao.png')}}", $("#txtnome").text(), $("#txtrg").text(), $("#txtcpf").text(), $("#txtra").text(), $("#txtnasc").text(), $("#txtsexo").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text());
-        });
-
-        $("#cb_tipo_declaracao").on('change', function() {
-            let val = $("#cb_tipo_declaracao").val();
-
-            if (val == 2 || val == 4) {
-                $("#painel_dados_resp").removeAttr('hidden');
-            } else {
-                $("#painel_dados_resp").attr('hidden', '');
-            }
-        });
-
-        $("#btn_confirmar_preview_transf").on('click', function(e) {
-
-            let tipo = $("#cb_tipo_declaracao").val();
-
-            ra = $("#txtra").text();
-            
-            if (tipo == 1) {
-                nome = $("#txtnome").text();
-                rg = $("#txtrg").text();
-                cpf = $("#txtcpf").text();
-                nasc = $("#txtnasc").text()
+            if (tipo == "mat") {
+                declaracaoMatricula("{{url_for('static', filename='images/brasao.png')}}", $("#txtnome").text(), $("#txtrg").text(), $("#txtcpf").text(), $("#txtra").text(), $("#txtnasc").text(), $("#txtsexo").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text(), nome_assinatura, assinatura_rg, cargo_assinatura);
+            } else if (tipo == "mat_freq") {
+                $("#gerar_pdf").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+                $("#gerar_pdf").attr('disabled', '');            
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify({'destino':11, 'ra':$("#txtra").text(), 'assinatura':assinatura}),
+                    dataType: "json",
+                    success: function(data) {
+                        window.open(data);
+                        $("#gerar_pdf").html('Gerar');
+                        $("#gerar_pdf").removeAttr('disabled');
+                    },
+                });                        
+            } else if (tipo == "mat_horario") {
+                $("#gerar_pdf").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+                $("#gerar_pdf").attr('disabled', '');            
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify({'destino':19, 'ra':$("#txtra").text(), 'assinatura':assinatura}),
+                    dataType: "json",
+                    success: function(data) {
+                        window.open(data);
+                        $("#gerar_pdf").html('Gerar');
+                        $("#gerar_pdf").removeAttr('disabled');
+                    },
+                });  
+            } else if (tipo == "trans") {
+                let nome = $("#txtnome").text();
+                let rg = $("#txtrg").text();
+                let cpf = $("#txtcpf").text();
+                let ra = $("#txtra").text();
+                let nasc = $("#txtnasc").text();
 
                 if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
                     serie = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text();
@@ -399,44 +421,89 @@
                     ensino = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
                 }
 
-                declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino);
-            } else if (tipo == 2 || tipo == 4) {
+                declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino, nome_assinatura, assinatura_rg, cargo_assinatura);
+            } else if (tipo == "des_menor" || tipo == "baixa_menor") {
                 nome_resp = $("#txt_nome_resp").val();
                 rg_resp = $("#txt_rg_resp").val();
+
+                $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+                $(this).attr('disabled', ''); 
+
+                n_tipo = 2;
+                if (tipo == 'baixa_menor') {
+                    n_tipo = 4;
+                }
 
                 $.ajax({
                     type: "POST",
                     url: "gerar_pdf",
                     contentType: "application/json",
-                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':nome_resp, 'rg_resp':rg_resp, 'tipo':tipo}),
+                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':nome_resp, 'rg_resp':rg_resp, 'tipo':n_tipo}),
                     dataType: "json",
                     success: function(data) {
                         window.open(data);
-                        /*$("#btn_declaracao_matricula_freq").html('Declaração de Matrícula com Freq (%)');
-                        $("#btn_declaracao_matricula_freq").removeAttr('disabled');*/
+                        $("#gerar_pdf").html('Gerar');
+                        $("#gerar_pdf").removeAttr('disabled');
                     },
-                });                  
+                });
+            } else if (tipo == "des_maior" || tipo == "baixa_maior") {
+                $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+                $(this).attr('disabled', ''); 
+
+                n_tipo = 3;
+                if (tipo == 'baixa_maior') {
+                    n_tipo = 5;
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':null, 'rg_resp':null,  'tipo':n_tipo}),
+                    dataType: "json",
+                    success: function(data) {
+                        window.open(data);
+                        $("#gerar_pdf").html('Gerar');
+                        $("#gerar_pdf").removeAttr('disabled');
+                    },
+                });                
             }
-
-
         });
 
-        $("#btn_declaracao_matricula_freq").on('click', function() {
-            $("#btn_declaracao_matricula_freq").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
-            $("#btn_declaracao_matricula_freq").attr('disabled', '');            
-            $.ajax({
-                type: "POST",
-                url: "gerar_pdf",
-                contentType: "application/json",
-                data: JSON.stringify({'destino':11, 'ra':$("#txtra").text()}),
-                dataType: "json",
-                success: function(data) {
-                    window.open(data);
-                    $("#btn_declaracao_matricula_freq").html('Declaração de Matrícula com Freq (%)');
-                    $("#btn_declaracao_matricula_freq").removeAttr('disabled');
-                },
-            });                        
+        $("#cb_tipo_declaracao_padrao").on('change', function() {
+            let val = $("#cb_tipo_declaracao_padrao").val();
+
+            console.log(val);
+
+            switch (val) {
+                case 'des_menor':
+                    $("#cb_assinatura").attr('disabled', '');
+                    $("#pnl_nome_resp").removeAttr('hidden');
+                    $("#pnl_rg_resp").removeAttr('hidden');
+                    break;
+                case 'des_maior':
+                    $("#cb_assinatura").attr('disabled', '');
+                    $("#pnl_nome_resp").attr('hidden', '');
+                    $("#pnl_rg_resp").attr('hidden', '');                    
+                    break;
+                case 'baixa_menor':
+                    $("#cb_assinatura").attr('disabled', '');
+                    $("#pnl_nome_resp").removeAttr('hidden');
+                    $("#pnl_rg_resp").removeAttr('hidden');
+                    break;    
+                case 'baixa_maior':
+                    $("#cb_assinatura").attr('disabled', '');
+                    $("#pnl_nome_resp").attr('hidden', '');
+                    $("#pnl_rg_resp").attr('hidden', '');                    
+                    break;                            
+                default:
+                    $("#cb_assinatura").removeAttr('disabled');
+                    $("#pnl_nome_resp").attr('hidden', '');
+                    $("#pnl_rg_resp").attr('hidden', '');               
+                    break;
+            }
         });
+
 
         $("#btn_confirmar_five").on('click', function() {
             $("#btn_confirmar_five").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');

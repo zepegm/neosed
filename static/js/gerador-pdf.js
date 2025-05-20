@@ -2133,7 +2133,7 @@ function gerarListaIF(lista) {
 
 }
 
-function declaracaoTransferencia(url_brasao, nome, rg, cpf, ra, nascimento, serie, ensino) {
+function declaracaoTransferencia(url_brasao, nome, rg, cpf, ra, nascimento, serie, ensino, nome_assinatura, assinatura_rg, cargo_assinatura) {
 
     var doc = new jsPDF({
         orientation: 'portrait',
@@ -2195,11 +2195,25 @@ function declaracaoTransferencia(url_brasao, nome, rg, cpf, ra, nascimento, seri
     doc.setFont('helvetica', 'normal');
     doc.text(data_extensa(), 520.28, y, 'right');    
 
+    if (nome_assinatura != "Sem assinatura") {
+        y += 200;
+        doc.setFontSize(9);
+
+        doc.setLineWidth(0.7); // Set line thickness
+        doc.line(197.64, y - 15, 397.64, y - 15);
+
+        doc.text(nome_assinatura, 297.64, y, 'center');
+        y += 15;
+        doc.text('RG: ' + assinatura_rg, 297.64, y, 'center');
+        y += 15;
+        doc.text(cargo_assinatura, 297.64, y, 'center');
+    }    
+
     window.open(doc.output('bloburl'), '_blank');        
 
 }
 
-function declaracaoMatricula(url_brasao, nome, rg, cpf, ra, nascimento, sexo, serie, ensino) {
+function declaracaoMatricula(url_brasao, nome, rg, cpf, ra, nascimento, sexo, serie, ensino, nome_assinatura, assinatura_rg, cargo_assinatura) {
     var doc = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
@@ -2267,6 +2281,22 @@ function declaracaoMatricula(url_brasao, nome, rg, cpf, ra, nascimento, sexo, se
     //doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text(data_extensa(), 520.28, y, 'right');
+
+    if (nome_assinatura != "Sem assinatura") {
+        y += 200;
+        doc.setFontSize(9);
+
+        doc.setLineWidth(0.7); // Set line thickness
+        doc.line(197.64, y - 15, 397.64, y - 15);
+
+        doc.text(nome_assinatura, 297.64, y, 'center');
+        y += 15;
+        doc.text('RG: ' + assinatura_rg, 297.64, y, 'center');
+        y += 15;
+        doc.text(cargo_assinatura, 297.64, y, 'center');
+    }
+
+
 
     window.open(doc.output('bloburl'), '_blank');    
 }

@@ -1680,16 +1680,22 @@ def render_lista():
         elif tipo == 'declaracao':
             global aux_info
 
+            distancia = "100px"
+
             if aux_info['assinatura'] != '0':
                 decl_assinatura = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cargos_livro_ponto.descricao as cargo from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where cpf = %s" % aux_info['assinatura'])[0]
                 rg = "%08d" % int(decl_assinatura['rg'])
-                decl_assinatura['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], decl_assinatura['digito'])
+                decl_assinatura['rg'] = 'RG: %s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], decl_assinatura['digito'])
             else:
                 decl_assinatura = False
             
             pronome = 'o'
             if aux_info['genero'] == 'f':
                 pronome = 'a'
+
+            pronome_e = 'e'
+            if aux_info['genero'] == 'f':
+                pronome_e = 'a'            
 
             texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, RG: ' + aux_info['rg']
 
@@ -1749,13 +1755,100 @@ def render_lista():
             elif aux_info['tipo'] == 5: # declaração de desistência de vaga para ensino profissionalizante para menor de idade
                 titulo = 'DECLARAÇÃO DE DESISTÊNCIA – Ensino Profissionalizante'
 
-                texto = f'Eu, <b>{aux_info['nome_resp']}</b>, RG: {aux_info['rg_resp']}, responsável pel{pronome} estudante {aux_info['nome']}, matriculad{pronome} na '
+                match (aux_info['info_classe']['tipo_ensino']):
+                    case 1:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 3:
+                        serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 4:
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
 
-                
+                texto = f"Eu, <b>{aux_info['nome_resp']}</b>, RG: {aux_info['rg_resp']}, responsável pel{pronome} estudante <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, matriculad{pronome} {serie} declaro estar <b>desistindo</b> da matrícula na classe com Itinerário Formativo Profissionalizante, ciente de que <b>não haverá a possibilidade de retorno futuro</b> a essa modalidade de atendimento e que {pronome} estudante será atendid{pronome} em classe com Itinerário Formativo propedêutico. "
+                decl_assinatura = {'nome':'Assinatura do responsável'}
+
+            elif aux_info['tipo'] == 6: # declaração de desistência de vaga para ensino profissionalizante para maior de idade
+                titulo = 'DECLARAÇÃO DE DESISTÊNCIA – Ensino Profissionalizante'
+                match (aux_info['info_classe']['tipo_ensino']):
+                    case 1:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 3:
+                        serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 4:
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+
+                texto = f"Eu, <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, maior de idade, matriculad{pronome} {serie} declaro estar <b>desistindo</b> da matrícula na classe com Itinerário Formativo Profissionalizante, ciente de que <b>não haverá a possibilidade de retorno futuro</b> a essa modalidade de atendimento e que serei atendid{pronome} em classe com Itinerário Formativo propedêutico. "
+                decl_assinatura = {'nome':'Assinatura do responsável'}                
+
+            elif aux_info['tipo'] == 7: # solicitação de baixa por transferência
+
+                distancia = "40px"
+
+                titulo = 'SOLICITAÇÃO – Baixa de Transferência'
+
+                match (aux_info['info_classe']['tipo_ensino']):
+                    case 1:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 3:
+                        serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 4:
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+
+
+                texto = f"Eu, <b>{aux_info['nome_resp']}</b>, RG: {aux_info['rg_resp']}, responsável pel{pronome} estudante <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, matriculad{pronome} {serie} solicito que seja lançado o registro de <b>Baixa de Transferência</b> na sua matrícula atual, que será inativada."
+                texto += '<br><br>Motivo da solicitação:<br>'
+                texto += '(&nbsp;&nbsp;) mudança para outro estado/país (Qual?_______________________)<br>'
+                texto += '(&nbsp;&nbsp;) mudança para escola da rede privada de ensino<br><br>'
+                texto += f"Declaro estar ciente de que devo providenciar imediatamente matrícula para est{pronome_e} estudante, conforme legislação vigente. Para nova matrícula, na rede pública de ensino do Estado de São Paulo, deverei realizar inscrição solicitando o atendimento."
+                decl_assinatura = {'nome':'Assinatura do responsável'}
+
+            elif aux_info['tipo'] == 8: # solicitação de baixa por transferência
+
+                distancia = "40px"
+
+                titulo = 'SOLICITAÇÃO – Baixa de Transferência'
+
+                match (aux_info['info_classe']['tipo_ensino']):
+                    case 1:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 3:
+                        serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 4:
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+
+
+                texto = f"Eu, <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, maior de idade, matriculad{pronome} {serie} solicito que seja lançado o registro de <b>Baixa de Transferência</b> na minha matrícula atual, que será inativada."
+                texto += '<br><br>Motivo da solicitação:<br>'
+                texto += '(&nbsp;&nbsp;) mudança para outro estado/país (Qual?_______________________)<br>'
+                texto += '(&nbsp;&nbsp;) mudança para escola da rede privada de ensino<br><br>'
+                texto += f"Declaro estar ciente que, para nova matrícula na rede pública de ensino do Estado de São Paulo, deverei realizar inscrição solicitando o atendimento."
+                decl_assinatura = {'nome':'Assinatura do responsável'}    
+
+            elif aux_info['tipo'] == 9: # declaração de matrícula com horário
+
+                titulo = 'DECLARAÇÃO DE MATRÍCULA'
+
+                match (aux_info['info_classe']['tipo_ensino']):
+                    case 1:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 3:
+                        serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 4:
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+
+                if aux_info['bimestre'] > 0:
+                    texto += ' é alun%s regularmente matriculad%s %s com frequência de <b>%s%s</b> registrada até o final do <b>%sº bimestre.</b>' % (pronome, pronome, serie, aux_info['percent'], r'%', aux_info['bimestre'])
+                else:
+                    list_serie = list(serie)
+                    list_serie[-5] = '.'
+                    texto += ' é alun%s regularmente matriculad%s %s' % (pronome, pronome, "".join(list_serie))
+
+                texto += "<br><br><b>Período:</b> %s" % aux_info['info_classe']['periodo']
+                texto += '<br><b>Horário de aula:</b> %s às %s' % (aux_info['info_classe']['inicio'], aux_info['info_classe']['fim'])
+
             data_atual = datetime.now()
             data_formatada = data_atual.strftime("%d de %B de %Y")
 
-            return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe, anos=aux_info['anos'], pronome=pronome, assinatura=decl_assinatura)
+            return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe, anos=aux_info['anos'], pronome=pronome, assinatura=decl_assinatura, distancia=distancia)
         
         elif tipo == 'ficha_mat':
 
@@ -2551,7 +2644,7 @@ async def gerar_pdf():
             freq_percent = -1
             bimestre = 0
 
-        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None}
+        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None, 'assinatura':info['assinatura']}
 
         browser = await launch(
             handleSIGINT=False,
@@ -2723,12 +2816,14 @@ async def gerar_pdf():
 
         return jsonify(pdf_path)    
 
-    elif info['destino'] == 18:
+    elif info['destino'] == 18: # declaração de transferência
         pdf_path = 'static/docs/declaracao.pdf'
 
         aluno = banco.executarConsulta('select nome, rg, sexo from aluno where ra = %s' % info['ra'].replace('.', '')[:9])[0]
+        
+        info_classe = banco.executarConsulta('select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = %s and situacao = 1' % info['ra'].replace('.', '')[:9])[0]        
 
-        aux_info = {'tipo':int(info['tipo']) + 3, 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'anos':None, 'nome_resp':info['nome_resp'], 'rg_resp':info['rg_resp']}
+        aux_info = {'tipo':int(info['tipo']) + 3, 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'anos':None, 'nome_resp':info['nome_resp'], 'rg_resp':info['rg_resp'], 'assinatura':'0', 'info_classe':info_classe}
 
         browser = await launch(
             handleSIGINT=False,
@@ -2741,8 +2836,44 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
-        return jsonify(pdf_path)        
+        return jsonify(pdf_path)
 
+    elif info['destino'] == 19: # declaração de matrícula com horário
+        
+        pdf_path = 'static/docs/declaracao_horario.pdf'
+        
+        aluno = banco.executarConsulta('select nome, rg, sexo from aluno where ra = %s' % info['ra'].replace('.', '')[:9])[0]
+        
+        info_classe = banco.executarConsulta(r'select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc, periodo.descricao as periodo, TIME_FORMAT(periodo.horario_inicio, "%Hh%i") as inicio, TIME_FORMAT(periodo.horario_fim, "%Hh%i") as fim from turma inner join periodo on periodo.id = turma.periodo inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = ' + '%s and situacao = 1' % info['ra'].replace('.', '')[:9])[0]
+
+        sql = 'SELECT '
+        sql += '(select sum(falta) - sum(ac) from notas inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.situacao = 1 left join vinculo_alunos_if on vinculo_alunos_if.ra_aluno = notas.ra_aluno and vinculo_alunos_if.situacao = 1 where notas.ra_aluno = %s and (notas.num_classe = vinculo_alunos_turmas.num_classe or notas.num_classe = vinculo_alunos_if.num_classe_if)) as faltas,' % info['ra'].replace('.', '')[:9]
+        sql += '(select sum(aulas_dadas) from vinculo_prof_disc inner join vinculo_alunos_turmas on vinculo_alunos_turmas.situacao = 1 and vinculo_alunos_turmas.ra_aluno = %s left join vinculo_alunos_if on vinculo_alunos_if.situacao = 1 and vinculo_alunos_if.ra_aluno = %s where vinculo_prof_disc.num_classe = vinculo_alunos_turmas.num_classe or vinculo_prof_disc.num_classe = vinculo_alunos_if.num_classe_if) as aulas_dadas,' % (info['ra'].replace('.', '')[:9], info['ra'].replace('.', '')[:9])
+        sql += '(select max(bimestre) from notas inner join turma on turma.num_classe = notas.num_classe where ra_aluno = %s and turma.ano = YEAR(CURDATE())) as bimestre' % info['ra'].replace('.', '')[:9]
+
+        freq = banco.executarConsulta(sql)
+
+        if (freq[0]['faltas']):
+            freq_percent = round((freq[0]['aulas_dadas'] - freq[0]['faltas']) / freq[0]['aulas_dadas'] * 100, 2)
+            bimestre = freq[0]['bimestre']
+        else:
+            freq_percent = -1
+            bimestre = 0
+
+        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':9, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None, 'assinatura':info['assinatura']}
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)
 
 
 
@@ -3433,10 +3564,12 @@ def listaAlunos():
 
     lista = banco.executarConsulta(r"SELECT ifnull(rm, '-') as rm, nome, ra as ra_val, concat(LPAD(SUBSTR(ra, -9, 1), 1, 0), SUBSTR(ra, -8, 2), '.', substr(ra, -6, 3), '.', substr(ra, -3, 3), '-', aluno.digito_ra) as ra, DATE_FORMAT(nascimento,'%d/%m/%Y') as nascimento_show, DATE_FORMAT(nascimento, '%Y-%m-%d') as nascimento_val, TIMESTAMPDIFF(YEAR, aluno.nascimento, NOW()) AS idade, sexo, ifnull(rg, '-') as rg, ifnull(concat(LPAD(SUBSTR(cpf, -11, 1), 1, 0), SUBSTR(cpf, -10, 2), '.', substr(cpf, -8, 3), '.', substr(cpf, -5, 3), '-', substr(cpf, -2, 2)), '-') as cpf FROM aluno ORDER BY nome")
 
-    #for item in lista:
-        #print(item)
+    funcionarios = banco.executarConsulta('select cpf, nome, rg, digito, cargos_livro_ponto.descricao as cargo from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where ativo = 1 order by nome')
+    for funcionario in funcionarios:
+        rg = "%08d" % int(funcionario['rg'])
+        funcionario['rg'] = '%s.%s.%s-%s' % (rg[:2], rg[2:5], rg[5:8], funcionario['digito'])
 
-    return render_template('alunos.jinja', lista=lista)
+    return render_template('alunos.jinja', lista=lista, funcionarios=funcionarios)
 
 
 @app.route('/notas', methods=['GET', 'POST'])
