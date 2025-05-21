@@ -345,14 +345,6 @@
                             $("#cb_tipo_declaracao_padrao").empty();
                             $("#cb_tipo_declaracao_padrao").append('<option value="trans">Transferência</option>');
 
-                            if (idade < 18) {
-                                $("#cb_tipo_declaracao_padrao").append('<option value="des_menor">Desistência Ensino Profissionalizante (menor)</option>');
-                                $("#cb_tipo_declaracao_padrao").append('<option value="baixa_menor">Solicitação de Baixa (menor)</option>');                            
-                            } else {
-                                $("#cb_tipo_declaracao_padrao").append('<option value="des_maior">Desistência Ensino Profissionalizante (maior)</option>');
-                                $("#cb_tipo_declaracao_padrao").append('<option value="baixa_maior">Solicitação de Baixa (maior)</option>')
-                            }
-
                             $("#pn_declaracao").removeAttr('hidden');
                         }
                     }
