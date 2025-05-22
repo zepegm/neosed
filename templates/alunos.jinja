@@ -302,6 +302,7 @@
             $("#txtidade").text(idade);
 
             $("#alunos_dados_dinamicos").empty();
+            $("#cb_tipo_declaracao_padrao").empty();
 
             $("#cb_assinatura").removeAttr('disabled');
             $("#pnl_nome_resp").attr('hidden', '');
@@ -322,7 +323,6 @@
 
                     if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
 
-                        $("#cb_tipo_declaracao_padrao").empty();
                         $("#cb_tipo_declaracao_padrao").append('<option value="mat">Matrícula</option>');
                         $("#cb_tipo_declaracao_padrao").append('<option value="mat_freq">Matrícula com Freq.(%)</option>');
                         $("#cb_tipo_declaracao_padrao").append('<option value="mat_horario">Matrícula com Horário</option>');
@@ -347,6 +347,11 @@
 
                             $("#pn_declaracao").removeAttr('hidden');
                         }
+                    }
+
+                    if ($("#alunos_dados_dinamicos tr .APROV").length > 0) {
+                        $("#cb_tipo_declaracao_padrao").append('<option value="conc">Conclusão</option>');
+                        $("#pn_declaracao").removeAttr('hidden');
                     }
 
                 /*console.log($("#alunos_dados_dinamicos tr .ATIVO").length);
@@ -459,6 +464,23 @@
                         $("#gerar_pdf").removeAttr('disabled');
                     },
                 });                
+            } else if (tipo == 'conc') {
+                $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+                $(this).attr('disabled', '');
+
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify({'destino':20, 'ra':$("#txtra").text(), 'assinatura':assinatura}),
+                    dataType: "json",
+                    success: function(data) {
+                        window.open(data);
+                        $("#gerar_pdf").html('Gerar');
+                        $("#gerar_pdf").removeAttr('disabled');
+                    },
+                });
+
             }
         });
 

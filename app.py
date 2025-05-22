@@ -1845,8 +1845,24 @@ def render_lista():
                 texto += "<br><br><b>Período:</b> %s" % aux_info['info_classe']['periodo']
                 texto += '<br><b>Horário de aula:</b> %s às %s' % (aux_info['info_classe']['inicio'], aux_info['info_classe']['fim'])
 
+            elif aux_info['tipo'] == 10: # declaração de conclusão de curso
+                
+                titulo = 'DECLARAÇÃO DE ESCOLARIDADE'
+
+                match (aux_info['info_classe']['tipo_ensino']):
+                    case 1:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 3:
+                        serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 4:
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+
+
+                texto += f''' foi alun{pronome} regularmente matriculad{pronome} {serie} no ano letivo de {aux_info['info_classe']['ano']}, tendo sido considerad{pronome} <b>APROVAD{pronome.upper()}.</b>'''
+
             data_atual = datetime.now()
             data_formatada = data_atual.strftime("%d de %B de %Y")
+
 
             return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe, anos=aux_info['anos'], pronome=pronome, assinatura=decl_assinatura, distancia=distancia)
         
@@ -2874,6 +2890,48 @@ async def gerar_pdf():
         await browser.close()
 
         return jsonify(pdf_path)
+
+    
+    elif info['destino'] == 20: # declaração de conclusão
+        pdf_path = 'static/docs/declaracao_conclusao.pdf'
+
+        aluno = banco.executarConsulta('select nome, rg, sexo from aluno where ra = %s' % info['ra'].replace('.', '')[:9])[0]
+
+        query = r'''SELECT
+	                turma.num_classe,
+                    turma.ano,
+                    serie, 
+                    tipo_ensino, 
+                    tipo_ensino.descricao AS tipo_ensino_desc, 
+                    periodo.descricao AS periodo, 
+                    TIME_FORMAT(periodo.horario_inicio, "%Hh%i") AS inicio, 
+                    TIME_FORMAT(periodo.horario_fim, "%Hh%i") AS fim 
+                FROM turma 
+                INNER JOIN periodo ON periodo.id = turma.periodo 
+                INNER JOIN vinculo_alunos_turmas ON vinculo_alunos_turmas.num_classe = turma.num_classe 
+                INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino 
+                WHERE ra_aluno = ''' + info['ra'].replace('.', '')[:9] + ''' and situacao = 6
+                ORDER BY ano DESC LIMIT 1'''
+        
+        print(query)
+
+        info_classe = banco.executarConsulta(query)[0]
+
+        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'genero':aluno['sexo'].lower(), 'tipo':10, 'info_classe':info_classe, 'anos':None, 'assinatura':info['assinatura']}
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        await browser.close()
+
+        return jsonify(pdf_path)
+
 
 
 
