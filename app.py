@@ -1958,7 +1958,7 @@ def render_lista():
 
             turmas = banco.executarConsulta(f'select nome_turma, num_classe, tipo_ensino.descricao from turma inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where tipo_ensino in {tipo_ensino} and ano = {ano} order by nome_turma')
             horario = banco.executarConsulta(f'''select distinct inicio, fim, concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario from hora_aulas where tipo_ensino in {tipo_ensino} and ano = {ano} order by inicio''')
-            grade = banco.executarConsulta(f'select distinct grade.num_classe, turma.nome_turma, pos, semana, grade.disciplina, disciplinas.abv, professor_livro_ponto.nome, matriz_curricular.cpf_professor, matriz_curricular.tipo from grade left join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and matriz_curricular.disc_disciplina = grade.disciplina left join professor_livro_ponto on professor_livro_ponto.cpf = matriz_curricular.cpf_professor inner join turma on turma.num_classe = grade.num_classe inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina where turma.tipo_ensino in {tipo_ensino} and turma.ano = {ano} order by semana, pos, nome_turma')
+            grade = banco.executarConsulta(f'select distinct grade.num_classe, turma.nome_turma, pos, semana, grade.disciplina, disciplinas.abv, professor_livro_ponto.nome_ata as nome, matriz_curricular.cpf_professor, matriz_curricular.tipo from grade left join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and matriz_curricular.disc_disciplina = grade.disciplina left join professor_livro_ponto on professor_livro_ponto.cpf = matriz_curricular.cpf_professor inner join turma on turma.num_classe = grade.num_classe inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina where turma.tipo_ensino in {tipo_ensino} and turma.ano = {ano} order by semana, pos, nome_turma')
             tipo = banco.executarConsultaVetor(f"SELECT CAST(GROUP_CONCAT(descricao SEPARATOR ' + ') AS CHAR) as texto FROM tipo_ensino where id in {tipo_ensino}")[0]
             legenda = banco.executarConsulta(f'select distinct tipo, tipo_disc_matriz.desc_completa as descricao from matriz_curricular inner join tipo_disc_matriz on tipo_disc_matriz.id = matriz_curricular.tipo inner join turma on turma.num_classe = matriz_curricular.num_classe where turma.tipo_ensino in {num_classe} and turma.ano = {ano}')
 
@@ -1971,11 +1971,7 @@ def render_lista():
             # parametrizar nomes dos professores
             for item in grade:
                 try:
-                    aux = item['nome'].split(' ')
-                    if len(aux[0]) < 4:
-                        item['nome'] = "(" + aux[0] + ' ' + aux[1] + ")"
-                    else:
-                        item['nome'] = "(" + aux[0] + ")"
+                    item['nome'] = "(" + item['nome'] + ")"
                 except:
                     item['nome'] = ''
 
@@ -4354,7 +4350,7 @@ def ponto():
             info = request.json
 
             if info['destino'] == 0: # pegar os dados do professor para editar no formulário
-                detalhes = banco.executarConsulta("select instancia_calendario, cpf, nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs, ifnull(atpc, '') as atpc, ifnull(atpl, '') as atpl, ifnull(aulas_outra_ue, '') as aulas_outra_ue from professor_livro_ponto WHERE cpf = %s and di = %s" % (info['cpf'], info['di']))[0]
+                detalhes = banco.executarConsulta("select instancia_calendario, cpf, nome, nome_ata, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs, ifnull(atpc, '') as atpc, ifnull(atpl, '') as atpl, ifnull(aulas_outra_ue, '') as aulas_outra_ue from professor_livro_ponto WHERE cpf = %s and di = %s" % (info['cpf'], info['di']))[0]
                 return jsonify(detalhes)
             
             elif info['destino'] == 1: # pegar quadro aula
@@ -4478,6 +4474,7 @@ def ponto():
             dados['atpl'] = 'null' if request.form['atpl'] == '' else "'%s'" % request.form['atpl']
             dados['aulas_outra_ue'] = 'null' if request.form['aulas'] == '' else "'%s'" % request.form['aulas']
             dados['instancia_calendario'] = request.form['cb_instancia']
+            dados['nome_ata'] = 'null' if request.form['nome_ata'] == '' else "'%s'" % request.form['nome_ata']
 
             if banco.insertOrUpdate(dados, 'professor_livro_ponto'):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \

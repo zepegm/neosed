@@ -338,7 +338,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
                                 <div class="mb-3">
                                     <label class="form-label" for="cb_disciplina">Disciplina:</label>
                                     <select class="form-select" id="cb_disciplina" name="disciplina">
@@ -350,7 +350,7 @@
                                 </div>
                             </div>                            
 
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
                                 <div class="mb-3">
                                     <label class="form-label" for="cb_afastamento">Afastamento:</label>
                                     <select class="form-select" id="cb_afastamento" name="afastamento">
@@ -360,7 +360,14 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                            </div> 
+                            </div>
+
+                            <div class="col-sm-4">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_afastamento">Nome Ata:</label>
+                                    <input class="form-control" type="text" name="nome_ata" id="txt_nome_ata">
+                                </div>
+                            </div>                             
 
                             <div class="col-sm-6">
                                 <div class="mb-3">
@@ -952,6 +959,7 @@
                     $("#txt_atpc").val(response['atpc']);
                     $("#txt_aulas").val(response['aulas_outra_ue']);
                     $("#cb_instancia").val(response['instancia_calendario']);
+                    $("#txt_nome_ata").val(response['nome_ata']);
 
                     if (response['assina_livro'] == 1) {
                         $("#assina").attr('checked', '');
