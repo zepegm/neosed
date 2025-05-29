@@ -1742,6 +1742,8 @@ def render_lista():
                         serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
                     case 4:
                         serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 6:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
 
 
                 titulo = 'DECLARAÇÃO DE MATRÍCULA'
@@ -1762,6 +1764,8 @@ def render_lista():
                         serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
                     case 4:
                         serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+                    case 6:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])            
 
                 texto = f"Eu, <b>{aux_info['nome_resp']}</b>, RG: {aux_info['rg_resp']}, responsável pel{pronome} estudante <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, matriculad{pronome} {serie} declaro estar <b>desistindo</b> da matrícula na classe com Itinerário Formativo Profissionalizante, ciente de que <b>não haverá a possibilidade de retorno futuro</b> a essa modalidade de atendimento e que {pronome} estudante será atendid{pronome} em classe com Itinerário Formativo propedêutico. "
                 decl_assinatura = {'nome':'Assinatura do responsável'}
@@ -1775,6 +1779,8 @@ def render_lista():
                         serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
                     case 4:
                         serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+                    case 6:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                        
 
                 texto = f"Eu, <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, maior de idade, matriculad{pronome} {serie} declaro estar <b>desistindo</b> da matrícula na classe com Itinerário Formativo Profissionalizante, ciente de que <b>não haverá a possibilidade de retorno futuro</b> a essa modalidade de atendimento e que serei atendid{pronome} em classe com Itinerário Formativo propedêutico. "
                 decl_assinatura = {'nome':'Assinatura do responsável'}                
@@ -1792,6 +1798,8 @@ def render_lista():
                         serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
                     case 4:
                         serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+                    case 6:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                        
 
 
                 texto = f"Eu, <b>{aux_info['nome_resp']}</b>, RG: {aux_info['rg_resp']}, responsável pel{pronome} estudante <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, matriculad{pronome} {serie} solicito que seja lançado o registro de <b>Baixa de Transferência</b> na sua matrícula atual, que será inativada."
@@ -1814,6 +1822,8 @@ def render_lista():
                         serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
                     case 4:
                         serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+                    case 6:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                        
 
 
                 texto = f"Eu, <b>{aux_info['nome']}</b>, RA: {aux_info['ra']}, maior de idade, matriculad{pronome} {serie} solicito que seja lançado o registro de <b>Baixa de Transferência</b> na minha matrícula atual, que será inativada."
@@ -1834,6 +1844,8 @@ def render_lista():
                         serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
                     case 4:
                         serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                    case 6:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                    
 
                 if aux_info['bimestre'] > 0:
                     texto += ' é alun%s regularmente matriculad%s %s com frequência de <b>%s%s</b> registrada até o final do <b>%sº bimestre.</b>' % (pronome, pronome, serie, aux_info['percent'], r'%', aux_info['bimestre'])
@@ -1855,7 +1867,10 @@ def render_lista():
                     case 3:
                         serie = 'na <b>%sª série (Correspondente ao %s) do %s,</b>' % (aux_info['info_classe']['serie'], series_fund[aux_info['info_classe']['serie']], aux_info['info_classe']['tipo_ensino_desc'])
                     case 4:
-                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])                
+                        serie = 'no <b>%sº Termo do %s,</b>' % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])     
+                    case 6:
+                        serie = "na <b>%sª série do %s,</b>" % (aux_info['info_classe']['serie'], aux_info['info_classe']['tipo_ensino_desc'])
+                           
 
 
                 texto += f''' foi alun{pronome} regularmente matriculad{pronome} {serie} no ano letivo de {aux_info['info_classe']['ano']}, tendo sido considerad{pronome} <b>APROVAD{pronome.upper()}.</b>'''
