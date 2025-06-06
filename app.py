@@ -917,6 +917,26 @@ def render_livro_ponto():
     # renderizar template
     return render_template('render_pdf/render_livro_ponto.jinja', professores=professores, data='%s / %s' % (getMes(mes), ano), dias=dias, eventos=lst_final_eventos, linhas=linhas, info_assinatura=info_assinatura, dias_semana=dias_semana, sumario=sumario, folha_extra=folha_extra)
 
+@app.route('/render_etiquetas_alunos',  methods=['GET', 'POST'])
+def render_etiquetas_alunos():
+
+    if request.method == 'GET':
+        #try:
+        classe = request.args.getlist('classe')[0]
+
+        turma = banco.executarConsultaVetor(f"select nome_turma from turma where num_classe = {classe}")[0]
+        alunos = banco.executarConsulta(f"select distinct aluno.nome from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = {classe} and situacao = 1 order by nome")
+
+        for aluno in alunos:
+            aluno['nome'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+
+        return render_template('render_pdf/render_etiqueta_aluno.jinja', turma=turma, alunos=alunos)
+
+        #except:
+            #return redirect('/')
+
+
+
 
 @app.route('/render_certificados_conclusao',  methods=['GET', 'POST'])
 def render_certificados_conclusao():
@@ -2942,6 +2962,24 @@ async def gerar_pdf():
         await browser.close()
 
         return jsonify(pdf_path)
+    
+    elif info['destino'] == 21:
+        pdf_path = 'static/docs/etiqueta.pdf'
+
+        num_classe = info['turma']
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )        
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_etiquetas_alunos?classe=%s' % (num_classe), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        await browser.close()
+
+        return jsonify(pdf_path)   
 
 
 

@@ -51,7 +51,11 @@
 
         .modal-xxl {
             max-width: 90%; /* Ajuste a porcentagem conforme necessário */
-        }        
+        }   
+
+        .hide {
+            display: none !important;
+        }     
 
     </style>
 
@@ -625,14 +629,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="modal_lista_turmasLabel">Lista dos Alunos</h1>
-                    <span>&nbsp;</span><button id="btnExportarTurma" class="btn btn-danger">Exportar PDF</button>&nbsp;
-                    <select id="cb_pdf_order" class="form-select" style="width:30vw;margin-right:1vw;">
-                        <option value="order by num_chamada">Ordem númerica</option>
-                        <option value="order by nome">Ordem alfabética</option>
-                        <option value="order by sexo, nome">Primeiro meninas</option>
-                        <option value="order by sexo desc, nome">Primeiro meninos</option>
-                    </select>
-                    <button id="btnGerarCertificado" class="btn btn-success" style="display: none;">Gerar Certificados</button>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>                  
                 </div>
                 <div class="modal-body">
@@ -661,7 +657,33 @@
                         <div class="col-sm-12">
                             <span class="fw-bold">Total: </span><span id="descTotal"></span>
                         </div>
-                        <div class="col-sm-5">
+
+                        <div class="col-sm-3 mt-3 mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text" id="basic-addon1">Gerar PDF de:</span>
+                                <select id="cb_pdf_option" class="form-select">
+                                    <option value="piloto">Lista Piloto</option>
+                                    <option value="chamada">Lista de Chamada</option>
+                                    <option value="simples">Lista Simples para Assinatura</option>
+                                    <option value="etiqueta">Lista de Nomes com Etiquetas</option>
+                                </select>               
+                            </div>
+                        </div>    
+
+                        <div id="painel_piloto" class="col-sm-3 painel-pdf">
+                            <div class="input-group mb-3 mt-3">
+                                <select id="cb_pdf_order" class="form-select">
+                                    <option value="order by num_chamada">Ordem númerica</option>
+                                    <option value="order by nome">Ordem alfabética</option>
+                                    <option value="order by sexo, nome">Primeiro meninas</option>
+                                    <option value="order by sexo desc, nome">Primeiro meninos</option>
+                                </select>
+                                <button id="btnExportarTurma" class="btn btn-danger"><i class="fa-solid fa-file-pdf"></i></button>
+                            </div>
+                            
+                        </div>                    
+
+                        <div id="painel_chamada" class="col-sm-5 hide painel-pdf">
                             <div class="input-group mb-3 mt-3">
                                 <span class="input-group-text" id="basic-addon1">Lista de Chamada de</span>
                                 <select class="form-select" id="cb_mes_chamada">
@@ -671,19 +693,27 @@
                                 </select>
                                 <span class="input-group-text" id="basic-addon2">Cor das Linhas</span>
                                 <input type="color" id="color_line" class="form-control" style="height: 38px;" value="#BBBBBB">
-                                <button type="button" class="btn btn-danger" id="gerar_pdf_chamada">Imprimir</button>
+                                <button type="button" class="btn btn-danger" id="gerar_pdf_chamada"><i class="fa-solid fa-file-pdf"></i></button>
                             </div>                        
                         </div>
 
-                        <div class="col-sm-7">
+                        <div id="painel_lista_simples" class="col-sm-6 hide painel-pdf">
                             <div class="input-group mb-3 mt-3">
                                 <span class="input-group-text" id="basic-addon1">Título:</span>
                                 <input type="text" class="form-control" id="txt_titulo_assinatura" placeholder="Título da Lista" aria-label="Título da Lista" aria-describedby="basic-addon1" value="Entrega de Livros">
                                 <span class="input-group-text" id="basic-addon1">Colunas (separar por ";"):</span>
                                 <input type="text" class="form-control" id="txt_colunas_assinatura" placeholder="Colunas da Lista" aria-label="Colunas da Lista" aria-describedby="basic-addon1" value="Livro 1;Livro 2">
-                                <button type="button" class="btn btn-danger" id="gerar_pdf_assinatura">Imprimir Lista Simples</button>
+                                <button type="button" class="btn btn-danger" id="gerar_pdf_assinatura"><i class="fa-solid fa-file-pdf"></i></button>
                             </div>                        
                         </div>
+
+                        <div id="painel_etiquetas" class="col-sm-1 d-flex align-self-center hide painel-pdf">
+                            <button type="button" id="btn_gerar_etiqueta" class="btn btn-danger"><i class="fa-solid fa-file-pdf"></i></button>
+                        </div>
+
+                        <div id="painel_certificado" class="col-sm-1 d-flex align-self-center hide painel-pdf">
+                            <button id="btnGerarCertificado" class="btn btn-danger"><i class="fa-solid fa-file-pdf"></i></button>
+                        </div>                        
 
                         <div id="tabelaAlunos" class="col-sm-12">
                             <table id="tabela_alunos" class="table table-hover"> 
@@ -809,6 +839,31 @@
         socket.on('update_info', function(html) {
             $("#status_auto_update").html(html)
         }); 
+
+        $("#cb_pdf_option").on('change', function() {
+            $(".painel-pdf").addClass('hide');
+
+            let opcao = $(this).val();
+
+            switch(opcao) {
+                case 'piloto':
+                    $("#painel_piloto").removeClass('hide');
+                    break;
+                case 'chamada':
+                    $("#painel_chamada").removeClass('hide');
+                    break;
+                case 'simples':
+                    $("#painel_lista_simples").removeClass('hide');
+                    break;
+                case 'etiqueta':
+                    $("#painel_etiquetas").removeClass('hide');
+                    break;
+                case 'certificado':
+                    $("#painel_certificado").removeClass('hide');
+                    break;
+            }
+                
+        });
 
         $("#btn_habilitar_edicao_confirm").on('click', function() {
             let senha = $("#txt_senha").val();
@@ -1119,7 +1174,27 @@
                 e.preventDefault();
                 $("#alert_error_if_edit").append('<div class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Atenção!</strong> Favor selecionar as turmas que terão vínculo com a classe do Itinerário.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
             }
-        });      
+        });
+
+        $("#btn_gerar_etiqueta").on('click', function(e) {
+            $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            $(this).attr('disabled', '');
+
+            info = {'destino':21, 'turma':$("#numClasse").text()}
+
+            $.ajax({
+                type: "POST",
+                url: "gerar_pdf",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                window.open(data);
+                $("#btn_gerar_etiqueta").html('<i class="fa-solid fa-file-pdf"></i>');
+                $("#btn_gerar_etiqueta").removeAttr('disabled');
+                },
+            });            
+        });
 
         $("#gerar_pdf_assinatura").on('click', function(e) {
             $("#gerar_pdf_assinatura").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
@@ -1135,7 +1210,7 @@
                 dataType: "json",
                 success: function(data) {
                 window.open(data);
-                $("#gerar_pdf_assinatura").html('Imprimir Lista de Assinatura Simples');
+                $("#gerar_pdf_assinatura").html('<i class="fa-solid fa-file-pdf"></i>');
                 $("#gerar_pdf_assinatura").removeAttr('disabled');
                 },
             });
@@ -1158,7 +1233,7 @@
                 dataType: "json",
                 success: function(data) {
                 window.open(data);
-                $("#gerar_pdf_chamada").html('Exportar PDF');
+                $("#gerar_pdf_chamada").html('<i class="fa-solid fa-file-pdf"></i>');
                 $("#gerar_pdf_chamada").removeAttr('disabled');
                 $("#color_line").css('height', '38px');
                 },
@@ -1181,7 +1256,7 @@
                 dataType: "json",
                 success: function(data) {
                 window.open(data);
-                $("#btnExportarTurma").html('Exportar PDF');
+                $("#btnExportarTurma").html('<i class="fa-solid fa-file-pdf"></i>');
                 $("#btnExportarTurma").removeAttr('disabled');
                 },
             });
@@ -1203,7 +1278,7 @@
                 dataType: "json",
                 success: function(data) {
                 window.open(data);
-                $("#btnGerarCertificado").html('Gerar Certificados');
+                $("#btnGerarCertificado").html('<i class="fa-solid fa-file-pdf"></i>');
                 $("#btnGerarCertificado").removeAttr('disabled');
                 },
             });            
@@ -1224,7 +1299,7 @@
                 dataType: "json",
                 success: function(data) {
                 window.open(data);
-                $("#btnExportarIf").html('Exportar PDF');
+                $("#btnExportarIf").html('<i class="fa-solid fa-file-pdf"></i>');
                 $("#btnExportarIf").removeAttr('disabled');
                 },
             });
@@ -1390,9 +1465,25 @@
                         });   
 
                     if (response['certificado']) {
-                        $("#btnGerarCertificado").show();
+                        $("#cb_pdf_option").html(`<select id="" class="form-select">
+                                    <option value="piloto">Lista Piloto</option>
+                                    <option value="chamada">Lista de Chamada</option>
+                                    <option value="simples">Lista Simples para Assinatura</option>
+                                    <option value="etiqueta">Lista de Nomes com Etiquetas</option>
+                                    <option value="certificado">Lista de Certificados de Conclusão</option>
+                                </select>`);
+                        $(".painel-pdf").addClass('hide');
+                        $("#painel_piloto").removeClass('hide');
+                            
                     } else {
-                        $("#btnGerarCertificado").hide();
+                        $("#cb_pdf_option").html(`<select id="" class="form-select">
+                                    <option value="piloto">Lista Piloto</option>
+                                    <option value="chamada">Lista de Chamada</option>
+                                    <option value="simples">Lista Simples para Assinatura</option>
+                                    <option value="etiqueta">Lista de Nomes com Etiquetas</option>
+                                </select>`);
+                        $(".painel-pdf").addClass('hide');
+                        $("#painel_piloto").removeClass('hide');                                
                     }
 
                     $("#modal_lista_turmas").modal('show');                    
