@@ -30,7 +30,10 @@
             .info-ROE,
             .info-Atpg,
             .info-Atpa,
-            .info-Mult {
+            .info-Mult,
+            .info-PAT,
+            .info-SL,
+            .info-SLN {
                 background-color: #ffea97;
             }
 
@@ -99,11 +102,11 @@
 
                 <tr>
                     <td class="aula">{{aula['horario']}}</td>
-                    <td class="aula info-{{aula['seg']}}">{{aula['seg']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')}}</td>
-                    <td class="aula info-{{aula['ter']}}">{{aula['ter']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')}}</td>
-                    <td class="aula info-{{aula['qua']}}">{{aula['qua']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')}}</td>
-                    <td class="aula info-{{aula['qui']}}">{{aula['qui']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')}}</td>
-                    <td class="aula info-{{aula['sex']}}">{{aula['sex']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')}}</td>
+                    <td class="aula info-{{aula['seg']}}">{{aula['seg']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')}}</td>
+                    <td class="aula info-{{aula['ter']}}">{{aula['ter']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')}}</td>
+                    <td class="aula info-{{aula['qua']}}">{{aula['qua']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')}}</td>
+                    <td class="aula info-{{aula['qui']}}">{{aula['qui']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')}}</td>
+                    <td class="aula info-{{aula['sex']}}">{{aula['sex']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')}}</td>
                 </tr>
                 {% endfor %}
             </tbody>
