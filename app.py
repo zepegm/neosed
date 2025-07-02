@@ -9,10 +9,12 @@ from excel import xls, open_xls
 from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar, extrair_numeros
 from flask_socketio import SocketIO, emit
 import pandas as pd
+import subprocess
 import os
 import csv
 import json
 from pyppeteer import launch
+from pyppeteer import connect
 import locale
 import math
 import calendar
@@ -2146,30 +2148,21 @@ async def atualizar_matriz_auto():
 
     num_classe = info['num_classe']
 
-    browser = await launch(
-        {'headless': False},
-        handleSIGINT=False,
-        handleSIGTERM=False,
-        handleSIGHUP=False
-    )
+    chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+    user_data_dir = r"C:\temp\chrome-playwright"
 
-    page = await browser.newPage()
-    # Navigate the page to a URL
-    await page.goto('https://sed.educacao.sp.gov.br/')
+    subprocess.Popen([
+        chrome_path,
+        "--remote-debugging-port=9222",
+        f"--user-data-dir={user_data_dir}"
+    ])
 
-    # Set screen size
-    await page.setViewport({'width':1366, 'height':768})
+    browser = await connect({
+        'browserURL': 'http://localhost:9222',  # Porta que o Chrome abriu
+        'defaultViewport': None
+    })
 
-    await page.waitForSelector("#name")
-
-    # Type into login
-    await page.type('#name', 'rg490877795sp')
-    await page.type('#senha', 'BGarden@FF8')
-
-
-    await page.click("#botaoEntrar")
-
-    await page.waitForSelector("#decorMenuFilterTxt")    
+    page = await browser.newPage()  
 
     await page.goto('https://sed.educacao.sp.gov.br//NCA/ColetaTurma/TurmaClasse/Index', {'waitUntil':'networkidle0'})
 
@@ -2233,31 +2226,21 @@ async def atualizar_lista_auto():
     ano = request.json
     print(ano)
 
-    browser = await launch(
-        {'headless': False},
-        handleSIGINT=False,
-        handleSIGTERM=False,
-        handleSIGHUP=False
-    )
+    chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+    user_data_dir = r"C:\temp\chrome-playwright"
+
+    subprocess.Popen([
+        chrome_path,
+        "--remote-debugging-port=9222",
+        f"--user-data-dir={user_data_dir}"
+    ])
+
+    browser = await connect({
+        'browserURL': 'http://localhost:9222',  # Porta que o Chrome abriu
+        'defaultViewport': None
+    })
 
     page = await browser.newPage()
-    # Navigate the page to a URL
-    await page.goto('https://sed.educacao.sp.gov.br/')
-
-    # Set screen size
-    await page.setViewport({'width':1366, 'height':768})
-
-    await page.waitForSelector("#name")
-
-    # Type into login
-    await page.type('#name', 'rg490877795sp')
-    await page.type('#senha', 'BGarden@FF8')
-
-
-    await page.click("#botaoEntrar")
-
-    await page.waitForSelector("#decorMenuFilterTxt")
-
 
     # pegar lista das turmas
     turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as desc_duracao from turma inner join duracao on duracao.id = turma.duracao where ano = %s order by duracao, tipo_ensino, nome_turma' % ano)
@@ -2558,24 +2541,22 @@ async def gerar_pdf():
         pdf_path = 'static/docs/ficha.pdf'
 
         try:
-            browser = await launch(
-                handleSIGINT=False,
-                handleSIGTERM=False,
-                handleSIGHUP=False
-            )
+
+            chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+            user_data_dir = r"C:\temp\chrome-playwright"
+
+            subprocess.Popen([
+                chrome_path,
+                "--remote-debugging-port=9222",
+                f"--user-data-dir={user_data_dir}"
+            ])
+
+            browser = await connect({
+                'browserURL': 'http://localhost:9222',  # Porta que o Chrome abriu
+                'defaultViewport': None
+            })
 
             page = await browser.newPage()
-
-            # efetuar login na SED
-            await page.goto('https://sed.educacao.sp.gov.br/')
-            await page.waitForSelector('#name', {'visible': True}) 
-            await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
-            await page.evaluate('''(selector, value) => {
-                document.querySelector(selector).value = value;
-            }''', '#senha', 'BGarden@FF8')  
-            await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
-            await page.click("#botaoEntrar")
-            await page.waitForSelector('#ambientes-aprendizagem', {'visible': True})
 
             # abrir a ficha do aluno e pegar informações
             await page.goto("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index", {'timeout':60000, 'waitUntil':'domcontentloaded'})
@@ -3481,30 +3462,21 @@ async def pesquisarRGCPF():
             lista = request.json
             new_list = []
             
-            browser = await launch(
-                {'headless': False},
-                handleSIGINT=False,
-                handleSIGTERM=False,
-                handleSIGHUP=False
-            )
+            chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+            user_data_dir = r"C:\temp\chrome-playwright"
+
+            subprocess.Popen([
+                chrome_path,
+                "--remote-debugging-port=9222",
+                f"--user-data-dir={user_data_dir}"
+            ])
+
+            browser = await connect({
+                'browserURL': 'http://localhost:9222',  # Porta que o Chrome abriu
+                'defaultViewport': None
+            })
 
             page = await browser.newPage()
-            # Navigate the page to a URL
-            await page.goto('https://sed.educacao.sp.gov.br/')
-
-            # Set screen size
-            await page.setViewport({'width':1366, 'height':768})
-
-            await page.waitForSelector("#name")
-
-            # Type into login
-            await page.type('#name', 'rg490877795sp')
-            await page.type('#senha', 'BGarden@FF8')
-
-
-            await page.click("#botaoEntrar")
-
-            await page.waitForSelector("#decorMenuFilterTxt")
 
             for item in lista:
                 await page.goto("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index", {'timeout':60000, 'waitUntil':'domcontentloaded'})

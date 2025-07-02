@@ -1,4 +1,5 @@
 import win32com.client
+import openpyxl
 import os
 
 def rgb_to_hex(rgb):
@@ -6,6 +7,22 @@ def rgb_to_hex(rgb):
     strValue = '%02x%02x%02x' % bgr
     iValue = int(strValue, 16)
     return iValue
+
+class open_xls:
+    def __init__(self, filepath):
+        self.wb = openpyxl.load_workbook(filepath)
+        self.sheet_obj = self.wb.active
+
+    def getCell(self, r, c):
+        cell_obj = self.sheet_obj.cell(row=r, column=c)
+        return cell_obj.value
+    
+    def getTotalRows(self):
+        return self.sheet_obj.max_row
+    
+    def getTotalColumns(self):
+        return self.sheet_obj.max_column
+
 
 class xls:
     def __init__(self, planilha=None):
