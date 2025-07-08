@@ -1008,8 +1008,10 @@ def render_conselho_bimestre_all():
         
         turmas = banco.executarConsulta(sql)
 
-        inicio = str(banco.executarConsultaVetor('select %sbim_inicio from calendario where ano = (select ano from turma where num_classe = %s)' % (bimestre, turmas[0]['num_classe']))[0])
-        fim = str(banco.executarConsultaVetor('select %sbim_fim from calendario where ano = (select ano from turma where num_classe = %s)' % (bimestre, turmas[0]['num_classe']))[0])
+        datas_limites = banco.executarConsulta('select %sbim_inicio as inicio, %sbim_fim as fim from calendario where ano = %s' % (bimestre, bimestre, ano))
+
+        inicio = str(datas_limites[0]['inicio'])
+        fim = str(datas_limites[0]['fim'])
 
         top = 2278
         limite = 1124
@@ -1192,6 +1194,9 @@ def render_conselho_bimestre_all():
 
                     # pegar notas
                     for item in turma['disciplinas']:
+
+                        item['conceito_final'] = {}
+
                         sql = 'SELECT vinculo_alunos_turmas.ra_aluno, vinculo_alunos_turmas.num_chamada as num, media '
                         sql += 'from conceito_final '
                         sql += 'inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = conceito_final.ra_aluno and vinculo_alunos_turmas.num_classe = conceito_final.num_classe '
@@ -1200,9 +1205,8 @@ def render_conselho_bimestre_all():
                         notas = banco.executarConsulta(sql)
 
                         for aluno in notas:
-                            lista[aluno['ra_aluno']] = aluno
+                            item['conceito_final'][aluno['ra_aluno']] = aluno
 
-                        item['conceito_final'] = lista
 
                 turma['top_mapao_conselho_final'] = top
                 top += limite
@@ -3898,32 +3902,66 @@ def notas():
 
                 total_linha = excel.getTotalRows()
                 total_coluna = int(excel.getTotalColumns() / 4)
-
                 linha_inicial = 11
                 coluna_inicial = 3
 
-                for i in range(1, total_coluna + 1):
-                    item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
+
+                # caso seja Conselho Final (Quinto Conceito)
+                if excel.getCell(7, 2) == "Conselho Final (QUINTO CONCEITO)":
+                    total_coluna = int(excel.getTotalColumns() / 2)
+                    #print(total_coluna)
+                    #print(excel.getTotalColumns())
+
+                    for i in range(1, total_coluna + 1):
+                        #print(excel.getCell(linha_inicial, coluna_inicial))
+                        try:
+                            item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
+                            
+                            if item['disc'].isnumeric():
+                                professor = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+
+                                if len(professor) > 0:
+                                    item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                                    
+                                    medias = {}
+                                    
+                                    for j in range(linha_inicial + 2, total_linha):
+                                        medias[str(excel.getCell(j, coluna_inicial)).zfill(2)] = {'M':excel.getCell(j, coluna_inicial + 1)}
+
+                                    item['medias'] = medias
+                                    item['professor'] = professor[0]['nome']
+
+                                    lista.append(item)
+
+                                coluna_inicial += 2
+                        except Exception as e:
+                            print(f"Erro ao processar disciplina: {e}")
+                            coluna_inicial += 2
+                            continue
+
+                else:
+                    for i in range(1, total_coluna + 1):
+                        item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
                     
-                    if item['disc'].isnumeric():
-                        ad = int(excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', ''))
+                        if item['disc'].isnumeric():
+                            ad = int(excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', ''))
                         
-                        if ad > 0:
-                            item['AD'] = excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', '')
+                            if ad > 0:
+                                item['AD'] = excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', '')
 
-                            # percorrer a lista
-                            notas = {}
+                                # percorrer a lista
+                                notas = {}
                             
-                            for j in range(linha_inicial + 2, total_linha):
-                                notas[str(excel.getCell(j, coluna_inicial)).zfill(2)] = {'N':excel.getCell(j, coluna_inicial + 1), 'F':excel.getCell(j, coluna_inicial + 2), 'AC':excel.getCell(j, coluna_inicial + 3)}
+                                for j in range(linha_inicial + 2, total_linha):
+                                    notas[str(excel.getCell(j, coluna_inicial)).zfill(2)] = {'N':excel.getCell(j, coluna_inicial + 1), 'F':excel.getCell(j, coluna_inicial + 2), 'AC':excel.getCell(j, coluna_inicial + 3)} 
 
-                            item['notas'] = notas
+                                item['notas'] = notas
 
-                            item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
+                                item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
                             
-                            lista.append(item)
+                                lista.append(item)
 
-                    coluna_inicial += 4
+                        coluna_inicial += 4
 
             else:
                 for i in range(0, int(math.ceil(total))):
