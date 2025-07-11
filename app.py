@@ -145,7 +145,7 @@ def index():
         #print('yes')
         if 'txtnumeroclasse' in request.form:
 
-            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':request.form['ano'], 'apelido':request.form['txtapelidoturma']}
+            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':request.form['ano'], 'apelido':"'" + request.form['txtapelidoturma']  + "'"}
             
             if banco.inserirNovaTurma(classe):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -1982,10 +1982,70 @@ def render_lista():
             ano = request.args.getlist('order')[0]
             data_horario = request.args.getlist('data')[0]
 
-            turmas = banco.executarConsulta(f'select nome_turma, num_classe, tipo_ensino.descricao from turma inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where tipo_ensino in {tipo_ensino} and ano = {ano} order by nome_turma')
+            turmas = banco.executarConsulta(f'''
+                                                SELECT
+                                                    nome_turma, num_classe, tipo_ensino.descricao from turma
+                                                INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino
+                                                WHERE tipo_ensino IN {tipo_ensino} AND ano = {ano} 
+                                                    AND (
+                                                        CASE duracao 
+                                                          WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                          ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                        END) <= '{converterDataMySQL(data_horario)}'
+                                                    AND (
+                                                        CASE duracao
+                                                            WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano)
+                                                            ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano)
+                                                        END) >= '{converterDataMySQL(data_horario)}'
+                                                ORDER BY nome_turma''')
+            
             horario = banco.executarConsulta(f'''select distinct inicio, fim, concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario from hora_aulas where tipo_ensino in {tipo_ensino} and ano = {ano} order by inicio''')
-            grade = banco.executarConsulta(f'select distinct grade.num_classe, turma.nome_turma, pos, semana, grade.disciplina, disciplinas.abv, professor_livro_ponto.nome_ata as nome, matriz_curricular.cpf_professor, matriz_curricular.tipo from grade left join matriz_curricular on matriz_curricular.num_classe = grade.num_classe and matriz_curricular.disc_disciplina = grade.disciplina left join professor_livro_ponto on professor_livro_ponto.cpf = matriz_curricular.cpf_professor inner join turma on turma.num_classe = grade.num_classe inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina where turma.tipo_ensino in {tipo_ensino} and turma.ano = {ano} order by semana, pos, nome_turma')
+            
+            if len(turmas) == 0:
+                ano = data_horario.split('/')[2]
+                calendario = banco.executarConsulta(f'''select DATE_FORMAT(1bim_inicio, '%d/%m/%Y') as inicio_1_sem, DATE_FORMAT(2bim_fim, '%d/%m/%Y') as fim_1_sem, DATE_FORMAT(3bim_inicio, '%d/%m/%Y') as inicio_2_sem, DATE_FORMAT(4bim_fim, '%d/%m/%Y') as fim_2_sem from calendario where ano = {ano}''')[0]
+                msg = f'''<p style="font-size:30px;line-height: 40px;">
+                            <b>Atenção!</b>
+                            A data escolhida não abrange nenhuma turma. Escolha uma data que esteja entre o início e o fim do bimestre.
+                        </p>
+                        <p style="font-size:30px;line-height: 40px;">
+                            Lembre-se que entre o primeiro e o segundo semestres existe um período de férias/recesso.
+                        </p>
+                        <p style="font-size:30px;line-height: 40px;">
+                            <b>Calendário Escolar de {ano}: </b>
+                            <ul>
+                                <li style="font-size:30px;margin-bottom:10px;">Início do 1º Semestre: <b>{calendario['inicio_1_sem']}</b></li>
+                                <li style="font-size:30px;margin-bottom:20px;">Fim do 1º Semestre: <b>{calendario['fim_1_sem']}</b></li>
+                                <li style="font-size:30px;margin-bottom:10px;">Início do 2º Semestre: <b>{calendario['inicio_2_sem']}</b></li>
+                                <li style="font-size:30px;margin-bottom:10px;">Fim do 2º Semestre: <b>{calendario['fim_2_sem']}</b></li>                                
+                            </ul>
+                        </p>
+                        <p style="font-size:30px;margin-top:30px;">Data escolhida: <b style="color:red;">{data_horario}</b></p>'''
+                return render_template('render_pdf/render_erro.jinja', msg=msg)
+
+            grade = banco.executarConsulta(f'''
+                                               SELECT DISTINCT 
+                                                    grade.num_classe, turma.nome_turma, pos, semana, grade.disciplina, disciplinas.abv, professor_livro_ponto.nome_ata as nome, matriz_curricular.cpf_professor, matriz_curricular.tipo
+                                                FROM grade
+                                                LEFT JOIN matriz_curricular ON matriz_curricular.num_classe = grade.num_classe AND matriz_curricular.disc_disciplina = grade.disciplina
+                                                LEFT JOIN professor_livro_ponto ON professor_livro_ponto.cpf = matriz_curricular.cpf_professor
+                                                INNER JOIN turma ON turma.num_classe = grade.num_classe
+                                                INNER JOIN disciplinas ON disciplinas.codigo_disciplina = grade.disciplina
+                                                WHERE turma.tipo_ensino in {tipo_ensino} AND turma.ano = {ano} 
+                                                    AND (
+                                                        CASE duracao 
+                                                            WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                            ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                        END) <= '{converterDataMySQL(data_horario)}'
+                                                    AND (
+                                                        CASE duracao
+                                                            WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano)
+                                                            ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano)
+                                                        END) >= '{converterDataMySQL(data_horario)}'
+                                                ORDER BY semana, pos, nome_turma''')
+            
             tipo = banco.executarConsultaVetor(f"SELECT CAST(GROUP_CONCAT(descricao SEPARATOR ' + ') AS CHAR) as texto FROM tipo_ensino where id in {tipo_ensino}")[0]
+            
             legenda = banco.executarConsulta(f'select distinct tipo, tipo_disc_matriz.desc_completa as descricao from matriz_curricular inner join tipo_disc_matriz on tipo_disc_matriz.id = matriz_curricular.tipo inner join turma on turma.num_classe = matriz_curricular.num_classe where turma.tipo_ensino in {num_classe} and turma.ano = {ano}')
 
             grade_final = {}
@@ -2059,46 +2119,120 @@ def render_lista():
 
         elif tipo == 'individual': # horário individual dos professores
 
+            data_horario = request.args.getlist('data')[0]
             tipo_ensino = request.args.getlist('num_classe')[0]
             ano = request.args.getlist('order')[0]  
-            professores = banco.executarConsulta('select distinct cpf_professor, professor_livro_ponto.nome, professor_livro_ponto.afastamento, (select sum(qtd_aulas) from matriz_curricular where cpf_professor = professor_livro_ponto.cpf or cpf_professor_2 = professor_livro_ponto.cpf) as qtd_aulas from matriz_curricular inner join professor_livro_ponto on professor_livro_ponto.cpf = matriz_curricular.cpf_professor where num_classe in (select num_classe from turma where tipo_ensino in %s and ano = %s) order by nome' % (tipo_ensino, ano))
+            professores = banco.executarConsulta(f'''SELECT 
+                                                        cpf_professor,
+                                                        professor_livro_ponto.nome, 
+                                                        professor_livro_ponto.afastamento,
+                                                        sum(qtd_aulas) AS qtd_aulas,
+                                                        (select count(seg) + count(ter) + count(qua) + count(qui) + count(sex) + count(sab) + count(dom) from horario_livro_ponto where cpf_professor = matriz_curricular.cpf_professor) as total_quadro_manual
+                                                  FROM matriz_curricular INNER JOIN professor_livro_ponto ON professor_livro_ponto.cpf = matriz_curricular.cpf_professor
+                                                  WHERE num_classe IN (select num_classe from turma where tipo_ensino in {tipo_ensino} and ano = {ano} 
+                                                                            AND (
+                                                                                    CASE duracao 
+                                                                                        WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                                                        ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                                                    END) <= '{converterDataMySQL(data_horario)}'
+                                                                                AND (
+                                                                                    CASE duracao
+                                                                                        WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano)
+                                                                                        ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano)
+                                                                                    END) >= '{converterDataMySQL(data_horario)}')
+                                                                        GROUP BY cpf_professor, professor_livro_ponto.nome, professor_livro_ponto.afastamento
+                                                                        ORDER BY nome''')
+
+            if len(professores) == 0:
+                ano = data_horario.split('/')[2]
+                calendario = banco.executarConsulta(f'''select DATE_FORMAT(1bim_inicio, '%d/%m/%Y') as inicio_1_sem, DATE_FORMAT(2bim_fim, '%d/%m/%Y') as fim_1_sem, DATE_FORMAT(3bim_inicio, '%d/%m/%Y') as inicio_2_sem, DATE_FORMAT(4bim_fim, '%d/%m/%Y') as fim_2_sem from calendario where ano = {ano}''')[0]
+                msg = f'''<p style="font-size:30px;line-height: 40px;">
+                            <b>Atenção!</b>
+                            A data escolhida não abrange nenhum professor. Escolha uma data que esteja entre o início e o fim do bimestre.
+                        </p>
+                        <p style="font-size:30px;line-height: 40px;">
+                            Lembre-se que entre o primeiro e o segundo semestres existe um período de férias/recesso.
+                        </p>
+                        <p style="font-size:30px;line-height: 40px;">
+                            <b>Calendário Escolar de {ano}: </b>
+                            <ul>
+                                <li style="font-size:30px;margin-bottom:10px;">Início do 1º Semestre: <b>{calendario['inicio_1_sem']}</b></li>
+                                <li style="font-size:30px;margin-bottom:20px;">Fim do 1º Semestre: <b>{calendario['fim_1_sem']}</b></li>
+                                <li style="font-size:30px;margin-bottom:10px;">Início do 2º Semestre: <b>{calendario['inicio_2_sem']}</b></li>
+                                <li style="font-size:30px;margin-bottom:10px;">Fim do 2º Semestre: <b>{calendario['fim_2_sem']}</b></li>                                
+                            </ul>
+                        </p>
+                        <p style="font-size:30px;margin-top:30px;">Data escolhida: <b style="color:red;">{data_horario}</b></p>'''
+                return render_template('render_pdf/render_erro.jinja', msg=msg)
 
             for professor in professores:
-                
-                silaba = "'-'"
-                end_sql = f'FROM hora_aulas WHERE hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {professor['cpf_professor']}) '
-                end_sql_2 = f'(select distinct hora_aulas.inicio from grade inner join hora_aulas on hora_aulas.pos = grade.pos and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {professor['cpf_professor']}))'
+
+                if professor['total_quadro_manual'] > 0:
+                    silaba = "'-'"
+                    end_sql = f'FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where (cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']})) '
+                    end_sql_2 = f'(select distinct hora_aulas.inicio FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {professor['cpf_professor']}))'
+                else:
+                    silaba = "'-'"
+                    end_sql = f'''FROM hora_aulas WHERE hora_aulas.tipo_ensino in (
+                                                                                    SELECT
+                                                                                        distinct turma.tipo_ensino from matriz_curricular
+                                                                                        inner join turma on matriz_curricular.num_classe = turma.num_classe 
+                                                                                        WHERE cpf_professor = {professor['cpf_professor']} 
+                                                                                        AND (
+                                                                                            CASE duracao 
+                                                                                                WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                                                                ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                                                            END) <= '{converterDataMySQL(data_horario)}'
+                                                                                        AND (
+                                                                                            CASE duracao
+                                                                                                WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano)
+                                                                                                ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano)
+                                                                                            END) >= '{converterDataMySQL(data_horario)}') '''
+                    end_sql_2 = f'''(select distinct hora_aulas.inicio from grade inner join hora_aulas on hora_aulas.pos = grade.pos and hora_aulas.tipo_ensino in (SELECT
+                                                                                        distinct turma.tipo_ensino from matriz_curricular
+                                                                                        inner join turma on matriz_curricular.num_classe = turma.num_classe 
+                                                                                        WHERE cpf_professor = {professor['cpf_professor']} 
+                                                                                        AND (
+                                                                                            CASE duracao 
+                                                                                                WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                                                                ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano)
+                                                                                            END) <= '{converterDataMySQL(data_horario)}'
+                                                                                        AND (
+                                                                                            CASE duracao
+                                                                                                WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano)
+                                                                                                ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano)
+                                                                                            END) >= '{converterDataMySQL(data_horario)}')) '''
 
                 sql =   'SELECT distinct ' \
                     r'''inicio, fim, concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario, ''' \
                     '''CASE WHEN inicio < '12:00:00' THEN 'Manhã' WHEN inicio < '19:00:00' THEN 'Tarde' ELSE 'Noite' END as periodo, ''' \
                     'ifnull( ' \
                     f'''(select seg from horario_livro_ponto where cpf_professor = {professor['cpf_professor']} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 2 and turma.ano = hora_aulas.ano limit 1), {silaba})''' \
+                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 2 and turma.ano = hora_aulas.ano AND (CASE duracao WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano) ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano) END) <= '{converterDataMySQL(data_horario)}' AND (CASE duracao WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano) ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano) END) >= '{converterDataMySQL(data_horario)}' limit 1), {silaba})''' \
                     ') as seg, ' \
                     'ifnull( ' \
                     f'''(select ter from horario_livro_ponto where cpf_professor = {professor['cpf_professor']} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 3 and turma.ano = hora_aulas.ano limit 1), {silaba}) ''' \
+                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 3 and turma.ano = hora_aulas.ano AND (CASE duracao WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano) ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano) END) <= '{converterDataMySQL(data_horario)}' AND (CASE duracao WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano) ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano) END) >= '{converterDataMySQL(data_horario)}' limit 1), {silaba}) ''' \
                     ') as ter, ' \
                     'ifnull( ' \
                     f'''(select qua from horario_livro_ponto where cpf_professor = {professor['cpf_professor']} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 4 and turma.ano = hora_aulas.ano limit 1), {silaba}) ''' \
+                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 4 and turma.ano = hora_aulas.ano AND (CASE duracao WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano) ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano) END) <= '{converterDataMySQL(data_horario)}' AND (CASE duracao WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano) ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano) END) >= '{converterDataMySQL(data_horario)}' limit 1), {silaba}) ''' \
                     ') as qua, ' \
                     'ifnull( ' \
                     f'''(select qui from horario_livro_ponto where cpf_professor = {professor['cpf_professor']} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 5 and turma.ano = hora_aulas.ano limit 1), {silaba}) ''' \
+                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 5 and turma.ano = hora_aulas.ano AND (CASE duracao WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano) ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano) END) <= '{converterDataMySQL(data_horario)}' AND (CASE duracao WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano) ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano) END) >= '{converterDataMySQL(data_horario)}' limit 1), {silaba}) ''' \
                     ') as qui, ' \
                     'ifnull( ' \
                     f'''(select sex from horario_livro_ponto where cpf_professor = {professor['cpf_professor']} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 6 and turma.ano = hora_aulas.ano limit 1), {silaba}) ''' \
+                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 6 and turma.ano = hora_aulas.ano AND (CASE duracao WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano) ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano) END) <= '{converterDataMySQL(data_horario)}' AND (CASE duracao WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano) ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano) END) >= '{converterDataMySQL(data_horario)}' limit 1), {silaba}) ''' \
                     ') as sex, ' \
                     'ifnull( ' \
                     f'''(select sab from horario_livro_ponto where cpf_professor = {professor['cpf_professor']} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 7 and turma.ano = hora_aulas.ano limit 1), '') ''' \
+                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 7 and turma.ano = hora_aulas.ano AND (CASE duracao WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano) ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano) END) <= '{converterDataMySQL(data_horario)}' AND (CASE duracao WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano) ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano) END) >= '{converterDataMySQL(data_horario)}' limit 1), '') ''' \
                     ') as sab, ' \
                     'ifnull( ' \
                     f'''(select dom from horario_livro_ponto where cpf_professor = {professor['cpf_professor']} and DATE_FORMAT(horario_livro_ponto.inicio, '%H:%i') = TIME_FORMAT(hora_aulas.inicio, "%H:%i")), ''' \
-                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 1 and turma.ano = hora_aulas.ano limit 1), '') ''' \
+                    f'''IFNULL((SELECT concat(turma.apelido, " (", disciplinas.abv, ")") from grade inner join disciplinas on disciplinas.codigo_disciplina = grade.disciplina inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) inner join turma on turma.num_classe = matriz_curricular.num_classe and grade.num_classe = matriz_curricular.num_classe  where grade.pos = hora_aulas.pos and semana = 1 and turma.ano = hora_aulas.ano AND (CASE duracao WHEN 3 THEN (SELECT 3bim_inicio FROM calendario WHERE ano = turma.ano) ELSE (SELECT 1bim_inicio FROM calendario WHERE ano = turma.ano) END) <= '{converterDataMySQL(data_horario)}' AND (CASE duracao WHEN 2 THEN (SELECT 2bim_fim FROM calendario WHERE ano = turma.ano) ELSE (SELECT 4bim_fim FROM calendario WHERE ano = turma.ano) END) >= '{converterDataMySQL(data_horario)}' limit 1), '') ''' \
                     f') as dom {end_sql}' \
                     'UNION ' \
                     'select ' \
@@ -2106,13 +2240,13 @@ def render_lista():
                     'CONVERT(fim, TIME) as fim, ' \
                     r'''concat(TIME_FORMAT(inicio, "%H:%i"), ' - ',  TIME_FORMAT(fim, "%H:%i")) as horario, ''' \
                     'periodo_livro_ponto.descricao as periodo, ' \
-                    '''ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sáb, ifnull(dom, '') as dom ''' \
+                    '''ifnull(seg, '-') as seg, ifnull(ter, '-') as ter, ifnull(qua, '-') as qua, ifnull(qui, '-') as qui, ifnull(sex, '-') as sex, ifnull(sab, '-') as sáb, ifnull(dom, '-') as dom ''' \
                     'from horario_livro_ponto ' \
                     'inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo ' \
                     f'where cpf_professor = {professor['cpf_professor']} ' \
                     f'and CONVERT(inicio, TIME) not in  {end_sql_2}' \
                     'ORDER BY inicio'
-                
+
                 professor['quadro'] = banco.executarConsulta(sql)
 
             horario = banco.executarConsulta('select distinct inicio, fim from hora_aulas where ano = 2025 order by inicio')
@@ -2781,6 +2915,8 @@ async def gerar_pdf():
             handleSIGTERM=False,
             handleSIGHUP=False
         )
+
+        print('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (estilo, ensino, ano, data))
 
         page = await browser.newPage()
         await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (estilo, ensino, ano, data), {'waitUntil':'networkidle2'})

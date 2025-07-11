@@ -1,0 +1,81 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                width: 1057px;
+                height: 729px;
+                border-width: 2px;
+                border-style: solid;
+                border-color: white;
+                position: absolute;
+                top:30px;
+                left: 30px;
+                background-color: white;
+                font-family: Arial, Helvetica, sans-serif;
+            }   
+
+            #head {
+                font-family: BebasKai;
+                text-align: center;
+                width: 1050px;
+                height: 40px;
+                /*margin-top: 100px;*/
+                margin-top: 10px;
+            } 
+
+            .red {
+                color:red;
+            }
+
+            #tb_principal {
+                margin-top: 10px;
+                font-family: Arial, Helvetica, sans-serif;
+                width: 100%;
+                border-collapse: collapse;
+                border: 2px solid black;
+                height: 669px;
+                /*height: 300px;*/
+            }
+
+            th, td {
+                border: solid 1px black;
+            }
+
+            .notas {
+                text-align: center;
+            }
+
+            .br-2 {
+                border-right: solid black 2px;
+            }
+
+            .bl-2 {
+                border-left: solid black 2px;
+            }
+
+            .bege {
+                background-color: #f5f5dc;
+            }
+
+            .mini {
+                font-size: 12px;
+            }
+
+        </style>
+    </head> 
+    <body>
+        <div id="pagina">{{msg}}</div>
+        <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/textFit.min.js') }}"></script>
+    </body>
+</htmL>
