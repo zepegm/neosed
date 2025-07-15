@@ -886,8 +886,8 @@
                 $("#cbBimestre").append('<option value="1">1º Bimestre</option>');
                 $("#cbBimestre").append('<option value="2">2º Bimestre</option>');
                 $("#cbBimestre").append('<option value="3">3º Bimestre</option>');
-                $("#cbBimestre").append('<option value="4">4º Bimestre + Conceito Final</option>');
-                //$("#cbBimestre").append('<option value="5">Conceito Final</option>');
+                $("#cbBimestre").append('<option value="4">4º Bimestre</option>');
+                $("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                 // consulta primeiro bimestre
                 inicio = bimestres['1bim']['inicio'];
@@ -896,15 +896,15 @@
             } else {
                  if ($(this).attr("data-duracao") == "1º Semestre") {  
                     $("#cbBimestre").append('<option value="1">1º Bimestre</option>');
-                    $("#cbBimestre").append('<option value="2">2º Bimestre + Conceito Final</option>');
-                    //$("#cbBimestre").append('<option value="5">Conceito Final</option>');
+                    $("#cbBimestre").append('<option value="2">2º Bimestre</option>');
+                    $("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                     inicio = bimestres['1bim']['inicio'];
                     fim = bimestres['1bim']['fim'];
                  } else {
                     $("#cbBimestre").append('<option value="3">1º Bimestre</option>');
-                    $("#cbBimestre").append('<option value="4">2º Bimestre + Conceito Final</option>');
-                    //$("#cbBimestre").append('<option value="5">Conceito Final</option>');
+                    $("#cbBimestre").append('<option value="4">2º Bimestre</option>');
+                    $("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                     inicio = bimestres['3bim']['inicio'];
                     fim = bimestres['3bim']['fim'];                    

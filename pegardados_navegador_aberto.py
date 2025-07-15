@@ -139,8 +139,10 @@ def action1():
             for i in range(tamanho_tabela):
                 tipo_ensino = int(page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][8]" % i))
                 
-                if tipo_ensino == 2 or tipo_ensino == 5:
+                if tipo_ensino in (2, 5, 101):
                     status = page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][17]" % i)
+
+                    print(status)
                     
                     if status == '<span>Aprovado</span>':
                         escola = page.evaluate("$('#tabelaDadosMatricula').DataTable().rows().data()[%s][6]" % i)
@@ -168,6 +170,8 @@ def action1():
                                 desc_serie = str(serie) + 'ª Série'
                             case 5:
                                 desc_serie = str(serie) + 'º Termo'
+                            case 101: # Novo Ensino Médio 
+                                desc_serie = str(serie) + 'ª Série'
 
                         planilha.setValCell(coluna + '20', ano)
                         planilha.setValCell(coluna + '19', desc_serie)
@@ -218,7 +222,11 @@ def action2():
                     notas = banco.executarConsulta("select * from conceito_final where num_classe = %s and ra_aluno = %s" % (turma[0]['num_classe'], ra_aluno))
 
                 for item in notas:
-                    planilha.setValCell(f'{coluna[i]}{linhas_disc[item["disciplina"]]}', item['media'])
+                    try:
+                        planilha.setValCell(f'{coluna[i]}{linhas_disc[item["disciplina"]]}', item['media'])
+                    except KeyError:
+                        print(f"Disciplina {item['disciplina']} não encontrada para a série {i}. Verifique se a disciplina está mapeada corretamente.")
+                        continue
 
 
         messagebox.showinfo("Operação efetuada com sucesso!", "Dados Transportados com sucesso!")
