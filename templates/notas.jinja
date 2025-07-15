@@ -800,8 +800,9 @@
                 $("#btn_gerar_conselho").attr('disabled', '');
                 $("#btn_gerar_conselho").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
 
+                const ano = $("#cb_ano").val();
 
-                info = {'destino':5, 'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':$("#cbBimestre").val()}
+                info = {'destino':5, 'num_classe':$('#lista_geral .active').attr("data-id"), 'bimestre':$("#cbBimestre").val(), 'ano':ano}
 
                 $.ajax({
                     type: "POST",
@@ -824,9 +825,9 @@
             $(this).attr('disabled');
             $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
 
-            const currentYear = $("#cb_ano").val();
+            const ano = $("#cb_ano").val();
 
-            info = {'destino':6, 'bimestre':$('#bimestre_ata_completa').val(), 'ano':currentYear}
+            info = {'destino':6, 'bimestre':$('#bimestre_ata_completa').val(), 'ano':ano}
 
             $.ajax({
                 type: "POST",
@@ -885,8 +886,8 @@
                 $("#cbBimestre").append('<option value="1">1º Bimestre</option>');
                 $("#cbBimestre").append('<option value="2">2º Bimestre</option>');
                 $("#cbBimestre").append('<option value="3">3º Bimestre</option>');
-                $("#cbBimestre").append('<option value="4">4º Bimestre</option>');
-                $("#cbBimestre").append('<option value="5">Conceito Final</option>');
+                $("#cbBimestre").append('<option value="4">4º Bimestre + Conceito Final</option>');
+                //$("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                 // consulta primeiro bimestre
                 inicio = bimestres['1bim']['inicio'];
@@ -895,15 +896,15 @@
             } else {
                  if ($(this).attr("data-duracao") == "1º Semestre") {  
                     $("#cbBimestre").append('<option value="1">1º Bimestre</option>');
-                    $("#cbBimestre").append('<option value="2">2º Bimestre</option>');
-                    $("#cbBimestre").append('<option value="5">Conceito Final</option>');
+                    $("#cbBimestre").append('<option value="2">2º Bimestre + Conceito Final</option>');
+                    //$("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                     inicio = bimestres['1bim']['inicio'];
                     fim = bimestres['1bim']['fim'];
                  } else {
                     $("#cbBimestre").append('<option value="3">1º Bimestre</option>');
-                    $("#cbBimestre").append('<option value="4">2º Bimestre</option>');
-                    $("#cbBimestre").append('<option value="5">Conceito Final</option>');
+                    $("#cbBimestre").append('<option value="4">2º Bimestre + Conceito Final</option>');
+                    //$("#cbBimestre").append('<option value="5">Conceito Final</option>');
 
                     inicio = bimestres['3bim']['inicio'];
                     fim = bimestres['3bim']['fim'];                    

@@ -988,6 +988,11 @@ def render_conselho_bimestre_all():
         ano = request.args.getlist('ano')[0]
         dificuldades = banco.executarConsulta("select * from dificuldades")
 
+        if request.args.getlist('num_classe'):
+            num_classe = 'and num_classe = %s' % request.args.getlist('num_classe')[0]
+        else:
+            num_classe = ''
+
         final = 'and (duracao = 1 or duracao = 2)'
 
         if int(bimestre) > 2:
@@ -1004,7 +1009,7 @@ def render_conselho_bimestre_all():
               "inner join calendario on turma.ano = calendario.ano " + \
               "inner join duracao on turma.duracao = duracao.id " + \
               "inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino " + \
-              "where turma.ano = %s %s order by tipo_ensino, nome_turma" % (ano, final)
+              "where turma.ano = %s %s %s order by tipo_ensino, nome_turma" % (ano, final, num_classe)
         
         turmas = banco.executarConsulta(sql)
 
@@ -2622,7 +2627,7 @@ async def gerar_pdf():
         )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_conselho_bimestre?bimestre=%s&num_classe=%s&order=0' % (info['bimestre'], info['num_classe']), {'waitUntil':'networkidle2'})
+        await page.goto('http://localhost/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (info['bimestre'], info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
