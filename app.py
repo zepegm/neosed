@@ -1058,7 +1058,16 @@ def render_conselho_bimestre_all():
             turma['total'] = total
 
             # pegar as notas da turma
-            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, turma['num_classe']))
+            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas, matriz_curricular.tipo from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina left join matriz_curricular on matriz_curricular.disc_disciplina = vinculo_prof_disc.disciplina and matriz_curricular.num_classe = vinculo_prof_disc.num_classe where bimestre = %s and vinculo_prof_disc.num_classe = %s order by tipo, disciplina' % (bimestre, turma['num_classe']))
+
+            if len(disciplinas) > 15:
+                turma['folha_extra'] = True
+                turma['qtd_folha_1'] = sum(1 for item in disciplinas if item.get("tipo") in (1, 3))
+                turma['qtd_folha_2'] = len(disciplinas) - turma['qtd_folha_1']
+            else:
+                turma['folha_extra'] = False
+                turma['qtd_folha_1'] = len(disciplinas)
+                turma['qtd_folha_2'] = 0
 
             for item in disciplinas:
                 sql = 'select ' + \
@@ -1077,6 +1086,7 @@ def render_conselho_bimestre_all():
 
             turma['disciplinas'] = disciplinas
 
+
             # pegar a data final da ata
             sql = 'select %sbim_fim as fim from calendario where ano = (select ano from turma where num_classe = %s)' % (bimestre, turma['num_classe'])
             try:
@@ -1090,10 +1100,17 @@ def render_conselho_bimestre_all():
             top += limite
             turma['top_mapao'] = top
             top += limite
+
+            if turma['folha_extra']:
+                turma['top_extra'] = top
+                top += limite
+
             turma['top_verso'] = top
             top += limite
-            turma['top_blank'] = top
-            top += limite
+
+            if not turma['folha_extra']:
+                turma['top_blank'] = top
+                top += limite
 
             # verificar se existe IF nessa turma
             turmas_if = []
@@ -4302,6 +4319,11 @@ def boletim():
 
     # correr a lista dos alunos e buscar a nota
     for aluno in alunos:
+
+        if aluno['ra_aluno'] == 112523955: # aluno de teste
+            print('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.duracao = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
+
+
         notas_aluno = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.duracao = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
         notas_aluno_if = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma_if on turma_if.ano = %s and turma_if.duracao = %s and turma_if.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
 
