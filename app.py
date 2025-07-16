@@ -2150,7 +2150,7 @@ def render_lista():
                                                         professor_livro_ponto.afastamento,
                                                         sum(qtd_aulas) AS qtd_aulas,
                                                         (select count(seg) + count(ter) + count(qua) + count(qui) + count(sex) + count(sab) + count(dom) from horario_livro_ponto where cpf_professor = matriz_curricular.cpf_professor) as total_quadro_manual
-                                                  FROM matriz_curricular INNER JOIN professor_livro_ponto ON professor_livro_ponto.cpf = matriz_curricular.cpf_professor
+                                                  FROM matriz_curricular INNER JOIN professor_livro_ponto ON professor_livro_ponto.cpf = matriz_curricular.cpf_professor AND professor_livro_ponto.ativo = 1
                                                   WHERE num_classe IN (select num_classe from turma where tipo_ensino in {tipo_ensino} and ano = {ano} 
                                                                             AND (
                                                                                     CASE duracao 
