@@ -2195,8 +2195,8 @@ def render_lista():
 
                 if professor['total_quadro_manual'] > 0:
                     silaba = "'-'"
-                    end_sql = f'FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where (cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']})) '
-                    end_sql_2 = f'(select distinct hora_aulas.inicio FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {professor['cpf_professor']}))'
+                    end_sql = f"FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where (cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']})) "
+                    end_sql_2 = f"(select distinct hora_aulas.inicio FROM hora_aulas inner join grade on grade.pos = hora_aulas.pos inner join matriz_curricular on matriz_curricular.disc_disciplina = grade.disciplina and (matriz_curricular.cpf_professor = {professor['cpf_professor']} or matriz_curricular.cpf_professor_2 = {professor['cpf_professor']}) WHERE grade.num_classe in (select distinct num_classe from matriz_curricular where cpf_professor = {professor['cpf_professor']} or cpf_professor_2 = {professor['cpf_professor']}) and hora_aulas.tipo_ensino in (select distinct turma.tipo_ensino from matriz_curricular inner join turma on matriz_curricular.num_classe = turma.num_classe where cpf_professor = {professor['cpf_professor']}))"
                 else:
                     silaba = "'-'"
                     end_sql = f'''FROM hora_aulas WHERE hora_aulas.tipo_ensino in (
@@ -2269,7 +2269,7 @@ def render_lista():
                     '''ifnull(seg, '-') as seg, ifnull(ter, '-') as ter, ifnull(qua, '-') as qua, ifnull(qui, '-') as qui, ifnull(sex, '-') as sex, ifnull(sab, '-') as sáb, ifnull(dom, '-') as dom ''' \
                     'from horario_livro_ponto ' \
                     'inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo ' \
-                    f'where cpf_professor = {professor['cpf_professor']} ' \
+                    f"where cpf_professor = {professor['cpf_professor']} " \
                     f'and CONVERT(inicio, TIME) not in  {end_sql_2}' \
                     'ORDER BY inicio'
 
