@@ -43,6 +43,11 @@
                 border: solid 1px black;
             }
 
+            .border-top {
+                border-top: solid 2px black;
+                border-left: solid 2px black;
+            }
+
 
             .pagina {
                 width: 729px;
@@ -118,6 +123,16 @@
 
             .cl-2 {
                 background-color: beige;
+            }
+            
+            .fw-bold {
+                font-weight: bold;
+            }
+
+            .total-title {
+                padding-top: 4px;
+                padding-bottom: 4px;
+                background-color: #dbfeff;
             }
 
         </style>
@@ -199,6 +214,47 @@
                             {% endtry %}
                         </tr>
                         {% endfor %}
+
+                        <!-- Desenhar o total de aulas dadas -->
+                        <tr>
+                            <td class="border-top left fw-bold total-title">&nbsp;&nbsp;Aulas Dadas:</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['aulas_dadas']['1bim'] if aluno['aulas_dadas']['1bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['aulas_dadas']['2bim'] if aluno['aulas_dadas']['2bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['aulas_dadas']['3bim'] if aluno['aulas_dadas']['3bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['aulas_dadas']['4bim'] if aluno['aulas_dadas']['4bim'] > 0 else '-'}}</td>
+                            <td colspan="2" class="border-top fw-bold total-title">{{(aluno['aulas_dadas']['1bim'] + aluno['aulas_dadas']['2bim'] + aluno['aulas_dadas']['3bim'] + aluno['aulas_dadas']['4bim']) if (aluno['aulas_dadas']['1bim'] + aluno['aulas_dadas']['2bim'] + aluno['aulas_dadas']['3bim'] + aluno['aulas_dadas']['4bim']) > 0 else '-'}}</td>
+                        </tr>
+
+                        <!-- Desenhar o total de faltas -->
+                        <tr>
+                            <td class="border-top left fw-bold total-title">&nbsp;&nbsp;Total de Ausências:</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['falta_1bim'] if aluno['total_faltas']['falta_1bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['falta_2bim'] if aluno['total_faltas']['falta_2bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['falta_3bim'] if aluno['total_faltas']['falta_3bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['falta_4bim'] if aluno['total_faltas']['falta_4bim'] > 0 else '-'}}</td>
+                            <td colspan="2" class="border-top fw-bold total-title">{{(aluno['total_faltas']['falta_1bim'] + aluno['total_faltas']['falta_2bim'] + aluno['total_faltas']['falta_3bim'] + aluno['total_faltas']['falta_4bim']) if (aluno['total_faltas']['falta_1bim'] + aluno['total_faltas']['falta_2bim'] + aluno['total_faltas']['falta_3bim'] + aluno['total_faltas']['falta_4bim']) > 0 else '-'}}</td>
+                        </tr>
+
+                        <!-- Desenhar o total de ausências compensadas -->
+                        <tr>
+                            <td class="border-top left fw-bold total-title">&nbsp;&nbsp;A. Compensadas:</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['ac_1bim'] if aluno['total_faltas']['ac_1bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['ac_2bim'] if aluno['total_faltas']['ac_2bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['ac_3bim'] if aluno['total_faltas']['ac_3bim'] > 0 else '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title">{{aluno['total_faltas']['ac_4bim'] if aluno['total_faltas']['ac_4bim'] > 0 else '-'}}</td>
+                            <td colspan="2" class="border-top fw-bold total-title">{{(aluno['total_faltas']['ac_1bim'] + aluno['total_faltas']['ac_2bim'] + aluno['total_faltas']['ac_3bim'] + aluno['total_faltas']['ac_4bim']) if (aluno['total_faltas']['ac_1bim'] + aluno['total_faltas']['ac_2bim'] + aluno['total_faltas']['ac_3bim'] + aluno['total_faltas']['ac_4bim']) > 0 else '-'}}</td>
+                        </tr>
+
+                        <!-- Desenhar a frequência total -->
+                        <tr>
+                            <td class="border-top left fw-bold total-title">&nbsp;&nbsp;Frequência:</td>
+                            <td colspan="3" class="border-top fw-bold total-title {{'red' if aluno['freq_total']['1bim']|float < 75 and aluno['freq_total']['1bim'] != '-' else '' }}">{{aluno['freq_total']['1bim']}}{{'%' if aluno['freq_total']['1bim'] != '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title {{'red' if aluno['freq_total']['2bim']|float < 75 and aluno['freq_total']['2bim'] != '-' else '' }}">{{aluno['freq_total']['2bim']}}{{'%' if aluno['freq_total']['2bim'] != '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title {{'red' if aluno['freq_total']['3bim']|float < 75 and aluno['freq_total']['3bim'] != '-' else '' }}">{{aluno['freq_total']['3bim']}}{{'%' if aluno['freq_total']['3bim'] != '-'}}</td>
+                            <td colspan="3" class="border-top fw-bold total-title {{'red' if aluno['freq_total']['4bim']|float < 75 and aluno['freq_total']['4bim'] != '-' else '' }}">{{aluno['freq_total']['4bim']}}{{'%' if aluno['freq_total']['4bim'] != '-'}}</td>
+                            <td colspan="2" class="border-top fw-bold total-title {{'red' if aluno['freq_total']['total']|float < 75 and aluno['freq_total']['total'] != '-' else '' }}">{{aluno['freq_total']['total']}}{{'%' if aluno['freq_total']['total'] != '-'}}</td>
+                        </tr>                        
+
                     </tbody>
                 </table>
 

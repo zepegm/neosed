@@ -20,6 +20,7 @@ import math
 import calendar
 from jinja_try_catch import TryCatchExtension
 from PyPDF2 import PdfMerger
+from decimal import Decimal, ROUND_HALF_UP
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -4395,10 +4396,51 @@ def boletim():
 
             aluno['notas_if'] = notas
 
+        # pegar total de aulas dadas por bimestre
+        sql = f'''SELECT 
+              ifnull((select sum(aulas_dadas) from vinculo_prof_disc where bimestre = 1 and num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 1 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) as 1bim, 
+              ifnull((select sum(aulas_dadas) from vinculo_prof_disc where bimestre = 2 and num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 2 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) as 2bim, 
+              ifnull((select sum(aulas_dadas) from vinculo_prof_disc where bimestre = 3 and num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 3 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) as 3bim,
+              ifnull((select sum(aulas_dadas) from vinculo_prof_disc where bimestre = 4 and num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 4 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) as 4bim'''
+    
+        aluno['aulas_dadas'] = banco.executarConsulta(sql)[0]
 
-        # calcular frequência
-  
+        # pegar o total de faltas e ac por bimestre
+        sql = f'''SELECT
+                    IFNULL((SELECT SUM(falta) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 1 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 1 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS falta_1bim, 
+                    IFNULL((SELECT SUM(ac) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 1 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 1 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS ac_1bim, 
+                    IFNULL((SELECT SUM(falta) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 2 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 2 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS falta_2bim, 
+                    IFNULL((SELECT SUM(ac) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 2 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 2 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS ac_2bim, 
+                    IFNULL((SELECT SUM(falta) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 3 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 3 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS falta_3bim, 
+                    IFNULL((SELECT SUM(ac) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 3 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 3 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS ac_3bim, 
+                    IFNULL((SELECT SUM(falta) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 4 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 4 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS falta_4bim, 
+                    IFNULL((SELECT SUM(ac) FROM notas WHERE ra_aluno = {aluno['ra_aluno']} and bimestre = 4 AND num_classe = (select distinct notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = {aluno['ra_aluno']} and bimestre = 4 and (turma.ano = {ano} or turma_if.ano = {ano}) and (turma.duracao = {duracao} or turma_if.duracao = {duracao}))), 0) AS ac_4bim'''
 
+        aluno['total_faltas'] = banco.executarConsulta(sql)[0]
+
+        # calcular frequência total - não fazer consulta no banco, pois já temos as aulas dadas e faltas
+        freq_1bim = 100 - ((aluno['total_faltas']['falta_1bim'] - aluno['total_faltas']['ac_1bim']) * 100 / aluno['aulas_dadas']['1bim']) if aluno['aulas_dadas']['1bim'] > 0 else '-'
+        freq_2bim = 100 - ((aluno['total_faltas']['falta_2bim'] - aluno['total_faltas']['ac_2bim']) * 100 / aluno['aulas_dadas']['2bim']) if aluno['aulas_dadas']['2bim'] > 0 else '-'
+        freq_3bim = 100 - ((aluno['total_faltas']['falta_3bim'] - aluno['total_faltas']['ac_3bim']) * 100 / aluno['aulas_dadas']['3bim']) if aluno['aulas_dadas']['3bim'] > 0 else '-'
+        freq_4bim = 100 - ((aluno['total_faltas']['falta_4bim'] - aluno['total_faltas']['ac_4bim']) * 100 / aluno['aulas_dadas']['4bim']) if aluno['aulas_dadas']['4bim'] > 0 else '-'
+
+        total_aulas_dadas = aluno['aulas_dadas']['1bim'] + aluno['aulas_dadas']['2bim'] + aluno['aulas_dadas']['3bim'] + aluno['aulas_dadas']['4bim']
+        total_faltas = aluno['total_faltas']['falta_1bim'] + aluno['total_faltas']['falta_2bim'] + aluno['total_faltas']['falta_3bim'] + aluno['total_faltas']['falta_4bim']
+        total_ac = aluno['total_faltas']['ac_1bim'] + aluno['total_faltas']['ac_2bim'] + aluno['total_faltas']['ac_3bim'] + aluno['total_faltas']['ac_4bim']
+        if total_aulas_dadas > 0:
+            frequencia_final = 100 - ((total_faltas - total_ac) * 100 / total_aulas_dadas)
+        else:
+            frequencia_final = '-'
+
+
+        aluno['freq_total'] = {
+            '1bim': freq_1bim.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP) if isinstance(freq_1bim, Decimal) else freq_1bim,
+            '2bim': freq_2bim.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP) if isinstance(freq_2bim, Decimal) else freq_2bim,
+            '3bim': freq_3bim.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP) if isinstance(freq_3bim, Decimal) else freq_3bim,
+            '4bim': freq_4bim.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP) if isinstance(freq_4bim, Decimal) else freq_4bim,
+            'total':frequencia_final.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP) if isinstance(frequencia_final, Decimal) else frequencia_final}
+
+        # obter frequência por disciplina
         sql = 'select disciplina, sum(falta) - sum(ac) as faltas from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where ra_aluno = %s and (turma.ano = %s or turma_if.ano = %s) group by disciplina ' % (aluno['ra_aluno'], ano, ano)
         #print(sql)
         freq_disciplinas = banco.executarConsulta(sql)
@@ -4408,21 +4450,23 @@ def boletim():
 
         for disc in freq_disciplinas:
             sql = 'select '
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 1 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 1 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 2 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 2 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 3 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 3 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) + ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
-            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 4 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 4 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as aulas_dadas ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 1 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 1 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as 1bim, ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 2 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 2 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as 2bim, ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 3 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 3 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as 3bim, ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
+            sql += 'ifnull((select aulas_dadas from vinculo_prof_disc where bimestre = 4 and disciplina = %s and num_classe = (select notas.num_classe from notas left join turma on turma.num_classe = notas.num_classe left join turma_if on turma_if.num_classe = notas.num_classe where disciplina = %s and ra_aluno = %s and bimestre = 4 and (turma.ano = %s or turma_if.ano = %s) and (turma.duracao = %s or turma_if.duracao = %s))), 0) as 4bim ' % (disc['disciplina'], disc['disciplina'], aluno['ra_aluno'], ano, ano, duracao, duracao)
 
-            aulas_dadas = banco.executarConsulta(sql)[0]['aulas_dadas']
+            aulas_dadas = banco.executarConsulta(sql)[0]
+            total_aulas = aulas_dadas['1bim'] + aulas_dadas['2bim'] + aulas_dadas['3bim'] + aulas_dadas['4bim']
+
             try:
-                freq_calc = 100 - (disc['faltas'] * 100 / aulas_dadas)
+                freq_calc = 100 - (disc['faltas'] * 100 / total_aulas)
                 freq_final[disc['disciplina']] = round(freq_calc, 1)
             except:
                 freq_final[disc['disciplina']] = ''
 
-            media = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma on turma.num_classe = conceito_final.num_classe and turma.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))
+            media = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma on turma.num_classe = conceito_final.num_classe and turma.ano = %s where disciplina = %s and ra_aluno = %s and conceito_final.num_classe = %s" % (ano, disc['disciplina'], aluno['ra_aluno'], num_classe))
             if len(media) > 0:
-                conceito_final[disc['disciplina']] = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma on turma.num_classe = conceito_final.num_classe and turma.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))[0]
+                conceito_final[disc['disciplina']] = media[0]
             else:
                 # verificar se é nota de if
                 media = banco.executarConsultaVetor("select ifnull(media, '-') from conceito_final inner join turma_if on turma_if.num_classe = conceito_final.num_classe and turma_if.ano = %s where disciplina = %s and ra_aluno = %s" % (ano, disc['disciplina'], aluno['ra_aluno']))
