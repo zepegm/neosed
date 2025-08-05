@@ -4670,6 +4670,20 @@ def ponto():
                 licencas = banco.executarConsulta(r'SELECT DATE_FORMAT(inicio, "%d/%m/%Y") as inicio, DATE_FORMAT(fim, "%d/%m/%Y") as fim, id_tipo, tipo_licenca_professores.descricao as desc_tipo, licenca_professores.descricao from licenca_professores inner join tipo_licenca_professores on tipo_licenca_professores.id = licenca_professores.id_tipo where cpf = ' + info['cpf'])
                 return jsonify(licencas)
             
+        if 'cpf_delete_quadro' in request.form: # é pra deletar o quadro de aulas do professor
+            cpf = request.form['cpf_delete_quadro']
+
+            if banco.excluirQuadro(cpf):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação realizada com sucesso!</strong> Quadro de aulas do professor excluído com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar excluir quadro de aulas do professor no banco de dados!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+        
         if 'quadro' in request.form: # é pra cadastrar o quadro de aulas do professor
             id = request.form['cpf']
             quadro = json.loads(request.form.getlist('quadro')[0])['lista_final']

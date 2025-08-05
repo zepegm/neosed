@@ -149,6 +149,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" id="btn_cadastrar_quadro" class="btn btn-primary">Salvar</button>
+                    <button type="button" id="btn_excluir_quadro" class="btn btn-danger">Excluir</button>
                 </div>
             </div>
         </div>
@@ -493,6 +494,10 @@
     <form id="form_quadro_aula" action="/ponto" method="POST">
         <input type="hidden" name="cpf" id="cpf_quadro">
         <input type="hidden" name="quadro" id="quadro_aula">    
+    </form>
+
+    <form id="form_excluir_quadro" action="/ponto" method="POST">
+        <input type="hidden" name="cpf_delete_quadro" id="cpf_quadro_excluir">
     </form>
 
     <form id="form_afastamentos" action="/ponto" method="POST">
@@ -852,6 +857,25 @@
                                                     '</div>' +
                                                 '</div>' +
                                             '</div>')
+                    $("#body-quadro").append('<hr>');
+                    $("#body-quadro").append('<div class="row">' +
+                                                '<div class="col-sm-12 mb-3">' +
+                                                    '<label class="form-label" for="txt_aulas">Siglas:</label>' +
+                                                    '<ul>' +
+                                                        '<li><b>ROE</b> - Reunião OE</li>' +
+                                                        '<li><b>Tut</b> - Tutoria</li>' +
+                                                        '<li><b>Atpg</b> - ATPG</li>' +
+                                                        '<li><b>Atpa</b> - ATPA</li>' +
+                                                        '<li><b>Atpc</b> - ATPC</li>' +
+                                                        '<li><b>ELE</b> - ELETIVA</li>' +
+                                                        '<li><b>Mult</b> - MULTIPLICA</li>' +
+                                                        '<li><b>PAT</b> - PAEET</li>' +
+                                                        '<li><b>CLB</b> - CLUBE</li>' +
+                                                        '<li><b>SL</b> - Sala de Leitura</li>' +
+                                                        '<li><b>SLN</b> - Sala de Leitura (Não soma na contagem de aulas atribuídas)</li>' +
+                                                    '</ul>' +
+                                                '</div>' +
+                                            '</div>');
 
                     $("#modal_quadro_aula").modal('show');
                 },
@@ -860,6 +884,12 @@
                 }
             }); 
 
+        });
+
+        $("#btn_excluir_quadro").on('click', function() {
+            $("#cpf_quadro_excluir").val($("#cpf_quadro").val());
+            $("#form_excluir_quadro").submit();
+            console.log('teste');
         });
 
         $("#btn_cadastrar_quadro").on('click', function() {

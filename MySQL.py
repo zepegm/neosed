@@ -331,6 +331,26 @@ class db:
             return False
         
 
+    def excluirQuadro(self, cpf):
+        try:
+
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()        
+
+            # remover dados conflitantes
+            cur.execute('SET SQL_SAFE_UPDATES = 0')
+            cur.execute("DELETE FROM horario_livro_ponto WHERE cpf_professor = %s" % cpf)
+            cur.execute("DELETE FROM aulas_outra_ue_livro_ponto WHERE cpf_professor = %s" % cpf)
+            cur.execute('SET SQL_SAFE_UPDATES = 1')
+
+            database.commit()
+
+            return True
+
+        except Exception as error:
+            print("An exception occurred:", error)
+            return False
+
     def inserirQuadro(self, cpf, quadro, outras_ue):
         try:
 
