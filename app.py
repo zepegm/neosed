@@ -21,7 +21,7 @@ import calendar
 from jinja_try_catch import TryCatchExtension
 from PyPDF2 import PdfMerger
 from decimal import Decimal, ROUND_HALF_UP
-from sed_api import start_context, get_escolas, get_unidades, get_classes, get_alunos
+from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -162,7 +162,7 @@ def index():
 
 
         if 'txtnumeroclasse_edit' in request.form:
-            classe = {'num_classe':request.form['txtnumeroclasse_edit'], 'nome_turma':"'" + request.form['txtnometurma_edit'] + "'", 'duracao':request.form['cbduracao_edit'], 'tipo_ensino':request.form['cbtipoensino_edit'], 'periodo':request.form['cbperiodo_edit'], 'apelido':f"'{request.form['txtapelidoturma_edit']}'"}
+            classe = {'num_classe':request.form['txtnumeroclasse_edit'], 'nome_turma':"'" + request.form['txtnometurma_edit'] + "'", 'duracao':request.form['cbduracao_edit'], 'tipo_ensino':request.form['cbtipoensino_edit'], 'periodo':request.form['cbperiodo_edit'], 'apelido':f"'{request.form['txtapelidoturma_edit']}'", 'id_oculto':request.form['id_oculto']}
             
             if banco.alterarTurma(classe):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -202,7 +202,7 @@ def index():
             color = 'table-dark'
 
             if item['id'] != 2 and item['id'] != 5:
-                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo, turma.apelido from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
+                turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma.duracao as id_duracao, turma.tipo_ensino as id_ensino, periodo.descricao as periodo, turma.periodo as id_periodo, turma.apelido, ifnull(turma.id_oculto, "") as id_oculto from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
             else:
                 turmas = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
                 print('select num_classe, nome_turma, duracao.descricao as duracao, turma_if.duracao as id_duracao, turma_if.tipo_ensino as id_ensino, periodo.descricao as periodo, turma_if.periodo as id_periodo, turma_if.categoria as categoria from turma_if INNER JOIN duracao ON duracao.id = turma_if.duracao INNER JOIN periodo ON periodo.id = turma_if.periodo where tipo_ensino = %s and ano = %s order by duracao, nome_turma' % (item['id'], ano))
@@ -2447,6 +2447,55 @@ async def atualizar_lista_auto():
     ano = request.json
     print(ano)
 
+    # primeiro verificar se as turmas tem id_oculto
+    id_oculto = banco.executarConsulta('select id_oculto from turma where ano = %s and id_oculto is null' % ano)
+
+    if len(id_oculto) < 1: # significa que todas as turmas tem um id_oculto e por conta disso a busca iniciará pela SED
+        socketio.emit('update_info', '<b>Iniciando atualização automática das listas de alunos (%s)... utilizando credenciais da sed...</b>' % ano)
+
+        try:
+            auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+
+            context = start_context(auth)
+            result_escolas = get_escolas(context)
+
+            id_escola = result_escolas[0]['id']
+
+            turmas = banco.executarConsulta('select num_classe, id_oculto, nome_turma, duracao.descricao as desc_duracao from turma inner join duracao on duracao.id = turma.duracao where ano = %s order by duracao, tipo_ensino, nome_turma' % ano)
+            for turma in turmas:
+                #socketio.emit('update_info', '<b>Atualizando dados da %s - %s (%s)</b>' % (turma['nome_turma'], turma['desc_duracao'], ano))
+                result = get_alunos_num_classe(context, ano, id_escola, turma['id_oculto'])
+
+                lista = []
+
+                for item in result:
+                    aluno = {'ra':int(item['ra']), 'digito':"'" + item['ra_dígito'] + "'", 'nome':'"' + item['nome'] + '"', 'nascimento':"'" + item['nascimento_data'].strftime("%Y-%m-%d") + "'", 'matricula':"'" + item['inicio_matricula'].strftime("%Y-%m-%d") + "'", 'num_chamada':item['numero'], 'serie':item['serie'], 'situacao':getSituacao(item['situação']), 'fim_mat':"'" + item['fim_matricula'].strftime("%Y-%m-%d") + "'", 'num_classe':turma['num_classe']}
+                    dados_extras = banco.executarConsulta("select ifnull(rg, '') as rg, ifnull(cpf, 'null') as cpf, sexo, ifnull(rm, 'null') as rm from aluno where ra = %s" % aluno['ra'])
+                    
+                    if len(dados_extras) > 0:
+                        aluno['rg'] = "'" + dados_extras[0]['rg'] + "'"
+                        aluno['cpf'] = dados_extras[0]['cpf']
+                        aluno['sexo'] = "'" + dados_extras[0]['sexo'] + "'"
+                        aluno['rm'] = dados_extras[0]['rm']
+                    else:
+                        aluno['rg'] = 'null'
+                        aluno['cpf'] = 'null'
+                        aluno['sexo'] = '-'
+                        aluno['rm'] = 'null'
+
+                    lista.append(aluno)     
+
+                if (banco.importarDadosTurma(lista)):
+                    socketio.emit('update_info', '<b>Dados da %s - %s <span class="text-success">atualizados com sucesso!</span></b>' % (turma['nome_turma'], turma['desc_duracao']))
+                else:
+                    socketio.emit('update_info', '<b class="text-danger">Falha ao tentar atualizar dados da %s - %s!</b>' % (turma['nome_turma'], turma['desc_duracao']))                                   
+
+            return jsonify(True)
+        except Exception as error:
+            print("An exception occurred:", error) # An exception occurred: division by zero
+            socketio.emit('update_info', '<b>Erro ao tentar puxar os dados pelas credenciais, mudando para busca automatizada usando um navegador</b>')
+
+
     chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
     user_data_dir = r"C:\temp\chrome-playwright"
 
@@ -3762,16 +3811,79 @@ def uploadTurma():
     if 'classe' in request.args:
         classe = request.args['classe']
         #print(classe)
-        info = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % classe)
+        info = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, id_oculto from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % classe)
         if (info == []):
             info = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma_if as turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % classe)
 
     if request.method == "POST":
 
         #print(request.form)
-        info = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
+        info = banco.executarConsulta('select num_classe, nome_turma, turma.ano, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
         if (info == []):
-            info = banco.executarConsulta('select num_classe, nome_turma, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma_if as turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
+            info = banco.executarConsulta('select num_classe, nome_turma, turma.ano, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma_if as turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
+
+        # localizando o ID oculto fará uma pesquisa na API do SED para pegar os alunos direto da SED
+        if 'id_oculto' in request.form:
+            auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+
+            try:
+                context = start_context(auth)
+                result_escolas = get_escolas(context)
+
+                id_escola = result_escolas[0]['id']
+
+                # a partir daqui será dividido as tarefas dependendo do objetivo desejado
+                lista = []
+                alunos = get_alunos_num_classe(context, info[0]['ano'], id_escola, request.form.get('id_oculto'))
+                codigos_alunos = consulta_ficha_aluno(context, info[0]['num_classe'])
+                
+                for aluno in alunos:
+                        sit = 0
+
+                        if aluno['situação'] == "ATIVO":
+                            sit = 1
+                        elif aluno['situação'] == 'BXTR' or aluno['situação'] == 'TRAN':
+                            sit = 2
+                        elif aluno['situação'] == "REMA":
+                            sit = 3
+                        elif aluno['situação'] == "NCFP" or aluno['situação'] == "NCOM":
+                            sit = 5
+                        elif aluno['situação'] == "CONCL":
+                            sit = 8
+                        elif aluno['situação'] == "APROVADO":
+                            sit = 6
+                        elif aluno['situação'] == "RETIDO FREQ." or aluno['situação'] == 'RETIDO REND.':
+                            sit = 10
+                        elif aluno['situação'] == 'RECL':
+                            sit = 15
+                        elif aluno['situação'] == 'ENCERRADA':
+                            sit = 16    
+
+                        aluno_add = {'id':codigos_alunos[aluno['ra']], 'ra':aluno['ra'], 'digito':aluno['ra_dígito'], 'nome':aluno['nome'], 'nascimento':aluno['nascimento_data'].strftime("%d/%m/%Y"), 'matricula':aluno['inicio_matricula'].strftime("%d/%m/%Y"), 'num_chamada':aluno['numero'], 'serie':aluno['serie'], 'desc_sit':aluno['situação'], 'situacao':sit, 'fim_mat':aluno['fim_matricula'].strftime("%d/%m/%Y"), 'sexo':'M', 'rg':'', 'cpf':'', 'rm':''}
+
+                        # procurar por informações adicionais do aluno na SED e depois o RM no banco
+                        info_aluno = get_info_aluno(context, aluno_add['id'])
+                        aluno_add['sexo'] = info_aluno['sexo'][0]
+                        aluno_add['cpf'] = info_aluno['cpf']
+
+                        if (info_aluno['rg_uf'] == 'SP'):
+                            aluno_add['rg'] = info_aluno['rg'][6:8] + '.' + info_aluno['rg'][8:11] + '.' + info_aluno['rg'][11:] + '-' + info_aluno['rg_dígito']
+                        else:
+                            aluno_add['rg'] = info_aluno['rg'] + '-' + info_aluno['rg_dígito'] + '/' + info_aluno['rg_uf']
+
+                        if aluno_add['rg'] == '-/':
+                            aluno_add['rg'] = ''
+
+                        aluno_add['rm'] = banco.executarConsultaVetor("select ifnull(rm, '') as rm from aluno where ra = '%s'" % aluno_add['ra'])[0]
+
+                        lista.append(aluno_add)
+
+                return render_template('upload_turma.jinja', lista=lista, info=info)
+            except Exception as e:
+                print(e)
+                return render_template('upload_turma.jinja', lista=[], info=info)
+
+
 
         f = request.files.get('file')
         #print(request.form)

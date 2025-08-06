@@ -82,6 +82,15 @@
                 </div>
             </div>
         </form>
+
+        {% if info[0]['id_oculto'] is not none %}
+        <form action="{{ url_for('uploadTurma')}}" method="post">
+            <input type="hidden" name="id_oculto" value="{{info[0]['id_oculto']}}" />
+            <input type="hidden" name="classe" value="{{info[0]['num_classe']}}" />
+            <input type="submit" class="mt-3 btn btn-success" value="Buscar utilizando Credencial da SED" />
+        </form>
+        {% endif %}
+
         {% endif %}
 
         {% if lista|length > 1 %}

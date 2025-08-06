@@ -91,6 +91,55 @@ def get_classes(context, ano_letivo, escola_id, unidade_id):
 
 	return classes
 
+def get_alunos_num_classe(context, ano_letivo, escola_id, classe_id):
+	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/RelacaoAlunosClasse/Visualizar',
+		data={
+			'anoLetivo': ano_letivo,
+			'codigoEscola': escola_id,
+			'codigoTurma': classe_id,
+			'matricula': 'false',
+			'visualizar': 'true',
+		})
+
+	soup = BeautifulSoup(response.text, 'html.parser')
+	trs = soup.tbody.findAll('tr')
+
+	alunos = []
+	for tr in trs:
+		alunos.append({
+			# movimentacaoMatricula(aluno_id, ano_letivo, classe_id, matricula_id)
+			'id': str(tr['id']),
+			'nome': str(tr.findAll('td')[3].get_text(strip=True)),
+			'ra': str(tr.findAll('td')[4].get_text(strip=True)),
+			'ra_dígito': str(tr.findAll('td')[5].get_text(strip=True)),
+			'nascimento_data': datetime.strptime(str(tr.findAll('td')[7].get_text(strip=True)), "%d/%m/%Y"),
+			'numero': str(tr.findAll('td')[2].get_text(strip=True)),
+			'serie': str(tr.findAll('td')[1].get_text(strip=True)),
+			'inicio_matricula': datetime.strptime(str(tr.findAll('td')[8].get_text(strip=True)), "%d/%m/%Y"),
+			'fim_matricula': datetime.strptime(str(tr.findAll('td')[9].get_text(strip=True)), "%d/%m/%Y"),
+			'situação': str(tr.findAll('td')[10].get_text(strip=True))
+		})
+
+	return alunos
+
+def consulta_ficha_aluno(context, num_classe):
+	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/FichaAluno/ListaFichaAlunoParcial',	
+		data={
+			'__RequestVerificationToken': context.request_verification_token,
+			'anoLetivo': 0,
+			'tipoConsultaFichaAluno': 5, # 5 = Consulta por número de classe
+			'numeroClasse': num_classe})
+	
+	soup = BeautifulSoup(response.text, 'html.parser')
+	trs = soup.tbody.findAll('tr')
+	codigos_alunos = {}
+	for tr in trs:
+		codigo_aluno = tr.findAll('a')[1]['id'].split('_')[1]
+		ra_aluno = tr.findAll('td')[2].get_text(strip=True)
+		codigos_alunos[ra_aluno] = codigo_aluno
+
+	return codigos_alunos
+
 def get_alunos(context, ano_letivo, escola_id, classe_id):
 	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/Matricula/ConsultaMatricula/Visualizar',
 		data={
@@ -106,8 +155,6 @@ def get_alunos(context, ano_letivo, escola_id, classe_id):
 
 	alunos = []
 	for tr in trs:
-		print('---------------------------------')
-		print(tr)
 		a = tr.select('td > a[onclick^="movimentacaoMatricula"]')[0] # ^= is starts with
 		onclick = a['onclick']
 
@@ -118,11 +165,12 @@ def get_alunos(context, ano_letivo, escola_id, classe_id):
 			'ra': str(tr.findAll('td')[4].string),
 			'ra_dígito': str(tr.findAll('td')[5].string),
 			'nascimento_data': datetime.strptime(str(tr.findAll('td')[7].string), "%d/%m/%Y"),
+			'numero': str(tr.findAll('td')[2].string),
 		})
 
 	return alunos
 
-def get_aluno(context, aluno_id):
+def get_info_aluno(context, aluno_id):
 	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/FichaAluno/FichaAluno',
 		data={
 			'codigoAluno': aluno_id,
@@ -259,7 +307,7 @@ def get_all_matriculas(context, ano_letivo, callback=None):
 			for classe in result_classes:
 				result_alunos = get_alunos(context, ano_letivo, escola['id'], classe['id'])
 				for aluno in result_alunos:
-					result_aluno = get_aluno(context, aluno['id'])
+					result_aluno = get_info_aluno(context, aluno['id'])
 					result_matriculas = get_matriculas(context, aluno['id'])
 					result_transporte_indicação = get_transporte_indicação(context, aluno['id'])
 

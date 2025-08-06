@@ -562,6 +562,18 @@
                         <div><span class="fw-bold">Fim: </span><span id="infofim">{{calendario['2sem_fim']}}</span></div>
                     </div>
 
+                    <div class="col-sm-4">
+                        <label for="cbduracao">ID Oculto:</label>
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <div class="input-group">            
+                                    <input type="text" class="form-control" id="id_oculto_edit" name="id_oculto">
+                                    <button data-num="txtnumeroclasse_edit" data-destino="id_oculto_edit" type="button" class="btn btn-success btn-search-id"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                    
+
                 </div>
             </div>
             <div class="modal-footer">
@@ -819,7 +831,7 @@
                                 <td class="text-center"><a href="javascript:abrirMatriz({{turma['num_classe']}}, '{{turma['duracao']}}')"><i class="fa-solid fa-table-list"></i></a></td>
                                 {% if item['tipo_ensino']['id'] != 2 and item['tipo_ensino']['id'] != 5 %}
                                 <td class="text-center"><a href="javascript:consultar({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
-                                <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}}, '{{turma['apelido']}}')"><i class="fa-solid fa-edit"></i></a></td>
+                                <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}}, '{{turma['apelido']}}', '{{turma['id_oculto']}}')"><i class="fa-solid fa-edit"></i></a></td>
                                 {% else %}
                                 <td class="text-center"><a href="javascript:consultarIf({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
                                 <td class="text-center"><a href="javascript:editarIf({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}}, {{turma['categoria']}})"><i class="fa-solid fa-edit"></i></a></td>                            
@@ -857,6 +869,8 @@
             const num_classe = $(this).attr('data-num');
             const destino = $(this).attr('data-destino');
 
+            const botao = $(this);
+            botao.html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
 
             $.ajax({
                 type: "POST",
@@ -870,6 +884,7 @@
                     } else {
                         alert('Número de classe inválido ou credencial incorreta!');
                     }
+                    botao.html('<i class="fa-solid fa-magnifying-glass"></i>');
                 },
             });
         });
@@ -1530,13 +1545,14 @@
 
         }
 
-        function editar(id, nome, ensino, periodo, duracao, apelido) {
+        function editar(id, nome, ensino, periodo, duracao, apelido, id_oculto) {
             $("#txtnumeroclasse_edit").val(id);
             $("#txtnometurma_edit").val(nome);
             $("#cbtipoensino_edit").val(ensino);
             $("#cbperiodo_edit").val(periodo);
             $("#cbduracao_edit").val(duracao);
             $("#txtapelidoturma_edit").val(apelido);
+            $("#id_oculto_edit").val(id_oculto);
             $("#editar_turma_modal").modal('show');
         }
 
