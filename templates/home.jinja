@@ -278,6 +278,19 @@
                             <div><span class="fw-bold">Fim: </span><span id="infofim">{{calendario['2sem_fim']}}</span></div>
                         </div>
 
+                        <div class="col-sm-4">
+                            <label for="cbduracao">ID Oculto:</label>
+                            <div class="form-inline">
+                                <div class="form-group">
+                                    <div class="input-group">            
+                                        <input type="text" class="form-control" id="id_oculto" name="id_oculto">
+                                        <button data-num="txtnumeroclasse" data-destino="id_oculto" type="button" class="btn btn-success btn-search-id"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
                     </div>
                 </div>
                     <div class="modal-footer">
@@ -839,6 +852,27 @@
         socket.on('update_info', function(html) {
             $("#status_auto_update").html(html)
         }); 
+
+        $(".btn-search-id").on('click', function() {
+            const num_classe = $(this).attr('data-num');
+            const destino = $(this).attr('data-destino');
+
+
+            $.ajax({
+                type: "POST",
+                url: "modulo_sed",
+                contentType: "application/json",
+                data: JSON.stringify({'num_classe':$("#" + num_classe).val(), 'destino':'id_classe'}),
+                dataType: "json",
+                success: function(data) {
+                    if (data) {
+                        $("#" + destino).val(data['id_classe']);
+                    } else {
+                        alert('Número de classe inválido ou credencial incorreta!');
+                    }
+                },
+            });
+        });
 
         $("#cb_pdf_option").on('change', function() {
             $(".painel-pdf").addClass('hide');

@@ -21,6 +21,7 @@ import calendar
 from jinja_try_catch import TryCatchExtension
 from PyPDF2 import PdfMerger
 from decimal import Decimal, ROUND_HALF_UP
+from sed_api import start_context, get_escolas, get_unidades, get_classes, get_alunos
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -146,7 +147,7 @@ def index():
         #print('yes')
         if 'txtnumeroclasse' in request.form:
 
-            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':request.form['ano'], 'apelido':"'" + request.form['txtapelidoturma']  + "'"}
+            classe = {'num_classe':request.form['txtnumeroclasse'], 'nome_turma':"'" + request.form['txtnometurma'] + "'", 'duracao':request.form['cbduracao'], 'tipo_ensino':request.form['cbtipoensino'], 'periodo':request.form['cbperiodo'], 'ano':request.form['ano'], 'apelido':"'" + request.form['txtapelidoturma']  + "'", 'id_oculto':request.form['id_oculto']}
             
             if banco.inserirNovaTurma(classe):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -225,6 +226,57 @@ def index():
         meses.append({'mes':getMes(i).title(), 'value':i, 'selected':selected})
 
     return render_template('home.jinja', tipo_ensino=tipo_ensino, calendario=calendario[0], duracao=duracao, periodo=periodo, msg=msg, listaTurmas=listaTurmas, tipo_ensino_itinerario=tipo_ensino_itinerario, cat_itinerario=cat_itinerario, anos=anos, tipo_disc=tipo_disc, area_conhecimento=area_conhecimento, disc=disc, professores=professores, meses=meses, ano=ano)
+
+@app.route('/modulo_sed', methods=['GET', 'POST'])
+def modulo_sed():
+
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.get_json()
+            auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+
+            try:
+                context = start_context(auth)
+                result_escolas = get_escolas(context)
+
+                id_escola = result_escolas[0]['id']
+                result_unidades = get_unidades(context, id_escola)
+                id_unidade = result_unidades[0]['id']
+
+                # a partir daqui será dividido as tarefas dependendo do objetivo desejado
+
+                if data['destino'] == 'id_classe':
+                    result_classes = get_classes(context, 2025, id_escola, id_unidade)
+                
+                    for classe in result_classes:
+                        if int(classe['id_b']) == int(data['num_classe']):
+                            return jsonify({'id_classe':classe['id']})
+
+                return jsonify(False)
+            except Exception as e:
+                print(e)
+                return jsonify(False)
+
+@app.route('/credenciais', methods=['GET', 'POST'])
+def credenciais():
+
+    result = ''
+
+    if request.method == 'POST':
+        if 'txt_credencial' in request.form:
+            cookie = request.form['txt_credencial']
+            banco.executeBasicSQL("delete from config where id_config = 'credencial'")
+            banco.executeBasicSQL("insert into config (id_config, valor) values ('credencial', '%s')" % cookie)
+
+            result = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação bem-sucedida!</strong> Credencial salva com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+
+    credencial = banco.executarConsultaVetor("select valor from config where  id_config = 'credencial'")
+
+    return render_template('credenciais.jinja', result=result, credencial=credencial[0] if credencial else '')
+
 
 @app.route('/salvar_grade', methods=['GET', 'POST'])
 def salvar_grade():

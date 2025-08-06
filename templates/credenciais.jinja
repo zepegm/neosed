@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Credenciais da SED</title>
+    <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+    <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/icon_sed.png') }}">
+
+    <style>
+          
+    </style>
+
+  </head>
+  <body style="background-color: rgba(244, 244, 244);">
+
+    {% block menu_superior %}
+      {% include 'menu.jinja' %}
+    {% endblock %}   
+
+    <main class="container-xxl">
+        <div id="result">{{result}}</div>
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="fs-2">Credenciais da SED</p>
+                <p><b>Atenção!</b> Para usar os módulos que puxam a informação direto do sistema da SED é necessário inserir o valor do Cookie "SED" que é o mesmo que <b>fornecer suas credenciais de login.</b></p>
+                <p>É importante ressaltar alguns pontos:</p>
+                <ul>
+                    <li>O cookie é válido por tempo determinado, pense nele como um "cartão de acesso temporário" após esse período você precisará inserir novamente.</li>
+                    <li>O cookie geralmente é único por navegador e computador, portanto é preciso inserir o cookie de uma sessão salva no computador do servidor apenas, caso contrário ele pode não funcionar.</li>
+                    <li>Apesar do cookie ser sua credencial de login, não correrá nenhum risco de fazer alterações diretas na SED, pois tudo o que o módulo faz é consultas utilizando sua sessão ativa.</li>
+                </ul>
+            </div>
+            <div class="col-sm-12">
+                <form id="form_credenciais" method="post" action="/credenciais">
+                    <div class="mb-3">
+                        <label for="txt_credencial" class="form-label fw-bold">Credencial SED:</label>
+                        <input type="text" class="form-control" id="txt_credencial" name="txt_credencial" value="{{ credencial }}" placeholder="Insira o cookie SED aqui">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </form>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-sm-12">
+                <p class="fs-5">Caso esteja em dúvida como obter o Cookie, segue uma pequena instrução:</p>
+                <p>1º - Entre na SED e <b>efetue login</b> para acessar a página principal.</p>
+                <img src="{{ url_for('static', filename='images/tutorial_cookie/001.png') }}" class="img-fluid" alt="Tela de login SED">
+                <p class="mt-3">2º - Aperte <b>F12</b> para abrir as <b>Ferramentas de Desenvolvedor</b> e depois selecione o menu <b>Application</b></p>
+                <img src="{{ url_for('static', filename='images/tutorial_cookie/002.png') }}" class="img-fluid" alt="Tela de login SED">
+                <p class="mt-3">3º - Clique na opção de <b>Cookies</b>, primeiro clique na setinha e na única opção que vai aparecer: <b>"https://sed.educac..."</b></p>
+                <img src="{{ url_for('static', filename='images/tutorial_cookie/003.png') }}" class="img-fluid" alt="Tela de login SED">
+                <p class="mt-3">4º - Clique no "cookie" chamado <b>SED</b>, e após isso copie o valor onde a seta está apontado, essa é sua credencial, cole ali no início da página e clique em <b>Salvar</p></b></p>
+                <img src="{{ url_for('static', filename='images/tutorial_cookie/004.png') }}" class="img-fluid" alt="Tela de login SED">
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
+    <!-- <script src="{{ url_for('static', filename='js/jquery.mask.min.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+  </body>
+</html>
