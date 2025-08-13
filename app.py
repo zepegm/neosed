@@ -21,7 +21,7 @@ import calendar
 from jinja_try_catch import TryCatchExtension
 from PyPDF2 import PdfMerger
 from decimal import Decimal, ROUND_HALF_UP
-from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno
+from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno, get_matriz_curricular, get_grade
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -61,16 +61,16 @@ app.jinja_env.filters['diferenca_maior_que_40'] = diferenca_maior
 
 #banco = db({'host':"localhost", 'user':'root', 'passwd':'Yasmin', 'db':'neosed'})
 
-banco = db({'host':"neosed.net",    # your host, usually localhost
-            'user':"username",         # your username
-            'passwd':"password",  # your password
-            'db':"neosed"})
+#banco = db({'host':"neosed.net",    # your host, usually localhost
+            #'user':"username",         # your username
+            #'passwd':"password",  # your password
+            #'db':"neosed"})
 
 # configuração do server principal
-#banco = db({'host':"localhost",    # your host, usually localhost
-            #'user':"root",         # your username
-            #'passwd':"admin",  # your password
-            #'db':"neosed"})
+banco = db({'host':"localhost",    # your host, usually localhost
+            'user':"root",         # your username
+            'passwd':"admin",  # your password
+            'db':"neosed"})
 
 
 home_directory = os.path.expanduser( '~' )
@@ -314,6 +314,32 @@ def grade():
         if 'ano' in request.form:
             ano = request.form['ano']
 
+        if 'num_classe_import_sed' in request.form:
+
+            try:
+                auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+                context = start_context(auth)
+
+                grade = get_grade(context, request.form['num_classe_import_sed'])
+
+                if banco.alterarGrade(request.form['num_classe_import_sed'], grade):
+                    msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                            '<strong>Operação bem-sucedida!</strong> Grade atualizada com sucesso!' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'
+                else:
+                    msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                            '<strong>Atenção!</strong> Erro ao tentar salvar grade, <strong>Contate o administrador!</strong>' \
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                            '</div>'
+
+            except Exception as e:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar importar grade, <strong>Verifique as credenciais da SED!</strong>' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'
+                print(e)
+
         if 'num_classe_import' in request.form:
             num_classe = request.form['num_classe_import']
 
@@ -402,7 +428,7 @@ def grade():
             grade_cadastrada = banco.executarConsulta(f'select pos, semana, disciplina, disciplinas.descricao as abv from grade left join disciplinas on disciplinas.codigo_disciplina = disciplina where num_classe = {num_classe} order by pos, semana')
             qtd_linhas = banco.executarConsultaVetor(f'select sum(qtd_aulas) as linhas from matriz_curricular where num_classe = {num_classe}')[0]
 
-            if info['tipo_ensino'] == 1 or info['tipo_ensino'] == 6:
+            if info['tipo_ensino'] == 1 or info['tipo_ensino'] == 3:
                 matriz.append({'disc':'-1', 'qtd_aulas':3, 'abv':'TUTORIA', 'tipo':1})
                 matriz.append({'disc':'-2', 'qtd_aulas':3, 'abv':'CLUBE', 'tipo':1})
                 qtd_linhas += 6
@@ -512,6 +538,7 @@ def render_livro_ponto_adm():
     ano = int(request.args.getlist('ano')[0])
 
     dados = banco.executarConsulta("select nome, cpf, rg, digito, horario, intervalo, cargos_livro_ponto.descricao as cargo, CASE WHEN estudante = 1 THEN 'Sim' ELSE 'Não' END AS estudante, CASE WHEN plantao = 1 THEN 'Sim' ELSE 'Não' END AS plantao from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where cpf = %s" % cpf)[0]
+    nome_escola = banco.executarConsultaVetor("select descricao from sede_livro_ponto where id = (select valor from config where id_config = 'ua_sede')")[0]
 
     aux_rg = '%08d' % int(dados['rg'])
     dados['rg'] = aux_rg[0:2] + "." + aux_rg[2:5] + "." + aux_rg[5:] + '-' + dados['digito']
@@ -584,7 +611,7 @@ def render_livro_ponto_adm():
             elif len(inicio_afastamento) == 0:
                 dias_com_fim_de_semana.append({'dia':dia, 'tipo':'', 'obs':'', 'class':'divisor', 'tr-class':''})
 
-    return render_template('render_pdf/render_livro_ponto_adm.jinja', mes=getMes(mes), ano=ano, dados=dados, dias=dias_com_fim_de_semana, verso=verso_txt, afastamentos=afastamentos)
+    return render_template('render_pdf/render_livro_ponto_adm.jinja', mes=getMes(mes), ano=ano, dados=dados, dias=dias_com_fim_de_semana, verso=verso_txt, afastamentos=afastamentos, nome_escola=nome_escola.upper(), banco=banco, cpf=cpf)
 
 
 
@@ -1601,6 +1628,8 @@ def render_lista():
 
         if tipo == 'chamada':
 
+            nome_escola = banco.executarConsultaVetor("select descricao from sede_livro_ponto where id = (select valor from config where id_config = 'ua_sede')")[0]
+
             dados = banco.executarConsulta(f'select ano, nome_turma from turma where num_classe = {num_classe}')[0]
             mes = request.args.getlist('mes')[0]
             cor = request.args.getlist('cor')[0]
@@ -1641,8 +1670,7 @@ def render_lista():
                         if pointer_color > 3:
                             pointer_color = 0
 
-            return render_template('render_pdf/render_chamada.jinja', dados=dados, mes=mes, desc_mes = getMes(mes), alunos=alunos, dias_uteis=dias_uteis, limite=limite, cor=cor)
-        
+            return render_template('render_pdf/render_chamada.jinja', dados=dados, mes=mes, desc_mes = getMes(mes), alunos=alunos, dias_uteis=dias_uteis, limite=limite, cor=cor, nome_escola=nome_escola)
         if tipo == 'turma':
             head = banco.executarConsulta('select ' + \
 	                                      'num_classe, nome_turma, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, duracao.descricao as duracao, ' + \
@@ -2366,77 +2394,24 @@ def render_lista():
 async def atualizar_matriz_auto():
 
     info = request.json
-
     num_classe = info['num_classe']
-
-    chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-    user_data_dir = r"C:\temp\chrome-playwright"
-
-    subprocess.Popen([
-        chrome_path,
-        "--remote-debugging-port=9222",
-        f"--user-data-dir={user_data_dir}"
-    ])
-
-    browser = await connect({
-        'browserURL': 'http://localhost:9222',  # Porta que o Chrome abriu
-        'defaultViewport': None
-    })
-
-    page = await browser.newPage()  
-
-    await page.goto('https://sed.educacao.sp.gov.br//NCA/ColetaTurma/TurmaClasse/Index', {'waitUntil':'networkidle0'})
-
-    await page.waitForSelector('.blockUI', {'hidden':True})
-
-    await page.evaluate('''$("#divClasse").removeAttr('style');''')
-
-    await page.evaluate('''$("#divFiltros").attr('style', 'display:none');''')
-
-    await page.evaluate('''$("#tipoPesquisa").val('1');''')
-
-    await page.type('#numeroClassePesq', f'{num_classe}')
-
-    print(num_classe)
-
-    await page.click('#btnPesquisar')
-
-    await page.waitForSelector('#tabelaDados')
-
-    script = await page.evaluate('''$("#tabelaDados tbody td:eq(10) a").attr('onclick');''')
-
-    await page.evaluate(script)
-
-    await page.waitForSelector('.blockUI', {'hidden':True})
-
-    await page.waitForSelector('#btnEditarFundamento')
-
-    await page.evaluate('VisualizarFundamentoLegal();')
-
-    await page.waitForSelector('#divVisualizarFundamentoLegal')
-
-    rows = await page.evaluate('''() => {
-        const rows = document.querySelectorAll('#divVisualizarFundamentoLegal table tbody tr');
-        return Array.from(rows, row => {
-            const cells = row.querySelectorAll('td, th');
-            return Array.from(cells, cell => cell.innerText);
-        });
-    }''')
+    ano_letivo = banco.executarConsultaVetor(f"select ano from turma where num_classe = '{num_classe}'")[0]
+    auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+    context = start_context(auth)
+    lista_matriz = get_matriz_curricular(context, ano_letivo, num_classe)
 
     lista = []
 
-    for item in rows:
+    for item in lista_matriz:
         try:
-            tipo = banco.executarConsultaVetor(f"select id from tipo_disc_matriz where desc_completa like '{item[1]}'")[0]
-            disc = item[0].split(' - ')[0]
-            area = banco.executarConsultaVetor(f'select area from matriz_curricular where disc_disciplina = {disc} limit 1')[0]
-            qtd = item[2].replace('\n', '').replace(" ", "")
+            tipo = banco.executarConsultaVetor(f"select id from tipo_disc_matriz where desc_completa like '{item['classificacao']}'")[0]
+            disc = item['componente'].split(' - ')[0]
+            area = banco.executarConsultaVetor(f'select area from matriz_curricular where disc_disciplina = {disc} order by area desc limit 1')[0]
+            qtd = item['carga_horária']
 
             lista.append({'num_classe':num_classe, 'tipo':tipo, 'disc':disc, 'area':area, 'qtd':qtd, 'minutos':info['minutos']})
         except Exception as error:
             print("An exception occurred:", error) # An exception occurred: division by zero
-
-    await browser.close()
 
     return jsonify(lista)
 
@@ -3818,7 +3793,7 @@ def uploadTurma():
     if request.method == "POST":
 
         #print(request.form)
-        info = banco.executarConsulta('select num_classe, nome_turma, turma.ano, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
+        info = banco.executarConsulta('select num_classe, nome_turma, turma.ano, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino, id_oculto from turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
         if (info == []):
             info = banco.executarConsulta('select num_classe, nome_turma, turma.ano, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma_if as turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
 
@@ -3831,6 +3806,7 @@ def uploadTurma():
                 result_escolas = get_escolas(context)
 
                 id_escola = result_escolas[0]['id']
+                print(id_escola)
 
                 # a partir daqui será dividido as tarefas dependendo do objetivo desejado
                 lista = []
@@ -3866,15 +3842,19 @@ def uploadTurma():
                         aluno_add['sexo'] = info_aluno['sexo'][0]
                         aluno_add['cpf'] = info_aluno['cpf']
 
-                        if (info_aluno['rg_uf'] == 'SP'):
-                            aluno_add['rg'] = info_aluno['rg'][6:8] + '.' + info_aluno['rg'][8:11] + '.' + info_aluno['rg'][11:] + '-' + info_aluno['rg_dígito']
-                        else:
-                            aluno_add['rg'] = info_aluno['rg'] + '-' + info_aluno['rg_dígito'] + '/' + info_aluno['rg_uf']
+                        
+                        if info_aluno['rg_uf'] is not None:
+                            if (info_aluno['rg_uf'] == 'SP'):
+                                aluno_add['rg'] = info_aluno['rg'][6:8] + '.' + info_aluno['rg'][8:11] + '.' + info_aluno['rg'][11:] + '-' + info_aluno['rg_dígito']
+                            else:
+                                aluno_add['rg'] = info_aluno['rg'] + '-' + info_aluno['rg_dígito'] + '/' + info_aluno['rg_uf']
 
-                        if aluno_add['rg'] == '-/':
-                            aluno_add['rg'] = ''
+                            if aluno_add['rg'] == '-/':
+                                aluno_add['rg'] = ''
 
-                        aluno_add['rm'] = banco.executarConsultaVetor("select ifnull(rm, '') as rm from aluno where ra = '%s'" % aluno_add['ra'])[0]
+                        consulta_rm = banco.executarConsultaVetor("select ifnull(rm, '') as rm from aluno where ra = '%s'" % aluno_add['ra'])
+                        if len(consulta_rm) > 0:
+                            aluno_add['rm'] = consulta_rm[0]
 
                         lista.append(aluno_add)
 

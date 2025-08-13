@@ -178,6 +178,10 @@
         <form id="form_limpar" action="/grade" method="post">
             <input type="hidden" id="num_classe" name="num_classe" value="">
         </form>
+
+        <form id="form_importar_sed" action="/grade" method="post" enctype="multipart/form-data">
+            <input type="hidden" id="num_classe_import_sed" name="num_classe_import_sed" value="">
+        </form>
     </main>
 
     <!-- <table id="myTable">
@@ -391,6 +395,13 @@
             $("#form_limpar").submit();
         });
 
+        $(document).on('click', '#btn_importar_sed', function() {
+            var num_classe = $(".list-group-item.active").attr('data-id');
+
+            $("#num_classe_import_sed").val(num_classe);
+            $("#form_importar_sed").submit();
+        });        
+
         $(document).on('click', '#btn_salvar', function() {
             var horarios = [];
             var disciplinas = [];
@@ -445,7 +456,8 @@
                         $("#btn_habilitar_edicao").remove();
                         $("#painel_Grade").append('<button id="btn_salvar" class="mt-3 btn btn-primary">Salvar</button>&nbsp;');
                         $("#painel_Grade").append('<button id="btn_limpar" class="mt-3 btn btn-secondary">Limpar Grade</button>&nbsp;');
-                        $("#painel_Grade").append('<button id="btn_importar" class="mt-3 btn btn-success" data-bs-toggle="modal" data-bs-target="#importar_planilha_urania">Importar Planilha do Urânia</button>');
+                        $("#painel_Grade").append('<button id="btn_importar" class="mt-3 btn btn-success" data-bs-toggle="modal" data-bs-target="#importar_planilha_urania">Importar Planilha do Urânia</button>&nbsp;');
+                        $("#painel_Grade").append('<button id="btn_importar_sed" class="mt-3 btn btn-warning">Importar da SED usando credenciais</button>');
                         $("#txt_num_classe").val($(".list-group-item.active").attr('data-id'));
                     } else {
                         $("#feedback").html('<div class="alert alert-danger alert-dismissible fade show" role="alert">Senha incorreta!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');

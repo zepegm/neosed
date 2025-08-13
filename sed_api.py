@@ -47,6 +47,111 @@ def get_escolas(context):
 
 	return escolas
 
+def pegar_disciplina(tr, td_index):
+	td = tr.find_all('td')[td_index]
+	div = td.find('div')
+	return div.get('data-cddisciplina') if div else 'null'
+
+
+def get_grade(context, num_classe):
+	response = context.session.post('https://sed.educacao.sp.gov.br/GradeHoraria/Pesquisar',
+		data={
+			'nrClasse': num_classe,
+			'cdEscola':0,
+			'anoLetivo': 0,
+			'cdTurma': 0,
+			'periodoUc7': 0,
+			'__RequestVerificationToken': context.request_verification_token,
+		})
+
+	soup = BeautifulSoup(response.text, 'html.parser')
+	trs = soup.tbody.findAll('tr')
+
+	grade = []
+
+	for tr in trs:
+		seg = pegar_disciplina(tr, 1)
+		ter = pegar_disciplina(tr, 2)
+		qua = pegar_disciplina(tr, 3)
+		qui = pegar_disciplina(tr, 4)
+		sex = pegar_disciplina(tr, 5)
+
+		if seg == 'null' and ter == 'null' and qua == 'null' and qui == 'null' and sex == 'null':
+			continue
+
+		grade.append({'Seg': seg, 'Ter': ter, 'Qua': qua, 'Qui': qui, 'Sex': sex})
+
+	return grade
+
+def get_matriz_curricular(context, ano_letivo, num_classe):
+	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/ColetaTurma/TurmaClasse/Pesquisar',
+		data={
+			'tipoPesquisa':1,
+			'anoLetivo': ano_letivo,
+			'codigoDiretoria':20202,
+			'codigoMunicipio':9087,
+			'codigoEscolaCIE':0,
+			'numeroClasse': num_classe,
+			'situacaoEscola':1,
+			'ejaEad':'false',
+			'__RequestVerificationToken': context.request_verification_token,
+
+		})
+
+	soup = BeautifulSoup(response.text, 'html.parser')
+
+	find_a = soup.find('a')['onclick']
+
+	codigoTurmaClasse = find_a.split('(')[1].split(')')[0].split(', ')[1]
+	codigoQuadroResumo = find_a.split('(')[1].split(')')[0].split(', ')[2]
+	codigoOperacao = find_a.split('(')[1].split(')')[0].split(', ')[3]
+	codigoEscola = soup.find(id='txtCodigoEscola')['value']
+
+	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/ColetaTurma/TurmaClasseEstadual/VisualizarTurmaClasse',
+		data={
+			'anoLetivo': ano_letivo,
+			'ceeja': 'false',
+			'codigoTurmaClasse': codigoTurmaClasse,
+			'codigoQuadroResumo': codigoQuadroResumo,
+			'codigoOperacao': codigoOperacao,
+			'ejaEad': 'false',
+			'__RequestVerificationToken': context.request_verification_token,
+		})
+	
+	soup = BeautifulSoup(response.text, 'html.parser')
+
+	codigoFundamentoLegal = soup.find(id='hfdCodigoFundamentoLegal')['value']
+	codigoFundamentoTurma = soup.find(id='hfdCodigoFundamentoTurma')['value']
+	NumeroSerie = soup.find(id='hfdNumeroSerie')['value']
+
+	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/ColetaTurma/TurmaClasseEstadual/VisualizarFundamentoLegal',
+		data={
+			'CodigoFundamentoLegal': codigoFundamentoLegal,
+			'CodigoFundamentoTurma': codigoFundamentoTurma,
+			'NumeroSerie': NumeroSerie,
+			'Semestre':0,
+			'CodigoEscola': codigoEscola,
+			'AnoLetivo':ano_letivo,
+			'__RequestVerificationToken': context.request_verification_token,
+		})
+	
+	soup = BeautifulSoup(response.text, 'html.parser')
+
+	trs = soup.tbody.findAll('tr')
+	matriz = []
+	for tr in trs:
+		try:
+			matriz.append({
+				'componente': str(tr.findAll('td')[0].get_text(strip=True)),
+				'classificacao': str(tr.findAll('td')[1].get_text(strip=True)),
+				'carga_horária': str(tr.findAll('td')[2].get_text(strip=True)),
+			})
+		except Exception as e:
+			print(f'Erro ao processar linha da matriz curricular: {e}')
+			continue
+
+	return matriz
+
 def get_unidades(context, escola_id):
 	response = context.session.get('https://sed.educacao.sp.gov.br/nca/Matricula/ConsultaMatricula/DropDownUnidadesJson',
 		params=(
@@ -92,6 +197,7 @@ def get_classes(context, ano_letivo, escola_id, unidade_id):
 	return classes
 
 def get_alunos_num_classe(context, ano_letivo, escola_id, classe_id):
+	print('cheguei aqui')
 	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/RelacaoAlunosClasse/Visualizar',
 		data={
 			'anoLetivo': ano_letivo,
@@ -106,19 +212,23 @@ def get_alunos_num_classe(context, ano_letivo, escola_id, classe_id):
 
 	alunos = []
 	for tr in trs:
-		alunos.append({
-			# movimentacaoMatricula(aluno_id, ano_letivo, classe_id, matricula_id)
-			'id': str(tr['id']),
-			'nome': str(tr.findAll('td')[3].get_text(strip=True)),
-			'ra': str(tr.findAll('td')[4].get_text(strip=True)),
-			'ra_dígito': str(tr.findAll('td')[5].get_text(strip=True)),
-			'nascimento_data': datetime.strptime(str(tr.findAll('td')[7].get_text(strip=True)), "%d/%m/%Y"),
-			'numero': str(tr.findAll('td')[2].get_text(strip=True)),
-			'serie': str(tr.findAll('td')[1].get_text(strip=True)),
-			'inicio_matricula': datetime.strptime(str(tr.findAll('td')[8].get_text(strip=True)), "%d/%m/%Y"),
-			'fim_matricula': datetime.strptime(str(tr.findAll('td')[9].get_text(strip=True)), "%d/%m/%Y"),
-			'situação': str(tr.findAll('td')[10].get_text(strip=True))
-		})
+		try:
+			alunos.append({
+				# movimentacaoMatricula(aluno_id, ano_letivo, classe_id, matricula_id)
+				'id': str(tr['id']),
+				'nome': str(tr.findAll('td')[3].get_text(strip=True)),
+				'ra': str(tr.findAll('td')[4].get_text(strip=True)),
+				'ra_dígito': str(tr.findAll('td')[5].get_text(strip=True)),
+				'nascimento_data': datetime.strptime(str(tr.findAll('td')[7].get_text(strip=True)), "%d/%m/%Y"),
+				'numero': str(tr.findAll('td')[2].get_text(strip=True)),
+				'serie': str(tr.findAll('td')[1].get_text(strip=True)),
+				'inicio_matricula': datetime.strptime(str(tr.findAll('td')[8].get_text(strip=True)), "%d/%m/%Y"),
+				'fim_matricula': datetime.strptime(str(tr.findAll('td')[9].get_text(strip=True)), "%d/%m/%Y"),
+				'situação': str(tr.findAll('td')[10].get_text(strip=True))
+			})
+		except Exception as e:
+			print(f'Erro ao processar aluno na classe {classe_id}: {e}')
+			continue
 
 	return alunos
 
