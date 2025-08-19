@@ -21,7 +21,7 @@ import calendar
 from jinja_try_catch import TryCatchExtension
 from PyPDF2 import PdfMerger
 from decimal import Decimal, ROUND_HALF_UP
-from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno, get_matriz_curricular, get_grade
+from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno, get_matriz_curricular, get_grade, get_professor_info
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -4813,6 +4813,15 @@ def ponto():
             elif info['destino'] == 3: # listar as licenças
                 licencas = banco.executarConsulta(r'SELECT DATE_FORMAT(inicio, "%d/%m/%Y") as inicio, DATE_FORMAT(fim, "%d/%m/%Y") as fim, id_tipo, tipo_licenca_professores.descricao as desc_tipo, licenca_professores.descricao from licenca_professores inner join tipo_licenca_professores on tipo_licenca_professores.id = licenca_professores.id_tipo where cpf = ' + info['cpf'])
                 return jsonify(licencas)
+
+            elif info['destino'] == 4: # importar os dados pela SED
+                try:
+                    auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+                    context = start_context(auth)
+
+                    return jsonify({'dados':get_professor_info(context, info['cpf'], info['rg']), 'result': True})
+                except Exception as e:
+                    return jsonify({'error': str(e), 'result': False})
             
         if 'cpf_delete_quadro' in request.form: # é pra deletar o quadro de aulas do professor
             cpf = request.form['cpf_delete_quadro']

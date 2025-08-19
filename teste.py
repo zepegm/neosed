@@ -1,4 +1,4 @@
-from sed_api import start_context, get_matriz_curricular, get_grade
+from sed_api import start_context, get_matriz_curricular, get_grade, get_professor_info
 import openpyxl
 import unicodedata
 
@@ -14,8 +14,6 @@ auth = {
 }
 context = start_context(auth)
 
-matriz = get_matriz_curricular(context, 2025, 291001493)
+dados_prof = get_professor_info(context, '27632200886', '')
 
-grade = get_grade(context, 291001493)
-
-print(grade)
+print(dados_prof)

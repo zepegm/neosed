@@ -3,12 +3,14 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from dataclasses import dataclass
 import re
+import json
 
 @dataclass
 class SEDContext:
 	session: requests.Session
 	request_verification_token: str = ''
 	authorization: str = ''
+	token_funcional: str = ''
 
 def start_context(auth):
 	session = requests.Session()
@@ -16,9 +18,13 @@ def start_context(auth):
 
 	# request_verification_token
 	response = session.get('https://sed.educacao.sp.gov.br/NCA/Matricula/ConsultaMatricula/Index')
-
 	soup = BeautifulSoup(response.text, 'html.parser')
-	request_verification_token = soup.find('input', attrs={'name': '__RequestVerificationToken'})['value']
+	request_verification_token = soup.find('input', attrs={'name': '__RequestVerificationToken'})['value']	
+
+	# Token para funcional
+	response = session.get('https://sed.educacao.sp.gov.br/Funcional/Consulta/Index')
+	soup = BeautifulSoup(response.text, 'html.parser')
+	token_funcional = soup.find('input', attrs={'name': '__RequestVerificationToken'})['value']
 
 	# authorization
 	response = session.get("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Consulta")
@@ -26,7 +32,7 @@ def start_context(auth):
 	match = re.search(r'Execute\.Init\("(.*?)"', response.text)
 	authorization = match.group(1)
 
-	return SEDContext(session=session, request_verification_token=request_verification_token, authorization=authorization)
+	return SEDContext(session=session, request_verification_token=request_verification_token, authorization=authorization, token_funcional=token_funcional)
 
 def get_cookies(auth):
 	return {
@@ -51,6 +57,71 @@ def pegar_disciplina(tr, td_index):
 	td = tr.find_all('td')[td_index]
 	div = td.find('div')
 	return div.get('data-cddisciplina') if div else 'null'
+
+def get_professor_info(context, cpf_professor, rg_professor):
+
+	final_data = {}
+
+	headers = {
+		'X-Requested-With': 'XMLHttpRequest'
+    }
+
+	# pegar dados básicos do professor
+	response = context.session.post(
+		'https://sed.educacao.sp.gov.br/Funcional/Consulta/ListarServidoresPessoal',
+		data={
+			'NrCpf': cpf_professor,
+			'NrRg': rg_professor,
+			'NmServidor': '',
+			'ConsultaTipo': 'false',
+			'__RequestVerificationToken': context.token_funcional  # novo token, da página correta
+		},
+		headers=headers
+	)
+
+	dados = response.json()
+	
+	final_data['nome'] = dados['ListServidores'][0]['DsNome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+	final_data['cpf'] = dados['ListServidores'][0]['NrCpf']
+	final_data['rg'] = dados['ListServidores'][0]['NrRg']
+	final_data['digito-rg'] = dados['ListServidores'][0]['CdVerifRg']
+
+	# pegar dados funcionais do professor
+	response = context.session.post('https://sed.educacao.sp.gov.br/Funcional/Consulta/ListarDadosFuncionais',
+		data={
+			'NrCpf': final_data['cpf']
+		},
+		headers=headers
+	)
+
+	soup = BeautifulSoup(response.text, 'html.parser')
+	tabela = soup.find(id='tblFuncional')
+	trs = tabela.tbody.find_all('tr')
+	
+	dados_funcionais = []
+
+	for tr in trs:
+
+		json_td = json.loads(tr.find('i')['onclick'].replace('DetalharDadosFuncionais(', '')[:-1])
+
+		info = {
+			'di': tr.find_all('td')[1].get_text(strip=True),
+			'vinculo': tr.find_all('td')[2].get_text(strip=True),
+			'cargo': tr.find_all('td')[3].get_text(strip=True),
+			'ua_classe': tr.find_all('td')[4].get_text(strip=True),
+			'situacao': tr.find_all('td')[5].get_text(strip=True),
+			'cod_faixa':json_td['CodigoIdentidadeReferenciaFaixa'],
+			'disciplina': json_td['NmDisciplina'],
+			'cod_cargo': json_td['CdCargo'],
+			'cod_jornada': json_td['CdJornada'],
+			'CdAfastamento': json_td['DsMotAfast'].split(' - ')[0] if 'DsMotAfast' in json_td else None,
+			}
+		
+		dados_funcionais.append(info)
+
+	final_data['dados_funcionais'] = dados_funcionais
+	
+	return final_data
 
 
 def get_grade(context, num_classe):
