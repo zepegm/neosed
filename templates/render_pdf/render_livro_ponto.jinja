@@ -420,7 +420,7 @@
                         </tr>
                         <tr>
                             <td class="right"><b>RG:</b></td><td><u>{{professor['rg']}}</u></td>
-                            <td class="right"><b>RS:</b></td><td colspan="2"><u>{{professor['rs']}}</u></td>
+                            <td class="right"><b>RS/PV:</b></td><td colspan="2"><u>{{professor['rs']}}</u></td>
                             <td class="right"><b>CPF:</b></td><td colspan="2"><u>{{professor['cpf']}}</u></td>
                         </tr>
                         <tr>
@@ -633,13 +633,13 @@
                             {% if n < professor['quadro_aula']|length %}
                                 <td class="center">{{professor['quadro_aula'][n]['periodo']}}</td>
                                 <td style="border-right: 2px solid black;" class="center">{{professor['quadro_aula'][n]['horario']}}</td>
-                                <td class="center green">{{professor['quadro_aula'][n]['seg'] | replace("SLN","SL")}}</td>
-                                <td class="center green">{{professor['quadro_aula'][n]['ter'] | replace("SLN","SL")}}</td>
-                                <td class="center green">{{professor['quadro_aula'][n]['qua'] | replace("SLN","SL")}}</td>
-                                <td class="center green">{{professor['quadro_aula'][n]['qui'] | replace("SLN","SL")}}</td>
-                                <td style="border-right: 2px solid black;" class="center green">{{professor['quadro_aula'][n]['sex']}}</td>
-                                <td class="center green">{{professor['quadro_aula'][n]['sab'] | replace("SLN","SL")}}</td>
-                                <td class="center green">{{professor['quadro_aula'][n]['dom'] | replace("SLN","SL")}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['seg'] | replace("SLN","SL") | replace("INV","")}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['ter'] | replace("SLN","SL") | replace("INV","")}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['qua'] | replace("SLN","SL") | replace("INV","")}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['qui'] | replace("SLN","SL") | replace("INV","")}}</td>
+                                <td style="border-right: 2px solid black;" class="center green">{{professor['quadro_aula'][n]['sex'] | replace("SLN","SL") | replace("INV","")}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['sab'] | replace("SLN","SL") | replace("INV","")}}</td>
+                                <td class="center green">{{professor['quadro_aula'][n]['dom'] | replace("SLN","SL") | replace("INV","")}}</td>
                             {% else %}
                                 <td></td>
                                 <td style="border-right: 2px solid black;"></td>

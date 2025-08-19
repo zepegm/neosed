@@ -75,6 +75,36 @@
       {% include 'menu.jinja' %}
     {% endblock %}  
 
+    <div class="modal fade" tabindex="-1" id="modal_funcional">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Vínculos Funcionais - <span class="text-danger" id="lb_nome_professor"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">                    
+                    <table id="tb_afastamentos" class="table table-hover table-striped">
+                        <thead class="table-primary">
+                            <tr>
+                                <th class="text-center">DI</th>
+                                <th class="text-center">Vínculo</th>
+                                <th class="text-center">Cargo - Nome do Cargo/ Função</th>
+                                <th class="text-center">UA CLS.</th>
+                                <th class="text-center">Situação do Vínculo</th>
+                                <th class="text-center">Selecionar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_func"></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="modal fade" tabindex="-1" id="modal_afastamentos">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -517,6 +547,12 @@
 
     <script>
 
+        const elCadastro  = document.getElementById('modal_cadastro_professor');
+        const elFuncional = document.getElementById('modal_funcional');
+
+        const modal_cadastro_professor = new bootstrap.Modal(elCadastro);
+        const modal_funcional          = new bootstrap.Modal(elFuncional);
+
         var periodos = {{periodos}};
 
         periodo = '<select class="form-control cb_periodo">';
@@ -558,6 +594,28 @@
             }); 
         });
 
+        $("#tbody_func").on('click', '.btn-selecionar-vinculo', function() {
+            $("#txt_di").val($(this).attr('data-di'));
+            $("#txt_faixa").val($(this).attr('data-faixa'));
+            $("#cb_cargo").val($(this).attr('data-cargo'));
+            $("#cb_categoria").val($(this).attr('data-vinculo'));
+            $("#cb_jornada").val($(this).attr('data-jornada'));
+            $("#cb_sede_classificacao").val($(this).attr('data-ua'));
+            $("#cb_sede_frequencia").val($(this).attr('data-ua'));
+            $("#cb_afastamento").val($(this).attr('data-afs'));
+            $("#txt_nome_ata").val($("#txt_nome").val().split(' ')[0]);
+            $("#cb_disciplina").val($(this).attr('data-disciplina'));
+
+            // Ouve o evento no ELEMENTO do modal
+            elFuncional.addEventListener('hidden.bs.modal', function () {
+                modal_cadastro_professor.show();
+            }, { once: true });
+
+            // Fecha o modal de cadastro; quando terminar de fechar, abre o funcional
+            modal_funcional.hide();
+
+        });
+
         $("#btn-import").on('click', function() {
 
             $(this).attr('disabled', '');
@@ -574,10 +632,39 @@
                 success: function(data) {
                     if (data.result) {
                         dados = data.dados;
+                        console.log(dados);
                         $("#txt_nome").val(dados['nome']);
                         $("#txt_cpf").val(dados['cpf']);
                         $("#txt_rg").val(dados['rg']);
                         $("#txt_digito_rg").val(dados['digito-rg']);
+                        $("#btn-import").removeAttr('disabled');
+                        $("#btn-import").html('Importar Dados SED');
+                        
+                        $("#lb_nome_professor").html(dados['nome']);
+
+                        let lista_vinculos = dados['dados_funcionais'];
+
+                        $("#tbody_func").empty();
+                        for (let i = 0; i < lista_vinculos.length; i++) {
+
+                            let button = '<button class="btn btn-success btn-selecionar-vinculo" data-di="' + lista_vinculos[i]['di'] + '" data-faixa="' + lista_vinculos[i]['cod_faixa'] + '" data-cargo="' + lista_vinculos[i]['cod_cargo'] + '" data-vinculo="' + lista_vinculos[i]['vinculo_cod'] + '" data-jornada="' + lista_vinculos[i]['cod_jornada'] + '" data-ua="' + lista_vinculos[i]['ua_classe'] + '" data-afs="' + lista_vinculos[i]['CdAfastamento'] + '" data-disciplina="' + lista_vinculos[i]['cod_disciplina'] + '"><i class="fa-solid fa-check"></i></button>';
+
+                            if (lista_vinculos[i]['situacao'] != 'ATIVO') {
+                                button = '<button class="btn btn-secondary" disabled><i class="fa-solid fa-minus"></i></button>';
+                            }
+
+                            let linha = '<tr><td class="text-center">' + lista_vinculos[i]['di'] + '</td><td class="text-center">' + lista_vinculos[i]['vinculo'] + '</td><td class="text-center">' + lista_vinculos[i]['cargo'] + '</td><td class="text-center">' + lista_vinculos[i]['ua_classe'] + '</td><td class="text-center">' + lista_vinculos[i]['situacao'] + '</td><td class="text-center">' + button + '</td></tr>';
+                            $("#tbody_func").append(linha);
+                        }
+
+                        // Ouve o evento no ELEMENTO do modal
+                        elCadastro.addEventListener('hidden.bs.modal', function () {
+                            modal_funcional.show();
+                        }, { once: true });
+
+                        // Fecha o modal de cadastro; quando terminar de fechar, abre o funcional
+                        modal_cadastro_professor.hide();
+                        
                     }
                 },
             });
@@ -900,6 +987,7 @@
                                                         '<li><b>CLB</b> - CLUBE</li>' +
                                                         '<li><b>SL</b> - Sala de Leitura</li>' +
                                                         '<li><b>SLN</b> - Sala de Leitura (Não soma na contagem de aulas atribuídas)</li>' +
+                                                        '<li><b>INV</b> - Conta pra atribuição mas não aparece no ponto</li>' +
                                                     '</ul>' +
                                                 '</div>' +
                                             '</div>');

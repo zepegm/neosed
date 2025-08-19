@@ -1,19 +1,34 @@
-from sed_api import start_context, get_matriz_curricular, get_grade, get_professor_info
-import openpyxl
-import unicodedata
+import os
+import asyncio
+import requests
+import pyppeteer.chromium_downloader as cd
+from pyppeteer import launch
 
-def limpar_texto(texto):
-    if isinstance(texto, str):
-        texto = unicodedata.normalize("NFKD", texto)  # remove acentos e normaliza
-        return texto.replace('\u202f', ' ').strip()
-    return texto
+# 1) Descobrir a última revisão disponível p/ Windows x64
+def latest_win64_revision():
+    url = "https://storage.googleapis.com/chromium-browser-snapshots/Win_x64/LAST_CHANGE"
+    r = requests.get(url, timeout=20)
+    r.raise_for_status()
+    return r.text.strip()
 
-# Passo 1: Autenticar com cookie SED
-auth = {
-    'cookie_SED': '64sKQsADm2f7lqx8006QHLMx974K5funMHKQZg=='
-}
-context = start_context(auth)
+async def main():
+    # 2) Apagar downloads antigos quebrados (opcional, mas recomendado)
+    local_dir = os.path.expandvars(r"%LOCALAPPDATA%\pyppeteer\pyppeteer\local-chromium")
+    if os.path.isdir(local_dir):
+        # Se quiser, limpe a pasta inteira manualmente pelo Explorer
+        pass
 
-dados_prof = get_professor_info(context, '27632200886', '')
+    # 3) Forçar a revisão para a mais recente disponível
+    rev = latest_win64_revision()
+    cd.REVISION = rev
 
-print(dados_prof)
+    # 4) Baixar e obter o executável dessa revisão
+    cd.download_chromium()  # baixa se não existir
+    exe = cd.chromium_executable()
+
+    # 5) Subir com essa revisão
+    browser = await launch(executablePath=exe, headless=False)
+    print(await browser.version())
+    await browser.close()
+
+asyncio.get_event_loop().run_until_complete(main())

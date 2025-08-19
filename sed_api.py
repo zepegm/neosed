@@ -4,6 +4,14 @@ from datetime import datetime
 from dataclasses import dataclass
 import re
 import json
+from MySQL import db
+
+# Lê o arquivo JSON
+with open("config_db.json") as f:
+    config = json.load(f)
+
+# configuração do server principal
+banco = db(config)
 
 @dataclass
 class SEDContext:
@@ -103,6 +111,8 @@ def get_professor_info(context, cpf_professor, rg_professor):
 	for tr in trs:
 
 		json_td = json.loads(tr.find('i')['onclick'].replace('DetalharDadosFuncionais(', '')[:-1])
+		cod_jornada = banco.executarConsulta("select id from jornada_livro_ponto where letra = '%s'" % json_td['CdJornada'])
+		cd_disciplina = banco.executarConsulta(f'''select codigo_disciplina from disciplinas where descricao like "{json_td['NmDisciplina']}"''')
 
 		info = {
 			'di': tr.find_all('td')[1].get_text(strip=True),
@@ -112,9 +122,11 @@ def get_professor_info(context, cpf_professor, rg_professor):
 			'situacao': tr.find_all('td')[5].get_text(strip=True),
 			'cod_faixa':json_td['CodigoIdentidadeReferenciaFaixa'],
 			'disciplina': json_td['NmDisciplina'],
-			'cod_cargo': json_td['CdCargo'],
-			'cod_jornada': json_td['CdJornada'],
-			'CdAfastamento': json_td['DsMotAfast'].split(' - ')[0] if 'DsMotAfast' in json_td else None,
+			'cod_disciplina': cd_disciplina[0]['codigo_disciplina'] if len(cd_disciplina) > 0 else "null",
+			'cod_cargo': banco.executarConsulta("select id from cargos_livro_ponto where cod_sed = %s " % json_td['CdCargo'])[0]['id'] if json_td['CdCargo'] else None,
+			'cod_jornada': cod_jornada[0]['id'] if len(cod_jornada) > 0 else 1,
+			'CdAfastamento': json_td['DsMotAfast'].split(' - ')[0] if json_td['DsMotAfast'].split(' - ')[0] != "" else "null",
+			'vinculo_cod': banco.executarConsulta("select id from categoria_livro_ponto where letra = '%s'" % json_td['CdIdentCatFunc'])[0]['id'] if 'CdIdentCatFunc' in json_td else None,
 			}
 		
 		dados_funcionais.append(info)

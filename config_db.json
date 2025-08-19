@@ -1,0 +1,6 @@
+{
+    "host":"localhost",
+    "user":"root",
+    "passwd":"admin",
+    "db":"neosed"
+}

@@ -66,11 +66,12 @@ app.jinja_env.filters['diferenca_maior_que_40'] = diferenca_maior
             #'passwd':"password",  # your password
             #'db':"neosed"})
 
+# Lê o arquivo JSON
+with open("config_db.json") as f:
+    config = json.load(f)
+
 # configuração do server principal
-banco = db({'host':"localhost",    # your host, usually localhost
-            'user':"root",         # your username
-            'passwd':"admin",  # your password
-            'db':"neosed"})
+banco = db(config)
 
 
 home_directory = os.path.expanduser( '~' )
@@ -3020,14 +3021,14 @@ async def gerar_pdf():
         browser = await launch(
             handleSIGINT=False,
             handleSIGTERM=False,
-            handleSIGHUP=False
+            handleSIGHUP=False,
         )
 
         print('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (estilo, ensino, ano, data))
 
         page = await browser.newPage()
         await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (estilo, ensino, ano, data), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path_1, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        await page.pdf({'path': pdf_path_1, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '9mm', 'left': '10mm'}})
 
         if (estilo == 'individual'):
             await browser.close()
@@ -4821,6 +4822,7 @@ def ponto():
 
                     return jsonify({'dados':get_professor_info(context, info['cpf'], info['rg']), 'result': True})
                 except Exception as e:
+                    print(e)
                     return jsonify({'error': str(e), 'result': False})
             
         if 'cpf_delete_quadro' in request.form: # é pra deletar o quadro de aulas do professor
