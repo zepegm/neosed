@@ -67,6 +67,37 @@
     {% endblock %}
 
     <!-- Modal -->
+    <div class="modal fade" id="modal_grade_horaria" tabindex="-1" aria-labelledby="modal_grade_horariaLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal_grade_horariaLabel">Grade Horária</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <button id="btn_add_row_horario" class="btn btn-success mb-3"><i class="fa-solid fa-plus"></i></button>
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-center">Início</th>
+                                <th class="text-center">Fim</th>
+                                <th class="text-center">Excluir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela_horario"></tbody>
+                    
+                    </table>
+                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btn_salvar_horario">Salvar</button>
+                    </div>
+            </div>
+        </div>
+    </div>     
+
+    <!-- Modal -->
     <div class="modal fade" id="confirmar_edicao_modal" tabindex="-1" aria-labelledby="confirmar_edicao_modalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -218,6 +249,10 @@
 
     <form id="form-enviar-matriz" method="post" action="/">
         <input type="hidden" name="matriz" id="hidden_matriz" value="">
+    </form>
+
+    <form id="form-enviar-horario" method="post" action="/">
+        <input type="hidden" name="horario" id="hidden_horario" value="">
     </form>
 
     <!-- Modal -->
@@ -807,7 +842,7 @@
                     <!-- <thead class="table-dark"> -->
                         <tr>
                             <th colspan="5">{{item['tipo_ensino']['tipo_ensino']}}</th>
-                            <th colspan="2">Total de turmas: {{item['tipo_ensino']['total']}}</th>
+                            <th colspan="3">Total de turmas: {{item['tipo_ensino']['total']}}</th>
                         </tr>
                     </thead>
                     <thead class="table-warning">
@@ -817,6 +852,7 @@
                             <th class="text-center">Período</th>
                             <th class="text-center">Duração</th>
                             <th class="text-center">Matriz Curricular</th>
+                            <th class="text-center">Esquema de Horário</th>
                             <th class="text-center">Visualizar</th>
                             <th class="text-center">Editar</th>
                         </tr>
@@ -830,6 +866,7 @@
                                 <td class="text-center">{{turma['duracao']}}</td>
                                 <td class="text-center"><a href="javascript:abrirMatriz({{turma['num_classe']}}, '{{turma['duracao']}}')"><i class="fa-solid fa-table-list"></i></a></td>
                                 {% if item['tipo_ensino']['id'] != 2 and item['tipo_ensino']['id'] != 5 %}
+                                <td class="text-center"><a href="javascript:abrirHorario({{turma['num_classe']}}, '{{turma['duracao']}}')"><i class="fa-solid fa-clock"></i></a></td>
                                 <td class="text-center"><a href="javascript:consultar({{turma['num_classe']}}, '{{turma['nome_turma']}}', '{{turma['duracao']}}', '{{turma['periodo']}}', '{{item['tipo_ensino']['tipo_ensino']}}')"><i class="fa-solid fa-search"></i></a></td>
                                 <td class="text-center"><a href="javascript:editar({{turma['num_classe']}}, '{{turma['nome_turma']}}', {{turma['id_ensino']}}, {{turma['id_periodo']}}, {{turma['id_duracao']}}, '{{turma['apelido']}}', '{{turma['id_oculto']}}')"><i class="fa-solid fa-edit"></i></a></td>
                                 {% else %}
@@ -943,6 +980,48 @@
             });
         });
 
+        $("#btn_add_row_horario").on('click', function() {
+
+            // Se já existir uma linha, a nova vai pegar o horário final da última linha e colocar como horário inicial
+            let last_row = $("#tabela_horario tr").last();
+            let last_hora_fim = last_row.find('.hora_fim').val();
+            
+            let hora_inicio = '07:00';
+            let hora_fim = '07:50';
+
+            if (last_hora_fim) {
+                hora_inicio = last_hora_fim;
+                let partes = last_hora_fim.split(':');
+                let horas = parseInt(partes[0]);
+                let minutos = parseInt(partes[1]) + 50;
+                if (minutos >= 60) {
+                    horas += Math.floor(minutos / 60);
+                    minutos = minutos % 60;
+                }
+                if (horas < 10) {
+                    horas = '0' + horas;
+                }
+                if (minutos < 10) {
+                    minutos = '0' + minutos;
+                }
+                hora_fim = `${horas}:${minutos}`;
+            }
+
+
+            let row = `<tr>`;
+            row += `<td><input type="time" class="form-control hora_inicio" value="${hora_inicio}"></td>`;
+            row += `<td><input type="time" class="form-control hora_fim" value="${hora_fim}"></td>`;
+            row += `<td class="text-center align-middle"><a href="#" class="remover-horario"><i class="fa-solid fa-trash"></i></a></td>`;
+            row += `</tr>`;
+
+            $("#tabela_horario").append(row);
+        });
+
+        $("#tabela_horario").on('click', '.remover-horario', function(e) {
+            e.preventDefault();
+            $(this).closest('tr').remove();
+        });
+
         $("#btn_puxar_matriz").on('click', function() {
             $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
             $(this).attr('disabled');
@@ -980,6 +1059,20 @@
 
             $("#hidden_matriz").val(JSON.stringify(matriz));
             $("#form-enviar-matriz").submit();
+        })
+
+        $("#btn_salvar_horario").on('click', function() {
+            let horario = [];
+            let pos = 1;
+            $("#tabela_horario tr").each(function() {
+                let inicio = $(this).find('.hora_inicio').val();
+                let fim = $(this).find('.hora_fim').val();
+                horario.push({num_classe:num_classe_matriz, pos:pos, inicio: inicio, fim: fim});
+                pos += 1;
+            });
+
+            $("#hidden_horario").val(JSON.stringify(horario));
+            $("#form-enviar-horario").submit();
         })
 
         $("#btn_add_disc").on('click', function() {
@@ -1141,6 +1234,34 @@
 
         });        
 
+        function abrirHorario(num_classe, duracao) {
+
+            num_classe_matriz = num_classe;
+
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('index') }}",
+                contentType: "application/json",
+                data: JSON.stringify({'destino':2, 'num_classe':num_classe}),
+                dataType: "json",
+                success: function(data) {
+                    $("#tabela_horario").empty();
+
+                    for (let i = 0; i < data.length; i++) {
+                        let row = `<tr>`;
+                        row += `<td><input type="time" class="form-control hora_inicio" value="${data[i].inicio}"></td>`;
+                        row += `<td><input type="time" class="form-control hora_fim" value="${data[i].fim}"></td>`;
+                        row += `<td class="text-center align-middle"><a href="#" class="remover-horario"><i class="fa-solid fa-trash"></i></a></td>`;
+                        row += `</tr>`;
+                        $("#tabela_horario").append(row);
+                    }
+
+                    $("#modal_grade_horaria").modal('show');
+                },
+            });                
+
+        }
+
         function abrirMatriz(num_classe, duracao) {
 
             num_classe_matriz = num_classe;
@@ -1155,7 +1276,7 @@
                 type: "POST",
                 url: "{{ url_for('index') }}",
                 contentType: "application/json",
-                data: JSON.stringify(num_classe),
+                data: JSON.stringify({'destino':1, 'num_classe':num_classe}),
                 dataType: "json",
                 success: function(data) {
                     $("#tabela_matriz").empty();

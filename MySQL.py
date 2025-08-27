@@ -2,41 +2,34 @@ import mysql.connector
 
 class db:
     def __init__(self, credenciais):
-        self.cred = credenciais
+        self.cred = credenciais    
 
-    def executarConsultaVetor(self, sql):
-        database = mysql.connector.connect(host=self.cred['host'],
-                                   user=self.cred['user'],
-                                   passwd=self.cred['passwd'],
-                                   db=self.cred['db'])
-        
+    def executarConsultaVetor(self, sql, params=None):
+        database = mysql.connector.connect(
+            host=self.cred['host'], user=self.cred['user'],
+            passwd=self.cred['passwd'], db=self.cred['db']
+        )
         cur = database.cursor()
-
-        cur.execute(sql)
-
+        if params:
+            cur.execute(sql, params)
+        else:
+            cur.execute(sql)
         result = [item[0] for item in cur.fetchall()]
-
         database.close()
+        return result
 
-        return result        
-
-    def executarConsulta(self, sql):
-        database = mysql.connector.connect(host=self.cred['host'],
-                                   user=self.cred['user'],
-                                   passwd=self.cred['passwd'],
-                                   db=self.cred['db'])
-        
+    def executarConsulta(self, sql, params=None):
+        database = mysql.connector.connect(
+            host=self.cred['host'], user=self.cred['user'],
+            passwd=self.cred['passwd'], db=self.cred['db']
+        )
         cur = database.cursor(dictionary=True)
-
-        cur.execute(sql)
-
+        if params:
+            cur.execute(sql, params)     # <— agora aceita params
+        else:
+            cur.execute(sql)
         result = [dict(row) for row in cur.fetchall()]
-        
-        #for row in cur.fetchall():
-            #print(row)
-
         database.close()
-
         return result
     
     def inserirNovaTurma(self, turma):   
@@ -202,6 +195,8 @@ class db:
             database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
             cur = database.cursor()
 
+            print(turma)
+
             if turma[0]['serie'] == "0":
                 #print('to aqui')
                 cur.execute('DELETE FROM vinculo_alunos_if WHERE num_classe_if = %s' % turma[0]['num_classe'])
@@ -221,6 +216,9 @@ class db:
                 for item in turma:
                     sql = "INSERT INTO aluno(ra, digito_ra, rm, nome, nascimento, sexo, rg, cpf) VALUES(%s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE rm=%s, nome=%s, nascimento=%s, sexo=%s, rg=%s, cpf=%s" % (item['ra'], item['digito'], item['rm'], item['nome'], item['nascimento'], item['sexo'], item['rg'], item['cpf'].replace(".", "").replace("-", ""), item['rm'], item['nome'], item['nascimento'], item['sexo'], item['rg'], item['cpf'].replace(".", "").replace("-", ""))                
                     cur.execute(sql)
+
+                    if item['serie'] == '':
+                        item['serie'] = '0'
 
                     sql = "INSERT INTO vinculo_alunos_turmas VALUES(%s, %s, %s, %s, %s, %s, %s)" % (item['ra'], item['num_classe'], item['num_chamada'], item['serie'], item['matricula'], item['fim_mat'], item['situacao'])
                     cur.execute(sql)
@@ -443,6 +441,31 @@ class db:
             print("An exception occurred:", error) # An exception occurred: division by zero
             return False 
                 
+    def alterarHorario(self, lista):
+        
+        num_classe = lista[0]['num_classe']
+        
+        try:
+
+            database = mysql.connector.connect(host=self.cred['host'], user=self.cred['user'], passwd=self.cred['passwd'], db=self.cred['db'])
+            cur = database.cursor()        
+
+            # remover dados conflitantes
+            cur.execute('SET SQL_SAFE_UPDATES = 0')
+            cur.execute("DELETE FROM horario_turma WHERE num_classe = %s" % num_classe)
+            cur.execute('SET SQL_SAFE_UPDATES = 1')
+
+
+            for item in lista:
+                print(f"INSERT INTO horario_turma(num_classe, pos, inicio, fim) VALUES({item['num_classe']}, {item['pos']}, {item['inicio']}, {item['fim']})")
+                cur.execute(f"INSERT INTO horario_turma(num_classe, pos, inicio, fim) VALUES({item['num_classe']}, {item['pos']}, '{item['inicio']}', '{item['fim']}')")
+
+            database.commit()
+
+            return True
+
+        except Exception as error:
+            print("An exception occurred:", error)
 
     def alterarMatriz(self, lista):
         num_classe = lista[0]['num_classe']

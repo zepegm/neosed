@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <title>Rendereziação PDF</title>
+        <style>
+
+            @font-face {
+                font-family:bebaskai;
+                font-style:normal;
+                font-weight:400;
+                src:local('BebasKai'),
+                url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
+            }
+
+            #pagina {
+                width: 729px;
+                height: 1062px;
+                color: black;
+                margin-top: -6px;
+                margin-left: -7px;
+                background-color: white;
+            }
+
+            .title {
+                font-family: bebaskai;
+                font-size: 30px;
+                text-align: center;
+                margin-bottom: 10px;
+                border: 2px solid black;
+                margin-bottom: 40px;
+            }
+
+            .red { color: #d63447; }
+
+            .blue { color: #1e90ff; }
+
+            .grid { display: grid; grid-template-columns: 90px repeat({{ turmas|length }}, 1fr); gap: 2px; }
+            .col-head { font-weight: 700; text-align: center; font-family: Arial, Helvetica, sans-serif; margin-bottom: 10px;}
+            .axis { position: relative; border-left: 1px solid #ccc; }
+            .lane { position: relative; border: 1px solid #e5e7eb; background:#fafafa}
+            .tick { position:absolute; left:-50px; width:80px; text-align:right; font-size:11px; color:#666; }
+            .hline{ position:absolute; left:0; right:0; height:1px; background:#e5e7eb; }
+            .block{ position:absolute; left:2px; right:2px; border:1px solid #9ec5fe; background:#e9f2ff; border-radius:4px;
+                    font-size:12px; display:flex; align-items:center; justify-content:center; font-family: Arial, Helvetica, sans-serif; }
+        
+        </style>
+    </head>
+    <body>
+        {% for dia, turmas_map in timeline.items() %}
+        <div id="pagina">
+            <p class="title"><span class="red">Horário Geral </span> - {{ dia }} - <span class="blue">{{ tipo_ensino }}</span> - <span class="red">{{data_horario}}</span></p>
+            <div class="grid">
+                <div class="col-head">Horário</div>
+                {% for turma in turmas %}
+                    <div class="col-head">{{ turma }}</div>
+                {% endfor %}
+
+                <!-- coluna do eixo -->
+                <div class="axis" style="height: {{ axis_height }}px">
+                    {% for t in ticks %}
+                    <div class="tick"  style="top: {{ t.y  + 2}}px">{{ t.label }}</div>
+                    <div class="hline" style="top: {{ t.y }}px"></div>
+                    {% endfor %}
+                </div>
+
+                <!-- defina o gap que preferir -->
+                {% set GAP = 4 %}
+
+                <!-- colunas das turmas -->
+                {% for turma in turmas %}
+                    <!-- cada coluna de turma recebe a var CSS -->
+                    <div class="lane" style="--gap: {{ GAP }}px; height: {{ axis_height }}px">
+                        {% for t in ticks %}<div class="hline" style="top: {{ t.y }}px"></div>{% endfor %}
+                        {% for b in timeline[dia].get(turma, []) %}
+                            <div class="block"
+                                title="{{ b.title }}"
+                                style="
+                                top:    calc({{ b.top }}px + var(--gap)/2);
+                                height: calc({{ b.height }}px - var(--gap));
+                                background: {{ b.bg }}; border-color: {{ b.bd }};
+                                text-align:center;"><span><p style="color:{{b.bd}}">{{b.inicio}} - {{b.fim}}</p>
+                            <p>{{ b.label }}</p></span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
+        </div>
+        {% endfor %}
+    </body>
+</htmL>

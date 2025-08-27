@@ -25,6 +25,7 @@
                 text-align: center;
                 font-family: Arial, Helvetica, sans-serif;  
                 border: solid black 1px;
+                font-size: 11px;
             }
 
             .info-ROE,
@@ -33,6 +34,7 @@
             .info-Atpc,
             .info-Mult,
             .info-PAT,
+            .info-PATN,
             .info-SL,
             .info-SLN {
                 background-color: #ffea97;
@@ -61,6 +63,7 @@
                 text-align: center;
                 font-weight: bold;
                 font-family: Arial, Helvetica, sans-serif;
+                font-size: 11px;
             }
 
             .almoco {
@@ -69,6 +72,13 @@
                 text-align: center;
                 font-weight: bold;
                 font-family: Arial, Helvetica, sans-serif;
+                font-size: 11px;
+            }
+
+            .intervalo_professor {
+                background-color: #333;
+                height: 3px !important;
+                max-height: 3px !important;
             }
             
         </style>
@@ -81,7 +91,7 @@
                     <td colspan="6" class="thead" style="padding-top:10px;padding-left:10px;"><b>Professor(a):</b> {{ professor.nome }}</td>
                 </tr>
                 <tr>
-                    <td colspan="6" class="thead" style="padding-left:10px;padding-bottom:10px;"><b>Quantidade de Aulas:</b> {{ professor['qtd_aulas'] }}</td>
+                    <td colspan="6" class="thead" style="padding-left:10px;padding-bottom:10px;"><b>Quantidade de Aulas:</b> {{ professor['qtd_aulas'] + professor['total_quadro_manual'] }}</td>
                 </tr>
                 <tr>
                     <th class="thead dark" style="width:104px;">Horário</th>
@@ -95,25 +105,32 @@
             <tbody>
                 {% for aula in professor['quadro'] %}
 
-                    {% set is_first_externo = loop.first %}
-
-                    {% for item in intervalos %}
-                        {% if item['horario'] == aula['inicio'] and not is_first_externo %}
-                        <tr>
-                            <td class="{{item['tipo']}}">{{item['inicio']|formatar_timedelta}} - {{aula['inicio']|formatar_timedelta}}</td>
-                            <td class="{{item['tipo']}}" colspan="5">{{item['descricao']}}</td>
-                        </tr>
-                        {% endif %}
-                    {% endfor %}
-
                 <tr>
                     <td class="aula">{{aula['horario']}}</td>
-                    <td class="aula info-{{aula['seg']}}">{{aula['seg']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['ter']}}">{{aula['ter']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['qua']}}">{{aula['qua']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['qui']}}">{{aula['qui']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['sex']}}">{{aula['sex']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula['seg']}}">{{aula['seg']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula['ter']}}">{{aula['ter']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula['qua']}}">{{aula['qua']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula['qui']}}">{{aula['qui']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula['sex']}}">{{aula['sex']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
                 </tr>
+
+                {% try %}
+                    {% if professor['quadro'][loop.index]['inicio'] != aula['fim'] %}
+
+                        {% if professor['afastamento'] %}
+                        <tr>
+                            <td class="intervalo">{{aula['fim']|formatar_timedelta}} - {{professor['quadro'][loop.index]['inicio']|formatar_timedelta}}</td>
+                            <td class="intervalo" colspan="5">INTERVALO DOS ALUNOS</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="intervalo_professor"></td>
+                        </tr>                        
+                        {% endif %}
+                    {% endif %}
+                {% catch %}
+                {% endtry %}
+
                 {% endfor %}
             </tbody>
         </table>

@@ -53,6 +53,10 @@
             .tb_{{item['disc']}} { background-color: {{item['cor']}}; color: black; }
         {% endfor %}
 
+        .tb_-3 {
+            color: white;
+        }
+
     </style>
 </head>
   <body style="background-color: rgba(244, 244, 244);">
@@ -141,13 +145,13 @@
                                 <select class="form-select" id="cb_ensino" name="ano">
                                     <option value="(1)">PEI - Fundamental</option>
                                     <option value="(3, 4)">PEI - Médio + Técnico</option>
+                                    <option value="individual">Horário Individual dos Professores</option>
                                 </select>
-                                <div class="input-group-text">Estilo:</div>
+                                <!-- <div class="input-group-text">Estilo:</div>
                                 <select class="form-select" id="cb_estilo" name="ano">
                                     <option value="grade">Compacto com Disciplinas coloridas por professor</option>
-                                    <option value="grade_alt">Espaçado com disciplinas coloridas por dia da semana</option>
-                                    <option value="individual">Horário Individual dos Professores</option>
-                                </select> 
+                                    <<option value="grade_alt">Espaçado com disciplinas coloridas por dia da semana</option>
+                                </select>  -->
                                 <div class="input-group-text">Data:</div>
                                 <input type="date" class="form-control" id="txt_data" value="{{data}}">
                                 <button id="btn-gerar-horario" class="btn btn-danger">Gerar PDF</button>                              
@@ -265,7 +269,8 @@
 
             let ano = $("#cb_ano").val();
             let ensino = $("#cb_ensino").val();
-            let estilo = $("#cb_estilo").val();
+            //let estilo = $("#cb_estilo").val();
+            let estilo = 'grade';
             let data = $("#txt_data").val();
 
             let dataParts = data.split("-");
@@ -363,7 +368,7 @@
                             
                             for (let j = 0; j < 5; j++) {
                                 console.log(data['grade'][cont_disc]);
-                                if (data['grade'][cont_disc]['disciplina'] != null) {
+                                if (typeof data['grade'][cont_disc] !== 'undefined' && data['grade'][cont_disc]['disciplina'] !== null) {
                                     html += `<td class="tb_${data['grade'][cont_disc]['disciplina']}" data-id="${data['grade'][cont_disc]['disciplina']}" draggable="true">${data['grade'][cont_disc]['abv']}</td>`;
                                 } else {
                                     html += `<td class="gray" draggable="false"></td>`;

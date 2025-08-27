@@ -146,7 +146,12 @@
             .CLUBE {
                 background-color: rebeccapurple !important;
                 color: white;
-            }      
+            }    
+
+            .ALMOÇO {
+                background-color: #ff5e00 !important;
+                color: white !important;
+            }  
 
             /* professores com cores específicas */
             {% for item in profs %}
@@ -185,8 +190,8 @@
                         {% for item in horario %}
                         <tr>
                             {% if loop.index == 1 %}
-                                <td class="first-line gray" rowspan="{{horario|length}}"><span class="vertical-text">{{dias_semana[n - 2]}}</span></td>
-                                <td class="gray first-line">{{item['horario']}}</td>
+                                <td style="width:40px;" class="first-line gray" rowspan="{{horario|length}}"><span class="vertical-text">{{dias_semana[n - 2]}}</span></td>
+                                <td style="width:80px;" class="gray first-line">{{item['horario']}}</td>
 
                                 <!-- Agora se inicia o processo de inclusão das disciplinas -->
                                 {% for turma in turmas %}
