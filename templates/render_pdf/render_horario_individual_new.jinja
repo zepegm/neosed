@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <title>Render Horário Individual</title>
+        <style>
+            .tb-prof { border-collapse: separate; border-spacing: 0 6px; width: 100%; }
+            .tb-prof td, .tb-prof th { padding: 6px 10px; border: 1px solid #ddd; }
+            .tb-prof .time { width: 120px; background:#f7f7f7; font-weight:600; }
+            
+        </style>
+    </head>
+    <body>
+        {% for p in profs %}
+        <h3>{{ p.nome }} — Quantidade de Aulas: {{ p.total }}</h3>
+        <table class="tb-prof">
+            <thead>
+            <tr><th>Horário</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th></tr>
+            </thead>
+            <tbody>
+            {% for r in p.grid %}
+            <tr>
+                <td class="time">{{ r.horario }}</td>
+                <td>{{ r[2] }}</td><td>{{ r[3] }}</td><td>{{ r[4] }}</td><td>{{ r[5] }}</td><td>{{ r[6] }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+        {% endfor %}  
+    </body>
+</html>

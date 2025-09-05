@@ -84,14 +84,14 @@
         </style>
     </head>
     <body>
-        {% for professor in professores %}
+        {% for professor in profs %}
         <table>
             <thead>
                 <tr>
                     <td colspan="6" class="thead" style="padding-top:10px;padding-left:10px;"><b>Professor(a):</b> {{ professor.nome }}</td>
                 </tr>
                 <tr>
-                    <td colspan="6" class="thead" style="padding-left:10px;padding-bottom:10px;"><b>Quantidade de Aulas:</b> {{ professor['qtd_aulas'] + professor['total_quadro_manual'] }}</td>
+                    <td colspan="6" class="thead" style="padding-left:10px;padding-bottom:10px;"><b>Quantidade de Aulas:</b> {{ professor['total'] }}</td>
                 </tr>
                 <tr>
                     <th class="thead dark" style="width:104px;">Horário</th>
@@ -103,15 +103,15 @@
                 </tr>
             </thead>
             <tbody>
-                {% for aula in professor['quadro'] %}
+                {% for aula in professor['grid'] %}
 
                 <tr>
                     <td class="aula">{{aula['horario']}}</td>
-                    <td class="aula info-{{aula['seg']}}">{{aula['seg']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['ter']}}">{{aula['ter']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['qua']}}">{{aula['qua']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['qui']}}">{{aula['qui']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
-                    <td class="aula info-{{aula['sex']}}">{{aula['sex']|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula[2]}}">{{aula[2]|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula[3]}}">{{aula[3]|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula[4]}}">{{aula[4]|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula[5]}}">{{aula[5]|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
+                    <td class="aula info-{{aula[6]}}">{{aula[6]|replace("ROE", "Reunião OE")|replace('Tut', 'TUTORIA')|replace('Atpg', 'ATPCG')|replace('Atpa', 'ATPCA')|replace('ELE', 'ELETIVA')|replace('Mult', 'MULTIPLICA')|replace('PAT', 'PAEET')|replace('PAEETN', 'PAEET')|replace('SLN', 'Sala de Leitura')|replace('SL', 'Sala de Leitura')|replace('Atpc', 'ATPC')|replace('CLB', 'CLUBE')}}</td>
                 </tr>
 
                 {% try %}

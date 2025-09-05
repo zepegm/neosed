@@ -43,6 +43,23 @@ def to_minutes(t):
         return int(h) * 60 + int(m)
     raise TypeError(f"Tipo de hora não suportado: {type(t)} {t!r}")
 
+
+def montar_grade_prof(rows):
+    # slots únicos e ordenados
+    slots = sorted({ (r['inicio'], r['fim']) for r in rows }, key=lambda t: (t[0], t[1]))
+    dias = [2,3,4,5,6]  # Seg..Sex (ajuste se quiser dom/sáb)
+    grid = []
+    for ini, fim in slots:
+        linha = {'horario': f"{fmt_hhmm(ini)} - {fmt_hhmm(fim)}"}
+        for s in dias:
+            lbl = next((r['label'] for r in rows
+                        if r['inicio']==ini and r['fim']==fim and r['semana']==s), '')
+            linha[s] = lbl or '-'
+        grid.append(linha)
+    # total de aulas (conta células com label diferente de vazio/“-”)
+    total = sum(1 for r in rows if r['label'] and r['label'] not in ('-', 'Atpc', 'SLN', 'REAN', 'PATN'))
+    return grid, total
+
 def montar_eventos(rows):
     # exemplo de preparo dos blocos
     PX_PER_MIN = 1.6  # 60 minutos = 72px (ajuste a gosto)

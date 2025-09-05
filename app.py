@@ -6,8 +6,9 @@ from waitress import serve
 from datetime import datetime, date, timedelta
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar, extrair_numeros, montar_eventos, hsl_for_key
+from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar, extrair_numeros, montar_eventos, hsl_for_key, montar_grade_prof
 from flask_socketio import SocketIO, emit
+from collections import defaultdict
 import pandas as pd
 import subprocess
 import os
@@ -37,7 +38,8 @@ socketio = SocketIO(app, async_mode='threading')
 
 app.jinja_env.add_extension(TryCatchExtension)
 
-BLOCOS_IGNORAR = {'', '-', 'ATPC', 'SLN', 'REAN', 'PATN'}
+#BLOCOS_IGNORAR = {'', '-', 'ATPC', 'SLN', 'REAN', 'PATN'}
+BLOCOS_IGNORAR = {'', '-'}
 SEMANA_SIGLAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']  # 0=seg ... 6=dom
 
 def ph(seq):
@@ -922,6 +924,30 @@ def render_livro_ponto():
                     professor['carga'] = f"{resto} aula(s)" if resto > 0 else "Não Possui"
         else:
             professor['jornada'] = 'Não Possui'
+
+
+        # -------- quadro de carga -------------
+        quadro = []
+        if int(professor['sede_c'][:5]) == int(ua_padrao):
+            # quadro estará visível somente para professores com sede aqui
+            if professor['afastamento'] == '': # quadro estará visível somente para professores que não estão designados ou afastados
+                if professor['total_aulas'] > 0: # quadro estará visível apenas para quem tiver aula
+                    if professor['jornada'] != 'Não Possui': # para os professores que tem jornada
+                        quadro.append({'col1':'<b>RESUMO (horas)</b>', 'col2':'Semanal', 'col3':'Mensal'})
+                        horas_jornada = int(round((professor['qtd_jornada'] + professor['soma_atpc']) * 50 / 60, 0))
+                        quadro.append({'col1':'JORNADA', 'col2':horas_jornada, 'col3':horas_jornada * 5})
+                        horas_suplementar = int(round((int(professor['total_aulas']) + int(professor['aulas_outra_ue']) - professor['qtd_jornada']) * 50 / 60, 0))
+                        quadro.append({'col1':'CARGA SUPLEMENTAR', 'col2':horas_suplementar, 'col3':horas_suplementar * 5})
+                        quadro.append({'col1':'TOTAL', 'col2':horas_jornada + horas_suplementar, 'col3':horas_jornada * 5 + horas_suplementar * 5})
+                    else: # para quem não tem jornada
+                        quadro.append({'col1':'<b>RESUMO (horas)</b>', 'col2':'Semanal', 'col3':'Mensal'})
+                        quadro.append({'col1':'NÃO POSSUI JORNADA', 'col2':'-', 'col3':'-'})
+                        horas_carga = int(round((professor['total_aulas'] + professor['aulas_outra_ue'] + professor['soma_atpc']) * 50 / 60, 0))
+                        quadro.append({'col1':'CARGA HORÁRIA', 'col2':horas_carga, 'col3':horas_carga * 5})
+                        quadro.append({'col1':'TOTAL', 'col2':horas_carga, 'col3':horas_carga * 5})
+                        
+                        
+        professor['quadro'] = quadro        
 
         # -------- quadro lateral (horário) via SP unificada --------
         if professor['assina_livro'] == 1:
@@ -2348,87 +2374,105 @@ def render_lista():
 
             data_horario = request.args.getlist('data')[0]
             tipo_ensino = request.args.getlist('num_classe')[0]
-            ano = request.args.getlist('order')[0]  
-            professores = banco.executarConsulta('''SELECT
-                                                        cpf,
-                                                        nome,
-                                                        afastamento,
-                                                        IFNULL(sum(qtd_aulas), 0) AS qtd_aulas,
-                                                        IFNULL((SELECT SUM( (seg NOT IN ('ATPC','SLN','REAN','PATN')) +
-                                                                    (ter NOT IN ('ATPC','SLN','REAN','PATN')) +
-                                                                    (qua NOT IN ('ATPC','SLN','REAN','PATN')) +
-                                                                    (qui NOT IN ('ATPC','SLN','REAN','PATN')) +
-                                                                    (sex NOT IN ('ATPC','SLN','REAN','PATN')))
-                                                        FROM horario_livro_ponto
-                                                        WHERE horario_livro_ponto.cpf_professor = professor_livro_ponto.cpf), 0) as total_quadro_manual
-                                                    FROM professor_livro_ponto
-                                                    LEFT JOIN matriz_curricular ON professor_livro_ponto.cpf IN (matriz_curricular.cpf_professor, matriz_curricular.cpf_professor_2)
-                                                    WHERE ativo = 1 AND assina_livro = 1
-                                                    GROUP BY cpf, nome, afastamento
-                                                    ORDER BY nome''')
+            ano = request.args.getlist('order')[0]
 
-            if len(professores) == 0:
-                ano = data_horario.split('/')[2]
-                calendario = banco.executarConsulta(f'''select DATE_FORMAT(1bim_inicio, '%d/%m/%Y') as inicio_1_sem, DATE_FORMAT(2bim_fim, '%d/%m/%Y') as fim_1_sem, DATE_FORMAT(3bim_inicio, '%d/%m/%Y') as inicio_2_sem, DATE_FORMAT(4bim_fim, '%d/%m/%Y') as fim_2_sem from calendario where ano = {ano}''')[0]
-                msg = f'''<p style="font-size:30px;line-height: 40px;">
-                            <b>Atenção!</b>
-                            A data escolhida não abrange nenhum professor. Escolha uma data que esteja entre o início e o fim do bimestre.
-                        </p>
-                        <p style="font-size:30px;line-height: 40px;">
-                            Lembre-se que entre o primeiro e o segundo semestres existe um período de férias/recesso.
-                        </p>
-                        <p style="font-size:30px;line-height: 40px;">
-                            <b>Calendário Escolar de {ano}: </b>
-                            <ul>
-                                <li style="font-size:30px;margin-bottom:10px;">Início do 1º Semestre: <b>{calendario['inicio_1_sem']}</b></li>
-                                <li style="font-size:30px;margin-bottom:20px;">Fim do 1º Semestre: <b>{calendario['fim_1_sem']}</b></li>
-                                <li style="font-size:30px;margin-bottom:10px;">Início do 2º Semestre: <b>{calendario['inicio_2_sem']}</b></li>
-                                <li style="font-size:30px;margin-bottom:10px;">Fim do 2º Semestre: <b>{calendario['fim_2_sem']}</b></li>                                
-                            </ul>
-                        </p>
-                        <p style="font-size:30px;margin-top:30px;">Data escolhida: <b style="color:red;">{data_horario}</b></p>'''
-                return render_template('render_pdf/render_erro.jinja', msg=msg)
+            sql = """/* Horário individual: todos os professores ativos que assinam o livro */
+                WITH profs AS (
+                SELECT p.cpf, p.nome AS prof_nome
+                FROM professor_livro_ponto p
+                WHERE p.ativo = 1 AND p.assina_livro = 1
+                ),
+                slots AS (
+                /* Aulas da grade/matriz (considerando calendário do ano) */
+                SELECT
+                    pr.cpf,
+                    pr.prof_nome,
+                    g.semana,
+                    COALESCE(ht.inicio, ha.inicio) AS inicio,
+                    COALESCE(ht.fim,    ha.fim)    AS fim,
+                    CONCAT(t.apelido,' (', d.abv, ')') AS label
+                FROM profs pr
+                JOIN matriz_curricular mc
+                    ON mc.cpf_professor = pr.cpf OR mc.cpf_professor_2 = pr.cpf
+                JOIN turma t            ON t.num_classe = mc.num_classe
+                JOIN calendario c       ON c.ano = t.ano
+                JOIN disciplinas d      ON d.codigo_disciplina = mc.disc_disciplina
+                JOIN grade g            ON g.num_classe = mc.num_classe AND g.disciplina = mc.disc_disciplina
+                LEFT JOIN horario_turma ht ON ht.num_classe = g.num_classe AND ht.pos = g.pos
+                LEFT JOIN hora_aulas ha    ON ha.ano = t.ano AND ha.tipo_ensino = t.tipo_ensino AND ha.pos = g.pos
+                WHERE
+                    (CASE t.duracao WHEN 3 THEN c.`3bim_inicio` ELSE c.`1bim_inicio` END) <= %s
+                    AND
+                    (CASE t.duracao WHEN 2 THEN c.`2bim_fim`    ELSE c.`4bim_fim`    END) >= %s
+                    /* Se houver quadro manual no mesmo slot/dia, ele tem prioridade */
+                    AND NOT EXISTS (
+                    SELECT 1
+                    FROM horario_livro_ponto h2
+                    WHERE h2.cpf_professor = pr.cpf
+                        AND TIME(h2.inicio) = TIME(COALESCE(ht.inicio, ha.inicio))
+                        AND TIME(h2.fim)    = TIME(COALESCE(ht.fim,    ha.fim))
+                        AND (
+                        (g.semana=2 AND h2.seg IS NOT NULL) OR (g.semana=3 AND h2.ter IS NOT NULL) OR
+                        (g.semana=4 AND h2.qua IS NOT NULL) OR (g.semana=5 AND h2.qui IS NOT NULL) OR
+                        (g.semana=6 AND h2.sex IS NOT NULL) OR (g.semana=7 AND h2.sab IS NOT NULL) OR
+                        (g.semana=1 AND h2.dom IS NOT NULL)
+                        )
+                    )
 
-            for professor in professores:
+                UNION ALL
 
+                /* Blocos do quadro manual (horario_livro_ponto) – unpivot seg..dom */
+                SELECT
+                    pr.cpf,
+                    pr.prof_nome,
+                    x.semana,
+                    TIME(h.inicio) AS inicio,
+                    TIME(h.fim)    AS fim,
+                    CASE x.semana WHEN 2 THEN h.seg WHEN 3 THEN h.ter WHEN 4 THEN h.qua
+                                    WHEN 5 THEN h.qui WHEN 6 THEN h.sex WHEN 7 THEN h.sab
+                                    WHEN 1 THEN h.dom END AS label
+                FROM profs pr
+                JOIN horario_livro_ponto h ON h.cpf_professor = pr.cpf
+                JOIN (SELECT 1 AS semana UNION ALL SELECT 2 UNION ALL SELECT 3
+                        UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7) x ON 1=1
+                WHERE CASE x.semana WHEN 2 THEN h.seg WHEN 3 THEN h.ter WHEN 4 THEN h.qua
+                                    WHEN 5 THEN h.qui WHEN 6 THEN h.sex WHEN 7 THEN h.sab
+                                    WHEN 1 THEN h.dom END IS NOT NULL
+                )
+                SELECT cpf, prof_nome, semana, inicio, fim, label
+                FROM slots
+                WHERE label IS NOT NULL
+                ORDER BY prof_nome, semana, inicio;"""
+
+            data_raw = request.args.get('data') or request.args.getlist('data')[0]
+            for fmt in ('%d/%m/%Y', '%Y-%m-%d'):
                 try:
-                    if professor['afastamento']:
-                        professor['quadro'] = banco.executarConsulta(f"CALL sp_horario_professor_v2({professor['cpf']}, '{converterDataMySQL(data_horario)}', 'detalhado', 0);")
-                    else:
-                        professor['quadro'] = banco.executarConsulta(f"CALL sp_horario_professor_v2({professor['cpf']}, '{converterDataMySQL(data_horario)}', 'detalhado', 1);")
-                except Exception as error:
-                    print("An exception occurred:", error)
-                    professor['quadro'] = []
+                    data_ref = datetime.strptime(data_raw, fmt).date()
+                    break
+                except ValueError:
+                    data_ref = None
+            if data_ref is None:
+                return "Parâmetro 'data' inválido", 400
 
-            #horario = banco.executarConsulta('select distinct inicio, fim from hora_aulas where ano = 2025 order by inicio')
-            intervalos = []
+            rows = banco.executarConsulta(sql, (data_ref, data_ref))
 
-            #for i in range(0, len(horario)):
-                #if i == len(horario) - 1:
-                    #break
 
-                #if horario[i]['fim'] != horario[i + 1]['inicio']:
-                    #diferenca = horario[i + 1]['inicio'] - horario[i]['fim']
-                    #diferenca_em_minutos = diferenca.total_seconds() / 60
-                    
-                    #if diferenca_em_minutos < 40:
-                        #intervalo = {
-                            #'horario': horario[i + 1]['inicio'],
-                            #'inicio': horario[i]['fim'],
-                            #'tipo': 'intervalo',
-                            #'descricao': 'INTERVALO DOS ALUNOS',
-                        #}
-                        #intervalos.append(intervalo)
-                    #elif diferenca_em_minutos < 120:
-                        #intervalo = {
-                            #'horario': horario[i + 1]['inicio'],
-                            #'inicio': horario[i]['fim'],
-                            #'tipo': 'almoco',
-                            #'descricao': 'ALMOÇO',
-                        #}
-                        #intervalos.append(intervalo)
+            # agrupar por professor
+            by_prof = defaultdict(list)
+            for r in rows:
+                by_prof[(r['cpf'], r['prof_nome'])].append(r)
 
-            return render_template('render_pdf/render_horario_individual.jinja', professores=professores)
+            profs = []
+            for (cpf, nome), rlist in by_prof.items():
+                grid, total = montar_grade_prof(rlist)
+                profs.append({'cpf': cpf, 'nome': nome, 'grid': grid, 'total': total})
+
+            profs.sort(key=lambda x: x['nome'])
+
+            return render_template(
+                'render_pdf/render_horario_individual.jinja',
+                profs=profs
+            )                
 
 @app.route('/atualizar_matriz_auto', methods=['GET', 'POST'])
 async def atualizar_matriz_auto():
