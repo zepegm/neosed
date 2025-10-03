@@ -288,9 +288,17 @@
                 {% for dia in dias %}
                     <tr {{dia['tr-class']}}>
                         <td class="line_day">{{dia['dia']}}</td>
+                        {% if dia['tipo'] != '' %}
+                        <td id="dia_{{dia['dia']}}" class="{{dia['class']}}">---------</td>
+                        {% else %}
                         <td id="dia_{{dia['dia']}}">&nbsp;</td>
+                        {% endif %}
                         <td class="{{dia['class']}}">{{dia['tipo']}}</td>
+                        {% if dia['tipo'] != '' %}
+                        <td class="{{dia['class']}}">---------</td>
+                        {% else %}
                         <td>&nbsp;</td>
+                        {% endif %}
                         <td class="{{dia['class']}}">{{dia['tipo']}}</td> 
                         {% if dia['class'] == 'divisor' %}
                         <td class="line"></td>

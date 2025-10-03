@@ -1026,7 +1026,7 @@ def render_livro_ponto():
                             height_deixou = cont_deixou * 16
                             professor['extra_red'] = '<div class="red-line-extra-min" style="top: %spx; height: %spx"></div>' % (top_deixou, height_deixou)
 
-                    desc = ev['descricao'] or ev['cat'] or ''
+                    desc = ev['cat'] or ''
                     if ev['qtd_letivo'] < 1 and (ev['evento'] < 7 or ev['evento'] > 9):
                         dias.append({'dia': f'{i:02d}', 'Assinatura': desc.replace("Sem vínculo", '').replace('Deixou de ministrar aulas nesta U.E.', ''),
                                      'semana': semana_sigla, 'class-bg': 'gray', 'class-txt': 'black', 'evento': ev['evento']})
