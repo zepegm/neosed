@@ -529,7 +529,7 @@
                             $("#tb-mapao thead tr:first").append("<th style='border-right-width:4px;border-top-width:4px' colspan='3'>" + response['lista'][item]['abv'] + "</th>");
                             $("#tb-mapao thead .subcab").append("<td>N</td><td>F</td><td style='border-right-width:4px'>AC</td>");
                             
-                            array_disc.push({'disc':response['lista'][item]['disc'], 'AD':response['lista'][item]['AD']});
+                            array_disc.push({'disc':response['lista'][item]['disc'], 'AD':response['lista'][item]['AD'], 'prof':response['lista'][item]['professor_cpf'], 'professor_cpf':response['lista'][item]['professor_cpf']});
 
                         }
                     }
@@ -608,17 +608,8 @@
                             $("#tb-mapao tbody .profResp").append("<td style='border-bottom-width:4px;border-top-width:4px;border-right-width:4px;'>" + response['lista'][i]['professor'] + "</td>");
                             console.log(i);
                         } else {
-                            $("#tb-mapao tbody .profResp").append("<td style='border-right-width:4px;' colspan='3'><select id='prof" + response['lista'][i]['disc'] +"' class='form-select' aria-label='Default select example'></td>");
+                            $("#tb-mapao tbody .profResp").append("<td style='border-bottom-width:4px;border-top-width:4px;border-right-width:4px;' colspan='3'>" + response['lista'][i]['professor'] + "</td>");
                             $("#tb-mapao tbody .aulas_dadas").append("<th style='border-right-width:4px;' colspan='3'>" + response['lista'][i]['AD'] + "</th>")
-
-                            for (var prof in response['professores']) {
-                                var rg = response['professores_atuais'][response['lista'][i]['disc']];
-                                if (rg == response['professores'][prof]['rg']) {
-                                    $("#prof" + response['lista'][i]['disc']).append("<option value='" + response['professores'][prof]['rg'] + "' selected>" + response['professores'][prof]['nome_ata'] + "</option>")
-                                } else {
-                                    $("#prof" + response['lista'][i]['disc']).append("<option value='" + response['professores'][prof]['rg'] + "'>" + response['professores'][prof]['nome_ata'] + "</option>")
-                                }
-                            }
                         }
                     }
 
@@ -638,9 +629,9 @@
 
         $("#btn_salvarnotas").on('click', function() {
 
-            for (var item in array_disc) {
+            /*for (var item in array_disc) {
                 array_disc[item]['prof'] = $("#prof" + array_disc[item]['disc']).val()
-            }
+            }*/
 
             info = {'action':4, 'bim':$("#cbBimestre").val(), 'num_classe':$("#lista_geral .active").attr("data-id"), 'notas':array_nota, 'vinculo':array_disc}
 

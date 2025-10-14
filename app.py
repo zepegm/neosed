@@ -1274,7 +1274,7 @@ def render_conselho_bimestre_all():
             turma['total'] = total
 
             # pegar as notas da turma
-            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas, matriz_curricular.tipo from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina left join matriz_curricular on matriz_curricular.disc_disciplina = vinculo_prof_disc.disciplina and matriz_curricular.num_classe = vinculo_prof_disc.num_classe where bimestre = %s and vinculo_prof_disc.num_classe = %s order by tipo, disciplina' % (bimestre, turma['num_classe']))
+            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas, matriz_curricular.tipo from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina left join matriz_curricular on matriz_curricular.disc_disciplina = vinculo_prof_disc.disciplina and matriz_curricular.num_classe = vinculo_prof_disc.num_classe where bimestre = %s and vinculo_prof_disc.num_classe = %s order by tipo, disciplina' % (bimestre, turma['num_classe']))
 
             if len(disciplinas) > 15:
                 turma['folha_extra'] = True
@@ -1557,7 +1557,7 @@ def render_conselho_bimestre():
 
         turma = turma[0]              
 
-        disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, num_classe))
+        disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, num_classe))
 
         for item in disciplinas:
             sql = 'select ' + \
@@ -3384,7 +3384,7 @@ def getPDFConselhoFinal():
 
             turma = turma[0]
 
-            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
+            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
 
             #print(disciplinas)
 
@@ -3519,7 +3519,7 @@ def getPDFListConselho():
 
             turma = turma[0]              
 
-            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
+            disciplinas = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, disciplinas.descricao as completo, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
 
             for item in disciplinas:
                 sql = 'select ' + \
@@ -4082,6 +4082,7 @@ def notas():
 
             # significa que é pra carregar a lista de alunos e as notas atuais
             if info['action'] == 0:
+                print('aqui?')
                 # consulta para pegar somente os alunos elegíveis a receber nota no bimestre
                 sql = "SELECT num_chamada, ra, nome FROM vinculo_alunos_turmas INNER JOIN aluno ON vinculo_alunos_turmas.ra_aluno = aluno.ra WHERE num_classe = %s AND fim_mat >= '%s' AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim'])
                 #print(sql)
@@ -4098,7 +4099,7 @@ def notas():
                 # carregar as notas caso elas existam
                 disciplinas = banco.executarConsulta('select disciplina, abv from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina where bimestre = %s and num_classe = %s group by disciplina' % (info['bimestre'], info['num_classe']))
 
-                professores = banco.executarConsulta('select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (info['bimestre'], info['num_classe']))
+                professores = banco.executarConsulta('select professor_livro_ponto.nome_ata, vinculo_prof_disc.disciplina, disciplinas.abv as desc_disc, aulas_dadas from vinculo_prof_disc inner join professor_livro_ponto on professor_livro_ponto.cpf = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by vinculo_prof_disc.disciplina' % (info['bimestre'], info['num_classe']))
 
                 profs = {}
 
@@ -4158,7 +4159,7 @@ def notas():
                 if duracao == 2:
                     bimestre = 2
 
-                sql = 'select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.rg_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, info['num_classe'])
+                sql = 'select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, info['num_classe'])
                 professores = banco.executarConsulta(sql)
                 #print(sql)
 
@@ -4316,7 +4317,7 @@ def notas():
                             item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
                             
                             if item['disc'].isnumeric():
-                                professor = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+                                professor = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.cpf_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
 
                                 if len(professor) > 0:
                                     item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
@@ -4339,11 +4340,15 @@ def notas():
 
                 else:
                     for i in range(1, total_coluna + 1):
+                        print(excel.getCell(linha_inicial, coluna_inicial))
                         item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
                     
                         if item['disc'].isnumeric():
                             ad = int(excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', ''))
-                        
+                            professor = banco.executarConsulta('select professor_livro_ponto.nome_ata, professor_livro_ponto.cpf from matriz_curricular inner join professor_livro_ponto on matriz_curricular.cpf_professor = professor_livro_ponto.cpf where num_classe = %s and disc_disciplina = %s' % (request.form.getlist('num_classe')[0], item['disc']))
+                            item['professor'] = professor[0]['nome_ata'] if len(professor) > 0 else '---'
+                            item['professor_cpf'] = professor[0]['cpf'] if len(professor) > 0 else 'null'
+
                             if ad > 0:
                                 item['AD'] = excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', '')
 
@@ -4370,7 +4375,8 @@ def notas():
 
                         if data[0][31][6] == "Tipo de Fechamento: CONSELHO FINAL (QUINTO CONCEITO)":
 
-                            professor = item['professor'] = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.rg_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+                            professor = item['professor'] = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.cpf_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+                            item['professor_cpf'] = professor[0]['cpf'] if len(professor) > 0 else 'null'
 
                             if len(professor) > 0:
                                 item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
@@ -4411,10 +4417,10 @@ def notas():
             professores = banco.executarConsulta('select rg, nome_ata from vinculo_turma_prof INNER JOIN professor ON professor.rg = vinculo_turma_prof.rg_prof where id_turma = %s order by nome_ata' % request.form.getlist('num_classe')[0])
 
             #verificar se já existe professores vinculados a disciplina e se existir criar uma lista
-            professores_atuais = banco.executarConsulta('select rg_prof, disciplina from vinculo_prof_disc where bimestre = %s and num_classe = %s' % (request.form.getlist('bimestre')[0], request.form.getlist('num_classe')[0]))
+            professores_atuais = banco.executarConsulta('select cpf_prof, disciplina from vinculo_prof_disc where bimestre = %s and num_classe = %s' % (request.form.getlist('bimestre')[0], request.form.getlist('num_classe')[0]))
             dict_aux = {}
             for item in professores_atuais:
-                dict_aux[item['disciplina']] = item['rg_prof']
+                dict_aux[item['disciplina']] = item['cpf_prof']
 
             return jsonify({'lista':lista, 'professores':professores, 'professores_atuais':dict_aux})
 

@@ -159,4 +159,7 @@ def encriptar(value):
     return sha256(value.encode('utf-8')).hexdigest()
 
 def extrair_numeros(string):
-    return ''.join([char for char in string if char.isdigit()])
+    try:
+        return ''.join([char for char in string if char.isdigit()])
+    except Exception as e:
+        return ''
