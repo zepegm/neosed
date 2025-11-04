@@ -280,7 +280,7 @@ def get_classes(context, ano_letivo, escola_id, unidade_id):
 	return classes
 
 def get_alunos_num_classe(context, ano_letivo, escola_id, classe_id):
-	print('cheguei aqui')
+	#print('cheguei aqui')
 	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/RelacaoAlunosClasse/Visualizar',
 		data={
 			'anoLetivo': ano_letivo,
@@ -370,6 +370,8 @@ def get_info_aluno(context, aluno_id):
 		})
 
 	soup = BeautifulSoup(response.text, 'html.parser')
+
+	#print(soup.prettify())
 
 	def achar_value(id):
 		e = soup.find(id=id)
