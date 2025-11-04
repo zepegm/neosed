@@ -65,7 +65,7 @@
         
         #tb-quadro-principal td:first-child { border-left: none; }
 
-        .quadro_aulas, .row_professor, .view_professor, .afs_professor, .desativar_prof, .bt_delete_afs, .reativar_professor { cursor: pointer; }
+        .bt_delete_evento, .quadro_aulas, .row_professor, .view_professor, .afs_professor, .desativar_prof, .bt_delete_afs, .reativar_professor { cursor: pointer; }
     </style>
 
   </head>
@@ -535,7 +535,13 @@
     <form id="form_afastamentos" action="/ponto" method="POST">
         <input type="hidden" name="cpf" id="cpf_afs">
         <input type="hidden" name="info_afs" id="info_afs">
-    </form>      
+    </form>
+
+    <form id="form_deletar_evento_funcional" action="/ponto" method="POST">
+        <input type="hidden" name="id_evento_funcional" id="id_evento_funcional">
+        <input type="hidden" name="cpf_professor_evento_funcional" id="cpf_professor_evento_funcional">
+        <input type="hidden" name="vigencia_evento_funcional" id="vigencia_evento_funcional">
+    </form>
 
     </main>
 
@@ -881,6 +887,34 @@
 
                     $("#body-detalhes").append(form_adicional);
 
+                    let form_eventos = "<div class='col-sm-12'><hr><h4>Eventos<h4></div>";
+                    
+                    form_eventos += "<div class='col-sm-4'><select class='form-select' id='cb_eventos_livro_ponto'>";
+                    for (let i = 0; i < response['eventos_funcionais'].length; i++) {
+                        form_eventos += "<option value='" + response['eventos_funcionais'][i]['id'] + "'>" + response['eventos_funcionais'][i]['descricao'] + "</option>";
+                    }
+                    form_eventos += "</select></div>";
+
+                    form_eventos += '';
+                    form_eventos += '<div class="col-sm-8"><form id="form_new_evento_funcional" action="/ponto" method="POST"><div class="form-group"><div class="input-group">';
+                    form_eventos += '<span class="input-group-text">Novo Evento - Vigência:</span>';
+                    form_eventos += '<input id="txt_vigencia_evento" type="date" class="form-control" name="vigencia_evento" required>';
+                    form_eventos += '<span class="input-group-text">Próximo evento (Dias):</span>';
+                    form_eventos += '<input id="txt_dias_proximo_evento" type="number" class="form-control" name="qtd_dias_evento" required>';
+                    form_eventos += '<input type="hidden" name="evento_funcional" id="hidden_evento_funcional">';
+                    form_eventos += '<input type="hidden" name="cpf_professor" id="hidden_cpf_funcional">';
+                    form_eventos += '<button class="btn_evento btn btn-success"><i class="fa-solid fa-plus"></i></button>';
+                    form_eventos += '</div></form></div></div>';
+
+                    form_eventos += '<div class="col-sm-12 mt-3"><table class="table table-striped"><thead class="table-dark"><tr><th>Nº</th><th class="text-center">Vigência</th><th class="text-center">Data Prevista para Próximo</th><th class="text-center">Excluir</th></tr></thead><tbody id="tbody_evento_funcional"></tbody></table></div>';
+
+                    $("#body-detalhes").append(form_eventos);
+
+                    for (let i = 0; i < response['tabela_eventos'].length; i++) {
+                        let row = '<tr><td>' + (i+1) + '</td><td class="text-center">' + response['tabela_eventos'][i]['vigencia_view'] + '</td><td class="text-center">' + response['tabela_eventos'][i]['proximo'] + '</td><td class="text-center bt_delete_evento" data-id_evento="' + response['tabela_eventos'][i]['id_evento'] + '" data-vigencia="' + response['tabela_eventos'][i]['vigencia_format'] + '" data-cpf="' + response['tabela_eventos'][i]['cpf_professor'] + '"><i class="fa-solid fa-trash"></i></td></tr>';
+                        $("#tbody_evento_funcional").append(row);
+                    }                    
+
                     $("#modal_visualizar").modal('show');
                 },
                 error: function(err) {
@@ -1043,6 +1077,38 @@
             $("#form_quadro_aula").submit();
 
         });
+
+        $("#modal_visualizar").on('submit', '#form_new_evento_funcional', function() {
+            $("#hidden_evento_funcional").val($("#cb_eventos_livro_ponto").val());
+            $("#hidden_cpf_funcional").val(cpf);
+        });
+
+        $("#modal_visualizar").on('change', '#cb_eventos_livro_ponto', function() {
+            let info = {'destino':5, 'evento':$(this).val(), 'cpf':cpf};
+            $.ajax({
+                type: "POST",
+                url: "ponto",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+
+                    $("#tbody_evento_funcional").empty();
+
+                    for (let i = 0; i < data.length; i++) {
+                        let row = '<tr><td>' + (i+1) + '</td><td class="text-center">' + data[i]['vigencia_view'] + '</td><td class="text-center">' + data[i]['proximo'] + '</td><td class="text-center bt_delete_evento" data-id_evento="' + data[i]['id_evento'] + '" data-vigencia="' + data[i]['vigencia_format'] + '" data-cpf="' + data[i]['cpf_professor'] + '"><i class="fa-solid fa-trash"></i></td></tr>';
+                        $("#tbody_evento_funcional").append(row);
+                    }
+                },
+            });
+        }); 
+
+        $("#modal_visualizar").on('click', '.bt_delete_evento', function() {
+            $("#vigencia_evento_funcional").val($(this).attr('data-vigencia'));
+            $("#cpf_professor_evento_funcional").val($(this).attr('data-cpf'));
+            $("#id_evento_funcional").val($(this).attr('data-id_evento'));
+            $("#form_deletar_evento_funcional").submit();
+        });               
 
         $("#modal_visualizar").on('click', '.btn_extra', function() {
             $(this).attr('disabled');

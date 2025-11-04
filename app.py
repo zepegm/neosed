@@ -1940,6 +1940,11 @@ def render_lista():
         elif tipo == 'declaracao':
             global aux_info
 
+            # definir cabeçalho
+            nome_escola = banco.executarConsultaVetor("select descricao from sede_livro_ponto where id = (select valor from config where id_config = 'ua_sede')")[0]
+            nome_escola = nome_escola.upper()
+            endereco_escola = banco.executarConsultaVetor("select valor from config where id_config = 'endereco_sede'")[0]
+
             distancia = "100px"
 
             if aux_info['assinatura'] != '0':
@@ -2139,7 +2144,7 @@ def render_lista():
             data_formatada = data_atual.strftime("%d de %B de %Y")
 
 
-            return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe, anos=aux_info['anos'], pronome=pronome, assinatura=decl_assinatura, distancia=distancia)
+            return render_template('render_pdf/render_declaracao.jinja', texto=texto, titulo=titulo, data=data_formatada, cor=num_classe, anos=aux_info['anos'], pronome=pronome, assinatura=decl_assinatura, distancia=distancia, nome_escola=nome_escola, endereco_escola=endereco_escola)
         
         elif tipo == 'ficha_mat':
 
@@ -4901,7 +4906,10 @@ def ponto():
                 # os detalhes estão completos, basta agora pegar o quadro
                 quadro = banco.executarConsulta(r"select periodo_livro_ponto.descricao as periodo, DATE_FORMAT(inicio, '%H:%i') as inicio, DATE_FORMAT(fim, '%H:%i') as fim, ifnull(seg, '') as seg, ifnull(ter, '') as ter, ifnull(qua, '') as qua, ifnull(qui, '') as qui, ifnull(sex, '') as sex, ifnull(sab, '') as sab, ifnull(dom, '') as dom from horario_livro_ponto inner join periodo_livro_ponto on periodo_livro_ponto.id = horario_livro_ponto.periodo where cpf_professor = " + info['cpf'] + ' ORDER BY inicio')
 
-                return jsonify({'quadro':quadro, 'detalhes':detalhes})
+                eventos_funcionais = banco.executarConsulta('select * from eventos_funcionais order by descricao')
+                tabela_eventos = banco.executarConsulta(f"select id_evento, vigencia, DATE_FORMAT(vigencia, '%Y-%m-%d') AS vigencia_format, cpf_professor, DATE_FORMAT(vigencia, '%d/%m/%Y') as vigencia_view, DATE_FORMAT(DATE_ADD(vigencia, INTERVAL qtd_dias_proximo DAY), '%d/%m/%Y') as proximo from vinculo_professor_eventos_funcionais where cpf_professor = {info['cpf']} and id_evento = {eventos_funcionais[0]['id']} order by vigencia")
+
+                return jsonify({'quadro':quadro, 'detalhes':detalhes, 'eventos_funcionais':eventos_funcionais, 'tabela_eventos':tabela_eventos})
 
             elif info['destino'] == 3: # listar as licenças
                 licencas = banco.executarConsulta(r'SELECT DATE_FORMAT(inicio, "%d/%m/%Y") as inicio, DATE_FORMAT(fim, "%d/%m/%Y") as fim, id_tipo, tipo_licenca_professores.descricao as desc_tipo, licenca_professores.descricao from licenca_professores inner join tipo_licenca_professores on tipo_licenca_professores.id = licenca_professores.id_tipo where cpf = ' + info['cpf'])
@@ -4916,7 +4924,11 @@ def ponto():
                 except Exception as e:
                     print(e)
                     return jsonify({'error': str(e), 'result': False})
-            
+
+            elif info['destino'] == 5: # consultar eventos funcionais
+                eventos = banco.executarConsulta(f"select id_evento, vigencia, DATE_FORMAT(vigencia, '%Y-%m-%d') AS vigencia_format, cpf_professor, DATE_FORMAT(vigencia, '%d/%m/%Y') as vigencia_view, DATE_FORMAT(DATE_ADD(vigencia, INTERVAL qtd_dias_proximo DAY), '%d/%m/%Y') as proximo from vinculo_professor_eventos_funcionais where cpf_professor = {info['cpf']} and id_evento = {info['evento']} order by vigencia")
+                return jsonify(eventos)
+
         if 'cpf_delete_quadro' in request.form: # é pra deletar o quadro de aulas do professor
             cpf = request.form['cpf_delete_quadro']
 
@@ -5029,6 +5041,43 @@ def ponto():
                         '<strong>Atenção!</strong> Erro ao tentar inserir dados no banco de dados! Verifique se as datas não batem!' \
                         '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
                         '</div>'  
+
+        if 'evento_funcional' in request.form: # é pra cadastrar novo evento funcional
+
+            id_evento_funcional = request.form['evento_funcional']
+            vigencia = request.form['vigencia_evento']
+            qtd_dias_proximo = request.form['qtd_dias_evento']
+            cpf_professor = request.form['cpf_professor']
+
+            if banco.executeBasicSQL(f"INSERT INTO vinculo_professor_eventos_funcionais VALUES({cpf_professor}, {id_evento_funcional}, '{vigencia}', {qtd_dias_proximo})"):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação realizada com sucesso!</strong> Novo Evento Funcional Cadastrado com Sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'    
+
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados! Verifique se esse evento já não foi cadastrado com essa vigência!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>' 
+
+        if 'id_evento_funcional' in request.form: # é pra deletar evento funcional
+
+            id_evento_funcional = request.form['id_evento_funcional']
+            vigencia = request.form['vigencia_evento_funcional']
+            cpf_professor = request.form['cpf_professor_evento_funcional']
+
+            if banco.executeBasicSQL(f"DELETE FROM vinculo_professor_eventos_funcionais WHERE cpf_professor = {cpf_professor} AND id_evento = {id_evento_funcional} AND vigencia = '{vigencia}'"):
+                msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
+                        '<strong>Operação realizada com sucesso!</strong> Evento Funcional deletado com sucesso!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>'    
+
+            else:
+                msg = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' \
+                        '<strong>Atenção!</strong> Erro ao tentar inserir dados! Contate o Administrador!' \
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' \
+                        '</div>' 
 
 
     cargos = banco.executarConsulta('select * from cargos_livro_ponto where tipo = 1')

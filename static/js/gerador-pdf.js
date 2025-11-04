@@ -2155,11 +2155,11 @@ function declaracaoTransferencia(url_brasao, nome, rg, cpf, ra, nascimento, seri
     y += 15;
     doc.text('SECRETARIA DE ESTADO DA EDUCAÇÃO', x, y)
     y += 15;
-    doc.text('DIRETORIA DE ENSINO REGIÃO GUARATINGUETÁ', x, y)
+    doc.text('UNIDADE REGIONAL DE ENSINO DE GUARATINGUETÁ', x, y)
     y += 15;
-    doc.text('EE “PROFª. ALICE VILELA GALVÃO”', x, y)
+    doc.text('EE MAJOR HERMÓGENES', x, y)
     y += 15;
-    doc.text('Rua Homero Ortiz Marcondes, 470, Centro, Canas-SP-CEP: 12615-000', x, y)
+    doc.text('Rua Ipiranga, S/N - Vila Paulista – Cruzeiro', x, y)
     
     y += 100;
 
@@ -2234,11 +2234,11 @@ function declaracaoMatricula(url_brasao, nome, rg, cpf, ra, nascimento, sexo, se
     y += 15;
     doc.text('SECRETARIA DE ESTADO DA EDUCAÇÃO', x, y)
     y += 15;
-    doc.text('DIRETORIA DE ENSINO REGIÃO GUARATINGUETÁ', x, y)
+    doc.text('UNIDADE REGIONAL DE ENSINO DE GUARATINGUETÁ', x, y)
     y += 15;
-    doc.text('EE “PROFª. ALICE VILELA GALVÃO”', x, y)
+    doc.text('EE MAJOR HERMÓGENES', x, y)
     y += 15;
-    doc.text('Rua Homero Ortiz Marcondes, 470, Centro, Canas-SP-CEP: 12615-000', x, y)
+    doc.text('Rua Ipiranga, S/N - Vila Paulista – Cruzeiro', x, y)
     
     y += 100;
 
