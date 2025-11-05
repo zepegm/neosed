@@ -372,7 +372,20 @@
             let assinatura = $("#cb_assinatura").val();
 
             if (tipo == "mat") {
-                declaracaoMatricula("{{url_for('static', filename='images/brasao.png')}}", $("#txtnome").text(), $("#txtrg").text(), $("#txtcpf").text(), $("#txtra").text(), $("#txtnasc").text(), $("#txtsexo").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text(), $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text(), nome_assinatura, assinatura_rg, cargo_assinatura);
+                $("#gerar_pdf").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+                $("#gerar_pdf").attr('disabled', '');            
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify({'destino':3, 'ra':$("#txtra").text(), 'assinatura':assinatura}),
+                    dataType: "json",
+                    success: function(data) {
+                        window.open(data);
+                        $("#gerar_pdf").html('Gerar');
+                        $("#gerar_pdf").removeAttr('disabled');
+                    },
+                }); 
             } else if (tipo == "mat_freq") {
                 $("#gerar_pdf").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
                 $("#gerar_pdf").attr('disabled', '');            
@@ -404,21 +417,20 @@
                     },
                 });  
             } else if (tipo == "trans") {
-                let nome = $("#txtnome").text();
-                let rg = $("#txtrg").text();
-                let cpf = $("#txtcpf").text();
-                let ra = $("#txtra").text();
-                let nasc = $("#txtnasc").text();
-
-                if ($("#alunos_dados_dinamicos tr .ATIVO").length > 0) {
-                    serie = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(2)").text();
-                    ensino = $("#alunos_dados_dinamicos tr .ATIVO").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
-                } else {
-                    serie = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(2)").text();
-                    ensino = $("#alunos_dados_dinamicos tr .TRAN").parent().find("td:nth-child(4)").text().replace(/ EJA| Regular/g, "");
-                }
-
-                declaracaoTransferencia("{{url_for('static', filename='images/brasao.png')}}", nome, rg, cpf, ra, nasc, serie, ensino, nome_assinatura, assinatura_rg, cargo_assinatura);
+                $("#gerar_pdf").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+                $("#gerar_pdf").attr('disabled', '');            
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'assinatura':assinatura}),
+                    dataType: "json",
+                    success: function(data) {
+                        window.open(data);
+                        $("#gerar_pdf").html('Gerar');
+                        $("#gerar_pdf").removeAttr('disabled');
+                    },
+                });  
             } else if (tipo == "des_menor" || tipo == "baixa_menor") {
                 nome_resp = $("#txt_nome_resp").val();
                 rg_resp = $("#txt_rg_resp").val();

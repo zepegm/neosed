@@ -555,10 +555,10 @@ function gerarAtaConselhoFinal(lista) {
 
     y += 0.6;
     
-    doc.text("EE Profª Alice Vilela Galvão", x, y);
+    doc.text("EE Major Hermógenes", x, y);
 
     y += 0.6;
-    doc.text('Canas, ' + lista['turma']['fim'], x + 4.5, y, 'right');
+    doc.text('Cruzeiro, ' + lista['turma']['fim'], x + 4.5, y, 'right');
 
     y += 0.6;
     x = in_x - 2.7;
@@ -663,7 +663,7 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
         doc.setFontSize(50);
         y = 3;
         x = 10.5;
-        doc.text(x, y, 'EE PROFª ALICE VILELA GALVÃO', 'center');
+        doc.text(x, y, 'EE MAJOR HERMÓGENES', 'center');
 
         y = 27;
         doc.setTextColor(255, 0, 0);
@@ -1459,10 +1459,10 @@ function gerarAtaConselho(bimestre, ano, turma, fim_bim, lista, dificuldades) {
 
     y += 0.6;
     
-    doc.text("EE Profª Alice Vilela Galvão", x, y);
+    doc.text("EE Major Hermógenes", x, y);
 
     y += 0.6;
-    doc.text('Canas, ' + fim_bim.substring(8, 10) + '/' + fim_bim.substring(5, 7) + '/' + fim_bim.substring(0, 4), x + 4.5, y, 'right');
+    doc.text('Cruzeiro, ' + fim_bim.substring(8, 10) + '/' + fim_bim.substring(5, 7) + '/' + fim_bim.substring(0, 4), x + 4.5, y, 'right');
 
     y += 0.6;
     x = in_x - 2.7;
@@ -2445,6 +2445,6 @@ const getTextRows = (doc, inputValue, width) => {
 
     //console.log(hoje.toLocaleDateString('pt-BR'));
 
-    return 'Canas, ' + String(hoje.getDate()).padStart(2, '0') + ' de ' + month + ' de ' + hoje.getFullYear();
+    return 'Cruzeiro, ' + String(hoje.getDate()).padStart(2, '0') + ' de ' + month + ' de ' + hoje.getFullYear();
 
 }
