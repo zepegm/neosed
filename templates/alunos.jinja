@@ -423,7 +423,7 @@
                     type: "POST",
                     url: "gerar_pdf",
                     contentType: "application/json",
-                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'assinatura':assinatura}),
+                    data: JSON.stringify({'destino':18, 'tipo':11, 'ra':$("#txtra").text(), 'assinatura':assinatura, 'nome_resp':null, 'rg_resp':null}),
                     dataType: "json",
                     success: function(data) {
                         window.open(data);
@@ -438,16 +438,16 @@
                 $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
                 $(this).attr('disabled', ''); 
 
-                n_tipo = 2;
+                n_tipo = 5;
                 if (tipo == 'baixa_menor') {
-                    n_tipo = 4;
+                    n_tipo = 7;
                 }
 
                 $.ajax({
                     type: "POST",
                     url: "gerar_pdf",
                     contentType: "application/json",
-                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':nome_resp, 'rg_resp':rg_resp, 'tipo':n_tipo}),
+                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':nome_resp, 'rg_resp':rg_resp, 'tipo':n_tipo, 'assinatura':assinatura}),
                     dataType: "json",
                     success: function(data) {
                         window.open(data);
@@ -459,16 +459,16 @@
                 $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
                 $(this).attr('disabled', ''); 
 
-                n_tipo = 3;
+                n_tipo = 6;
                 if (tipo == 'baixa_maior') {
-                    n_tipo = 5;
+                    n_tipo = 8;
                 }
 
                 $.ajax({
                     type: "POST",
                     url: "gerar_pdf",
                     contentType: "application/json",
-                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':null, 'rg_resp':null,  'tipo':n_tipo}),
+                    data: JSON.stringify({'destino':18, 'ra':$("#txtra").text(), 'nome_resp':null, 'rg_resp':null,  'tipo':n_tipo, 'assinatura':assinatura}),
                     dataType: "json",
                     success: function(data) {
                         window.open(data);

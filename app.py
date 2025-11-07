@@ -3213,7 +3213,7 @@ async def gerar_pdf():
         
         info_classe = banco.executarConsulta('select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = %s and tipo_ensino in (1, 3) order by vinculo_alunos_turmas.fim_mat desc limit 1' % info['ra'].replace('.', '')[:9])[0]
 
-        aux_info = {'tipo':11, 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'anos':None, 'assinatura':info['assinatura'], 'info_classe':info_classe}
+        aux_info = {'tipo':info['tipo'], 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'anos':None, 'assinatura':info['assinatura'], 'info_classe':info_classe, 'nome_resp':info['nome_resp'], 'rg_resp':info['rg_resp']}
 
         browser = await launch(
             handleSIGINT=False,

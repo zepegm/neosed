@@ -31,7 +31,10 @@ for turma in turmas:
         aluno_add = {'id':codigos_alunos[aluno['ra']], 'ra':aluno['ra'], 'digito':aluno['ra_dígito'], 'nome':aluno['nome'], 'nascimento':aluno['nascimento_data'].strftime("%d/%m/%Y"), 'matricula':aluno['inicio_matricula'].strftime("%d/%m/%Y"), 'num_chamada':aluno['numero'], 'serie':aluno['serie'], 'desc_sit':aluno['situação'], 'fim_mat':aluno['fim_matricula'].strftime("%d/%m/%Y"), 'sexo':'M', 'rg':'', 'cpf':'', 'rm':''}
         info_aluno = get_info_aluno(context, aluno_add['id'])
 
+        if aluno['ra'] == '000115990606':
+            print("Analisando aluno:", aluno['nome'], "RA:", codigos_alunos[aluno['ra']])
+
         if info_aluno['nome_pai'] == '':
             print(aluno['nome'] + " - RA: " + aluno['ra']  + " - Nome do Pai AUSENTE!")
-        else:
-            print(aluno['nome'] + " - RA: " + aluno['ra']  + " - Nome do Pai: " + info_aluno['nome_pai'])
+        #else:
+            #print(aluno['nome'] + " - RA: " + aluno['ra']  + " - Nome do Pai: " + info_aluno['nome_pai'])
