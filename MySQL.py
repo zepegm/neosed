@@ -160,7 +160,7 @@ class db:
             return True
         except Exception as error:
             print("An exception occurred:", error) # An exception occurred: division by zero
-            return False          
+            return False
 
     def salvarNotas(self, info):
         try:

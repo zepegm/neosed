@@ -1860,7 +1860,13 @@ def render_lista():
             for item in alunos:
                 item['nome'] = item['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
 
-            return render_template('render_pdf/render_lista.jinja', head=head, total=total, desc_total=desc_total, alunos=alunos)
+            tamanho_lista = 50
+            if tamanho_lista < len(alunos):
+                tamanho_lista = len(alunos)
+
+            print(tamanho_lista)
+
+            return render_template('render_pdf/render_lista.jinja', head=head, total=total, desc_total=desc_total, alunos=alunos, tamanho_lista=tamanho_lista)
         
         elif tipo == 'turma_if':
 
@@ -4110,7 +4116,7 @@ def notas():
 
             # significa que é pra carregar a lista de alunos e as notas atuais
             if info['action'] == 0:
-                print('aqui?')
+                #print('aqui?')
                 # consulta para pegar somente os alunos elegíveis a receber nota no bimestre
                 sql = "SELECT num_chamada, ra, nome FROM vinculo_alunos_turmas INNER JOIN aluno ON vinculo_alunos_turmas.ra_aluno = aluno.ra WHERE num_classe = %s AND fim_mat >= '%s' AND matricula < '%s' ORDER BY num_chamada" % (info['num_classe'], info['fim'], info['fim'])
                 #print(sql)
@@ -4187,9 +4193,9 @@ def notas():
                 if duracao == 2:
                     bimestre = 2
 
-                sql = 'select professor.nome_ata, disciplina, disciplinas.abv as desc_disc, aulas_dadas from vinculo_prof_disc inner join professor on professor.rg = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where bimestre = %s and num_classe = %s order by disciplina' % (bimestre, info['num_classe'])
-                professores = banco.executarConsulta(sql)
-                #print(sql)
+                professores = banco.executarConsulta('select professor_livro_ponto.nome_ata, vinculo_prof_disc.disciplina, disciplinas.abv as desc_disc, aulas_dadas from vinculo_prof_disc inner join professor_livro_ponto on professor_livro_ponto.cpf = vinculo_prof_disc.cpf_prof inner join disciplinas ON disciplinas.codigo_disciplina = vinculo_prof_disc.disciplina  where num_classe = %s order by vinculo_prof_disc.disciplina' % info['num_classe'])
+                #professores = banco.executarConsulta(sql)
+                print(professores)
 
                 profs = {}
 
@@ -4345,8 +4351,9 @@ def notas():
                             item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
                             
                             if item['disc'].isnumeric():
-                                professor = banco.executarConsulta('select professor.nome_ata as nome from vinculo_prof_disc inner join professor ON professor.rg = vinculo_prof_disc.cpf_prof where num_classe = %s and bimestre = %s and disciplina = %s' % (request.form.getlist('num_classe')[0], bimestre_final, item['disc']))
+                                professor = banco.executarConsulta('select professor_livro_ponto.nome_ata, professor_livro_ponto.cpf from matriz_curricular inner join professor_livro_ponto on matriz_curricular.cpf_professor = professor_livro_ponto.cpf where num_classe = %s and disc_disciplina = %s' % (request.form.getlist('num_classe')[0], item['disc']))
 
+                                print(professor)
                                 if len(professor) > 0:
                                     item['abv'] = banco.executarConsulta('select abv from disciplinas where codigo_disciplina = %s' % item['disc'])[0]['abv']
                                     
@@ -4356,7 +4363,7 @@ def notas():
                                         medias[str(excel.getCell(j, coluna_inicial)).zfill(2)] = {'M':excel.getCell(j, coluna_inicial + 1)}
 
                                     item['medias'] = medias
-                                    item['professor'] = professor[0]['nome']
+                                    item['professor'] = professor[0]['nome_ata']
 
                                     lista.append(item)
 
@@ -4366,12 +4373,15 @@ def notas():
                             coluna_inicial += 2
                             continue
 
+                    print(lista)
+
                 else:
                     for i in range(1, total_coluna + 1):
                         print(excel.getCell(linha_inicial, coluna_inicial))
                         item = {'disc': extrair_numeros(excel.getCell(linha_inicial, coluna_inicial))}
                     
                         if item['disc'].isnumeric():
+                            print(total_linha)
                             ad = int(excel.getCell(total_linha, coluna_inicial).replace('Aulas Dadas: ', ''))
                             professor = banco.executarConsulta('select professor_livro_ponto.nome_ata, professor_livro_ponto.cpf from matriz_curricular inner join professor_livro_ponto on matriz_curricular.cpf_professor = professor_livro_ponto.cpf where num_classe = %s and disc_disciplina = %s' % (request.form.getlist('num_classe')[0], item['disc']))
                             item['professor'] = professor[0]['nome_ata'] if len(professor) > 0 else '---'
@@ -4588,7 +4598,9 @@ def boletim():
         desc_duracao = ' - <span class="red">2º Semestre</span>'
 
     # pegar todos os alunos ativos dessa turma
-    alunos = banco.executarConsulta('select ra_aluno, nome, situacao.descricao as situacao from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno inner join situacao on vinculo_alunos_turmas.situacao = situacao.id where num_classe = %s and situacao in (1, 6, 7, 8, 10) order by nome' % num_classe)
+    alunos = banco.executarConsulta('select ra_aluno, nome, situacao.descricao as situacao from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno inner join situacao on vinculo_alunos_turmas.situacao = situacao.id where num_classe = %s and situacao in (1, 6, 7, 8, 10, 16) order by nome' % num_classe)
+
+    print(alunos)
 
     # pegar as disciplinas das turmas
     disciplinas = banco.executarConsulta('select disciplinas.descricao as disc, notas.disciplina, disciplinas.classificacao from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina where num_classe = %s group by disciplina order by classificacao, disciplina' % num_classe)
@@ -4599,9 +4611,8 @@ def boletim():
     # correr a lista dos alunos e buscar a nota
     for aluno in alunos:
 
-        if aluno['ra_aluno'] == 112523955: # aluno de teste
-            print('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.duracao = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
-
+        #if aluno['ra_aluno'] == 112523955: # aluno de teste
+            #print('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.duracao = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
 
         notas_aluno = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma on turma.ano = %s and turma.duracao = %s and turma.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
         notas_aluno_if = banco.executarConsulta('select bimestre, nota, falta, ac, disciplinas.descricao as disc, disciplinas.codigo_disciplina from notas inner join disciplinas on disciplinas.codigo_disciplina = notas.disciplina inner join turma_if on turma_if.ano = %s and turma_if.duracao = %s and turma_if.num_classe = notas.num_classe where ra_aluno = %s order by disc, bimestre' % (ano, duracao, aluno['ra_aluno']))
@@ -4743,6 +4754,8 @@ def boletim():
 
         aluno['freq'] = freq_final
         aluno['final'] = conceito_final
+
+        print('cheguei aqui?')
 
 
     return render_template('render_pdf/render_boletim.jinja', alunos=alunos, disciplinas=disciplinas, info_classe=info_classe, duracao=duracao, ano=ano, desc_duracao=desc_duracao)

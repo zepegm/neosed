@@ -167,7 +167,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for n in range(0, 50) %}
+                {% for n in range(0, tamanho_lista) %}
                     {% if loop.index <= alunos|length %}
                     {% if alunos[n]['fim_mat'] not in ('', 'APROVADO', 'APROVADA') %}
                     <tr class="red"> 
@@ -229,7 +229,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for n in range(0, 50) %}
+                {% for n in range(0, tamanho_lista) %}
                     {% if loop.index <= alunos|length %}
                     {% if alunos[n]['fim_mat'] not in ('', 'APROVADO', 'APROVADA') %}
                     <tr class="red"> 

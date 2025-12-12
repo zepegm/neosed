@@ -203,7 +203,7 @@
                                 {% endtry %}
                             {% endfor %}
                                 {% try %}
-                                <td class="border-basic {{'red' if aluno['final'][disc['disciplina']]|int < 5 and aluno['final'][disc['disciplina']] != 'null' else '' }}">{{aluno['final'][disc['disciplina']] if aluno['final'][disc['disciplina']] != 'null' else '-'}}</td>
+                                <td class="border-basic {{'red' if aluno['final'][disc['disciplina']]|int < 5 and aluno['final'][disc['disciplina']] not in ('ET', 'ES', 'EP') else '' }}">{{aluno['final'][disc['disciplina']] if aluno['final'][disc['disciplina']] != 'null' else '-'}}</td>
                                 {% catch %}
                                 <td class="border-basic">-</td>
                                 {% endtry %}

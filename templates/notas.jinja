@@ -560,9 +560,12 @@
 
                                 if (parseInt(response['lista'][item]['medias'][id]['M']) < 5 || response['lista'][item]['medias'][id]['M'] == '-') {
                                     excessao = "table-danger";
+                                    console.log(response['lista'][item]['medias'][id]['M']);
                                 } else if(response['lista'][item]['medias'][id]['M'] == "EP") {
                                     excessao = "table-warning";
-                                }     
+                                } else {
+                                    excessao = '';
+                                }   
 
                                 $("#tb-mapao tbody .aluno" + index).append("<td style='border-right-width:4px;' class='" + excessao + "''>" + response['lista'][item]['medias'][id]['M'] + "</td>");
                             } else {
