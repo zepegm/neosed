@@ -1954,6 +1954,8 @@ def render_lista():
 
             distancia = "100px"
 
+            #print(aux_info)
+
             if aux_info['assinatura'] != '0':
                 decl_assinatura = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cargos_livro_ponto.descricao as cargo from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where cpf = %s" % aux_info['assinatura'])[0]
                 rg = "%08d" % int(decl_assinatura['rg'])
@@ -2777,16 +2779,20 @@ async def gerar_pdf():
 
         pdf_path = 'static/docs/declaracao_mat.pdf'
         
-        aluno = banco.executarConsulta('select nome, rg, sexo, concat(LPAD(SUBSTR(ra, -9, 1), 1, 0), SUBSTR(ra, -8, 2), ".", substr(ra, -6, 3), ".", substr(ra, -3, 3), "-", aluno.digito_ra) as ra,' + " ifnull(concat(LPAD(SUBSTR(cpf, -11, 1), 1, 0), SUBSTR(cpf, -10, 2), '.', substr(cpf, -8, 3), '.', substr(cpf, -5, 3), '-', substr(cpf, -2, 2)), '-') as cpf from aluno where ra = %s" % info['ra'].replace('.', '')[:9])[0]
+        try:
+            aluno = banco.executarConsulta('select nome, rg, sexo, concat(LPAD(SUBSTR(ra, -9, 1), 1, 0), SUBSTR(ra, -8, 2), ".", substr(ra, -6, 3), ".", substr(ra, -3, 3), "-", aluno.digito_ra) as ra,' + " ifnull(concat(LPAD(SUBSTR(cpf, -11, 1), 1, 0), SUBSTR(cpf, -10, 2), '.', substr(cpf, -8, 3), '.', substr(cpf, -5, 3), '-', substr(cpf, -2, 2)), '-') as cpf from aluno where ra = %s" % info['ra'].replace('.', '')[:9])[0]
+            info_classe = banco.executarConsulta('select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = %s and situacao = 1 and tipo_ensino in (1, 3)' % info['ra'].replace('.', '')[:9])[0]
         
-        info_classe = banco.executarConsulta('select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = %s and situacao = 1 and tipo_ensino in (1, 3)' % info['ra'].replace('.', '')[:9])[0]
 
-        sql = 'SELECT '
-        sql += '(select sum(falta) - sum(ac) from notas inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.situacao = 1 left join vinculo_alunos_if on vinculo_alunos_if.ra_aluno = notas.ra_aluno and vinculo_alunos_if.situacao = 1 where notas.ra_aluno = %s and (notas.num_classe = vinculo_alunos_turmas.num_classe or notas.num_classe = vinculo_alunos_if.num_classe_if)) as faltas,' % info['ra'].replace('.', '')[:9]
-        sql += '(select sum(aulas_dadas) from vinculo_prof_disc inner join vinculo_alunos_turmas on vinculo_alunos_turmas.situacao = 1 and vinculo_alunos_turmas.ra_aluno = %s left join vinculo_alunos_if on vinculo_alunos_if.situacao = 1 and vinculo_alunos_if.ra_aluno = %s where vinculo_prof_disc.num_classe = vinculo_alunos_turmas.num_classe or vinculo_prof_disc.num_classe = vinculo_alunos_if.num_classe_if) as aulas_dadas,' % (info['ra'].replace('.', '')[:9], info['ra'].replace('.', '')[:9])
-        sql += '(select max(bimestre) from notas inner join turma on turma.num_classe = notas.num_classe where ra_aluno = %s and turma.ano = YEAR(CURDATE())) as bimestre' % info['ra'].replace('.', '')[:9]
+            sql = 'SELECT '
+            sql += '(select sum(falta) - sum(ac) from notas inner join vinculo_alunos_turmas on vinculo_alunos_turmas.ra_aluno = notas.ra_aluno and vinculo_alunos_turmas.situacao = 1 left join vinculo_alunos_if on vinculo_alunos_if.ra_aluno = notas.ra_aluno and vinculo_alunos_if.situacao = 1 where notas.ra_aluno = %s and (notas.num_classe = vinculo_alunos_turmas.num_classe or notas.num_classe = vinculo_alunos_if.num_classe_if)) as faltas,' % info['ra'].replace('.', '')[:9]
+            sql += '(select sum(aulas_dadas) from vinculo_prof_disc inner join vinculo_alunos_turmas on vinculo_alunos_turmas.situacao = 1 and vinculo_alunos_turmas.ra_aluno = %s left join vinculo_alunos_if on vinculo_alunos_if.situacao = 1 and vinculo_alunos_if.ra_aluno = %s where vinculo_prof_disc.num_classe = vinculo_alunos_turmas.num_classe or vinculo_prof_disc.num_classe = vinculo_alunos_if.num_classe_if) as aulas_dadas,' % (info['ra'].replace('.', '')[:9], info['ra'].replace('.', '')[:9])
+            sql += '(select max(bimestre) from notas inner join turma on turma.num_classe = notas.num_classe where ra_aluno = %s and turma.ano = YEAR(CURDATE())) as bimestre' % info['ra'].replace('.', '')[:9]
 
-        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':3, 'info_classe':info_classe, 'assinatura':info['assinatura'], 'anos':None}
+            aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':3, 'info_classe':info_classe, 'assinatura':info['assinatura'], 'anos':None}
+        except:
+            aux_info = info
+
 
         browser = await launch(
             handleSIGINT=False,
