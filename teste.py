@@ -1,34 +1,33 @@
-import os
-import asyncio
-import requests
-import pyppeteer.chromium_downloader as cd
-from pyppeteer import launch
+from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno, get_matriz_curricular, get_grade, get_professor_info
+from MySQL import db
+import json
 
-# 1) Descobrir a última revisão disponível p/ Windows x64
-def latest_win64_revision():
-    url = "https://storage.googleapis.com/chromium-browser-snapshots/Win_x64/LAST_CHANGE"
-    r = requests.get(url, timeout=20)
-    r.raise_for_status()
-    return r.text.strip()
+# Lê o arquivo JSON
+with open("config_db.json") as f:
+    config = json.load(f)
 
-async def main():
-    # 2) Apagar downloads antigos quebrados (opcional, mas recomendado)
-    local_dir = os.path.expandvars(r"%LOCALAPPDATA%\pyppeteer\pyppeteer\local-chromium")
-    if os.path.isdir(local_dir):
-        # Se quiser, limpe a pasta inteira manualmente pelo Explorer
-        pass
+# configuração do server principal
+banco = db(config)
 
-    # 3) Forçar a revisão para a mais recente disponível
-    rev = latest_win64_revision()
-    cd.REVISION = rev
 
-    # 4) Baixar e obter o executável dessa revisão
-    cd.download_chromium()  # baixa se não existir
-    exe = cd.chromium_executable()
+auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
 
-    # 5) Subir com essa revisão
-    browser = await launch(executablePath=exe, headless=False)
-    print(await browser.version())
-    await browser.close()
+try:
+    context = start_context(auth)
+    result_escolas = get_escolas(context)
 
-asyncio.get_event_loop().run_until_complete(main())
+    id_escola = result_escolas[0]['id']
+    result_unidades = get_unidades(context, id_escola)
+    id_unidade = result_unidades[0]['id']
+
+    # a partir daqui será dividido as tarefas dependendo do objetivo desejado
+
+    result_classes = get_classes(context, 2025, id_escola, id_unidade)
+    
+    for classe in result_classes:
+        if int(classe['id_b']) == 300273230:
+            print(classe['id'])
+
+    print("deu certo")
+except Exception as e:
+    print(e)

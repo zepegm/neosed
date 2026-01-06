@@ -306,7 +306,7 @@ def modulo_sed():
                 # a partir daqui será dividido as tarefas dependendo do objetivo desejado
 
                 if data['destino'] == 'id_classe':
-                    result_classes = get_classes(context, 2025, id_escola, id_unidade)
+                    result_classes = get_classes(context, int(data['ano']), id_escola, id_unidade)
                 
                     for classe in result_classes:
                         if int(classe['id_b']) == int(data['num_classe']):

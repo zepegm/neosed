@@ -913,7 +913,7 @@
                 type: "POST",
                 url: "modulo_sed",
                 contentType: "application/json",
-                data: JSON.stringify({'num_classe':$("#" + num_classe).val(), 'destino':'id_classe'}),
+                data: JSON.stringify({'num_classe':$("#" + num_classe).val(), 'destino':'id_classe', 'ano':$("#cbAno").val()}),
                 dataType: "json",
                 success: function(data) {
                     if (data) {
