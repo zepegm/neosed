@@ -75,3 +75,7 @@ class xls:
 
     def setColorBackground(self, name, endereco, rgb):
         self.wb.Worksheets(name).Range(endereco).Interior.Color = rgb_to_hex(rgb)
+
+    def close(self):
+        self.wb.Close(SaveChanges=0)
+        #self.app.Quit()

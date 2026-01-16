@@ -1158,20 +1158,18 @@ def render_certificados_conclusao():
 
         tipo_ensino = banco.executarConsulta('select tipo_ensino from turma where num_classe = %s' % classe)[0]['tipo_ensino']
 
-        if  tipo_ensino > 1: # eja
-            nome_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-eja-nome"')[0]
-            rg_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-eja-rg"')[0]
-        else: # regular
-            nome_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-regular-nome"')[0]
-            rg_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-regular-rg"')[0]  
+        nome_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-regular-nome"')[0]
+        rg_vice = banco.executarConsultaVetor('select valor from config where id_config = "vice-regular-rg"')[0]  
 
 
-        if tipo_ensino == 3:
+        if tipo_ensino == 1:
             modalidade = "Ensino Fundamental"
         else:
             modalidade = 'Ensino Médio'
 
-        alunos = banco.executarConsulta(r"select aluno.nome, aluno.rg, serie, aluno.sexo, DATE_FORMAT (aluno.nascimento,'%d/%m/%Y') as nascimento, DATE_FORMAT (vinculo_alunos_turmas.fim_mat,'%d/%m/%Y') as fim from vinculo_alunos_turmas  inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = " + classe + " and situacao in (1, 6) and serie in (3, 4, 12) order by nome")
+        alunos = banco.executarConsulta(r"select aluno.nome, aluno.rg, serie, aluno.sexo, DATE_FORMAT (aluno.nascimento,'%d/%m/%Y') as nascimento, DATE_FORMAT (vinculo_alunos_turmas.fim_mat,'%d/%m/%Y') as fim from vinculo_alunos_turmas  inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = " + classe + " and situacao in (6) and serie in (3, 4, 9) order by nome")
+
+        print(r"select aluno.nome, aluno.rg, serie, aluno.sexo, DATE_FORMAT (aluno.nascimento,'%d/%m/%Y') as nascimento, DATE_FORMAT (vinculo_alunos_turmas.fim_mat,'%d/%m/%Y') as fim from vinculo_alunos_turmas  inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno where num_classe = " + classe + " and situacao in (6) and serie in (3, 4, 9) order by nome")
 
         for aluno in alunos:
             aluno['nome_assinatura'] = aluno['nome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
@@ -2498,6 +2496,8 @@ async def atualizar_matriz_auto():
     context = start_context(auth)
     lista_matriz = get_matriz_curricular(context, ano_letivo, num_classe)
 
+    print(lista_matriz)
+
     lista = []
 
     for item in lista_matriz:
@@ -3780,7 +3780,7 @@ def getAlunosTurma():
 
             turma = banco.executarConsulta(sql)
 
-            total_habilitados_certificado = banco.executarConsultaVetor('select count(*) as total from vinculo_alunos_turmas where num_classe = %s and situacao in (6, 1) and serie in (3, 4, 12)' % num_classe)[0]
+            total_habilitados_certificado = banco.executarConsultaVetor('select count(*) as total from vinculo_alunos_turmas where num_classe = %s and situacao in (6) and serie in (3, 4, 9)' % num_classe)[0]
             
             if (total_habilitados_certificado > 0):
                 certificado = True
@@ -5277,6 +5277,22 @@ def calendario():
     instancias = banco.executarConsulta('select * from calendario_ponto order by descricao')
 
     return render_template('calendario.jinja', calendario=calendario, letivos=letivos, ano=ano, eventos=eventos, status=status, instancias=instancias, instancia=instancia)
+
+@app.route('/historicos', methods=['GET', 'POST'])
+def historicos():
+
+    anos = banco.executarConsulta('select distinct ano from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe where situacao in (6) and serie in (3, 4, 9) order by ano desc')
+
+    if len(anos) > 0:
+        ano_selecionado = anos[0]['ano']
+        result = ''
+
+        fundamental = banco.executarConsulta('select ra_aluno, aluno.nome from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno inner join turma on turma.num_classe = vinculo_alunos_turmas.num_classe where ano = %s and situacao = 6 and serie = 9 order by nome' % ano_selecionado)
+        medio = banco.executarConsulta('select ra_aluno, aluno.nome from vinculo_alunos_turmas inner join aluno on aluno.ra = vinculo_alunos_turmas.ra_aluno inner join turma on turma.num_classe = vinculo_alunos_turmas.num_classe where ano = %s and situacao = 6 and serie = 3 order by nome' % ano_selecionado)
+    
+        return render_template('historicos.jinja', anos=anos, fundamental=fundamental, medio=medio, ano_selecionado=ano_selecionado, result=result)
+    else:
+        return redirect('/')
 
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)

@@ -206,6 +206,12 @@ def get_matriz_curricular(context, ano_letivo, num_classe):
 	codigoFundamentoLegal = soup.find(id='hfdCodigoFundamentoLegal')['value']
 	codigoFundamentoTurma = soup.find(id='hfdCodigoFundamentoTurma')['value']
 	NumeroSerie = soup.find(id='hfdNumeroSerie')['value']
+	codigoTipoTurno = soup.find(id='hfdCodigoTipoTurno')['value']
+	codigoTurno = soup.find(id='hfdCodigoTipoEnsinoTurno')['value']
+	codigoTipoClasse = soup.find(id='CodigoTipoClasse').select_one('option[selected]')['value']
+	tipoEnsino = soup.find(id='hfdCodigoTipoEnsino')['value']
+
+	print(codigoFundamentoLegal, '-', codigoFundamentoTurma, '-', NumeroSerie, '-', codigoEscola, '-', codigoTipoTurno, '-', codigoTurno, '-', codigoTipoClasse)
 
 	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/ColetaTurma/TurmaClasseEstadual/VisualizarFundamentoLegal',
 		data={
@@ -215,6 +221,10 @@ def get_matriz_curricular(context, ano_letivo, num_classe):
 			'Semestre':0,
 			'CodigoEscola': codigoEscola,
 			'AnoLetivo':ano_letivo,
+			'CodigoTipoTurno':codigoTipoTurno,
+			'CodigoTurno':codigoTurno,
+			'CodigoTipoClasse':codigoTipoClasse,
+			'TipoEnsino':tipoEnsino,
 			'__RequestVerificationToken': context.request_verification_token,
 		})
 	
@@ -535,3 +545,42 @@ def get_all_matriculas(context, ano_letivo, callback=None):
 							**final_matricula,
 							'transporte_indicação': result_transporte_indicação,
 						}
+
+def get_matriz_curricular_new(context, ano_letivo, num_classe, codigo_ensino):
+	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/MatrizCurricular/RelatorioAcompanhamentoMatrizCurricular/PesquisarTurmasComQuadroAulas',
+	data={
+		'anoLetivo': ano_letivo,
+		'codigoDiretoria': 20202,
+		'codigoEscola': 12361,
+		'codigoTipoEnsino': codigo_ensino
+	})
+
+	soup = BeautifulSoup(response.text, 'html.parser')
+
+	trs = soup.find(id="tbRelatorio").tbody.findAll('tr')
+	
+	for tr in trs:
+		tds = tr.findAll('td')
+		if num_classe == int(tds[5].text):
+			comando = tds[15].find('i')['onclick']
+
+			parametros = re.findall(r'\d+', comando)
+			#print(parametros)
+
+			response = context.session.post('https://sed.educacao.sp.gov.br/NCA/MatrizCurricular/RelatorioAcompanhamentoMatrizCurricular/ListarQuadroAulas',
+			data={
+				'codigoFundamentoTurma': parametros[0],
+				'codigoTurma': parametros[1]
+			})
+
+			soup_matriz = BeautifulSoup(response.text, 'html.parser')
+
+			matriz = []
+
+			linhas = soup_matriz.find(id="tbListaQuadroAulas").tbody.findAll('tr')
+			for linha in linhas:
+				colunas = linha.findAll('td')
+				info = {'codigo':colunas[0].text, 'quantidade':colunas[3].text}
+				matriz.append(info)
+
+			return matriz

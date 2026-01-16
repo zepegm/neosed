@@ -102,6 +102,15 @@
                 </li>
                 {% endif %}                  
 
+                {% if url_for(request.endpoint) == '/historicos' %}
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Históricos</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="../historicos">Históricos</a>
+                </li>
+                {% endif %}  
 
                 {% if url_for(request.endpoint) == '/relatorios' %}
                 <li class="nav-item">
