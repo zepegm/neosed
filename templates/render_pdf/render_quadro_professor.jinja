@@ -1,0 +1,107 @@
+<html>
+    <head>
+        <title>Render Horário Individual</title>
+        <style>
+
+            .thead, tbody, th, td {
+                font-family: Arial, Helvetica, sans-serif;
+            }
+
+            .dark {
+                background-color: rgb(250, 255, 180);
+                color: black;
+                border-top: black solid 1px;
+                border-right: black solid 1px;
+            }
+
+            .dark:last-child {
+                border-right: none;
+            }
+
+            table {
+                width: 696px;
+                /*height: 340px;*/
+                border-collapse: collapse;
+                /*margin-bottom: 20px;
+                border: solid black 2px;*/
+                margin-left: 2px;
+            }
+
+            .tb-quadro tbody td {
+                border-right: solid black 1px;
+                border-top: solid black 1px;
+            }
+
+            .tb-quadro tbody td:last-child {
+                border-right: none;
+            }
+
+            .professor-container {
+                width: 700px;
+                border: solid black 2px;
+                margin-bottom: 20px;
+            }
+
+            /* O "pulo do gato": Efeito .table-striped */
+            .tb-quadro tbody tr:nth-child(even) {
+                background-color: #f2f2f2; /* Cor da listra (cinza claro) */
+            }
+
+            @media print {
+                /* Evita que o container do professor seja dividido entre duas páginas */
+                .professor-container {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                    display: block; /* Garante que o container se comporte como bloco para a quebra */
+                    
+                }
+
+                /* Opcional: Força uma nova página ANTES de cada professor (exceto o primeiro) 
+                se você quiser um professor por página: */
+                /* .professor-container { page-break-before: always; } */
+                
+                /* Garante que o cabeçalho da tabela se repita caso ela seja muito grande e precise quebrar */
+                thead {
+                    display: table-header-group;
+                }
+            }            
+            
+        </style>
+    </head>
+    <body>
+        {% for professor in profs %}
+        <div class="professor-container">
+            <table class="tb-quadro">
+                <thead>
+                    <tr>
+                        <td colspan="9" class="thead" style="padding-top:10px;padding-left:10px; font-size: 20px; height: 50px;"><b>Professor(a):</b> {{ professor.nome }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="9" class="thead" style="padding-left:10px;padding-bottom:10px; font-size: 20px; height: 50px;"><b>Quantidade de Aulas:</b> {{ professor.total }}</td>
+                    </tr>
+                    <tr>
+                        <th class="thead dark" style="width:104px; height: 30px; text-align: left; padding-left:10px;">Disciplina</th>
+                        <!-- Aqui iteramos sobre as chaves das turmas para criar o cabeçalho -->
+                        {% for turma in lista_turmas %}
+                            <th class="thead dark">{{ turma }}</th>
+                        {% endfor %}                
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nome_disc, aulas_turma in professor.disciplinas.items() %}
+                    <tr>
+                        <td style="height: 30px; padding-left:10px;">{{ nome_disc }}</td>
+                        {% for turma in lista_turmas %}
+                            <td style="text-align: center; width: 30px;">
+                                {# Verifica se a turma existe para esta disciplina, senão coloca '-' #}
+                                {{ aulas_turma.get(turma, '-') }}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </body>
+</html>

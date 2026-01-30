@@ -42,6 +42,19 @@ app.jinja_env.add_extension(TryCatchExtension)
 BLOCOS_IGNORAR = {'', '-'}
 SEMANA_SIGLAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']  # 0=seg ... 6=dom
 
+def ordenar_turmas(nome_turma):
+    # Definimos o peso: Fundamental (º) ganha 0, Médio (ª) ganha 1
+    peso_nivel = 0 if 'º' in nome_turma else 1
+    
+    # Extraímos apenas o número do início (ex: '6' de '6ºA')
+    # Se não houver número, usamos 0 para não quebrar
+    import re
+    numero = re.search(r'\d+', nome_turma)
+    ordem_numerica = int(numero.group()) if numero else 0
+    
+    # Retorna uma tupla: primeiro ordena pelo peso do nível, depois pelo número
+    return (peso_nivel, ordem_numerica, nome_turma)
+
 def ph(seq):
     """Gera '(%s,%s,%s,...)' com o tamanho certo; se vazio, retorna '(NULL)'."""
     return '(' + ','.join(['%s'] * len(seq)) + ')' if seq else '(NULL)'  
@@ -687,7 +700,7 @@ def render_livro_ponto():
     # ---------- parâmetros ----------
     ano = int(request.args.getlist('ano')[0])
     mes = int(request.args.getlist('mes')[0])
-    data_aux = date(ano, mes, 1)
+    data_aux = date(ano, mes, 2)
 
     # UA padrão
     ua_padrao = banco.executarConsulta(
@@ -955,6 +968,9 @@ def render_livro_ponto():
                 "CALL sp_horario_professor_v2(%s, %s, %s, %s)",
                 (cpf_int, data_aux.strftime("%Y-%m-%d"), 'apelido', 1)
             )
+
+            print("CALL sp_horario_professor_v2(%s, %s, %s, %s)", (cpf_int, data_aux.strftime("%Y-%m-%d"), 'apelido', 1))
+
         else:
             professor['quadro_aula'] = []
 
@@ -2241,7 +2257,7 @@ def render_lista():
                                                     gh.prof_nome
                                                 FROM grade_horario_vw gh
                                                 JOIN turma t ON t.num_classe = gh.num_classe
-                                                WHERE t.num_classe IN (select num_classe from turma where tipo_ensino in {tipo_ensino})
+                                                WHERE t.num_classe IN (select num_classe from turma where tipo_ensino in {tipo_ensino} and ano = {ano})
                                                 ORDER BY turma, gh.semana, gh.inicio;''')
 
     
@@ -4586,6 +4602,40 @@ def frequencia():
             listaTurmas.append({'tipo_ensino':item, 'lista':turmas})
 
     return render_template('frequencia.jinja', listaTurmas=listaTurmas, data=hoje.strftime('%Y-%m-%d'), msg=msg)
+
+@app.route('/render_quadro_professor', methods=['GET', 'POST'])
+def render_quadro_professor():
+    ano = request.args.getlist('ano')[0]
+    
+    query = """
+        SELECT p.nome, d.descricao, t.apelido, m.qtd_aulas
+        FROM matriz_curricular m
+        JOIN turma t ON m.num_classe = t.num_classe
+        JOIN disciplinas d ON m.disc_disciplina = d.codigo_disciplina
+        JOIN professor_livro_ponto p ON p.cpf in  (m.cpf_professor, m.cpf_professor_2) 
+        WHERE t.ano = """ + ano + " AND t.tipo_ensino in (1, 3) ORDER BY p.nome, d.descricao;"
+    
+    resultados = banco.executarConsultaBasic(query)
+
+    mapa = {}
+    todas_turmas = set()
+
+    for prof, disc, turma, qtd in resultados:
+        todas_turmas.add(turma)
+        if prof not in mapa:
+            mapa[prof] = {"nome": prof, "disciplinas": {}, "total": 0}
+        
+        if disc not in mapa[prof]["disciplinas"]:
+            mapa[prof]["disciplinas"][disc] = {}
+            
+        mapa[prof]["disciplinas"][disc][turma] = qtd
+        mapa[prof]["total"] += qtd
+
+    # Ordena as turmas (ex: 6ºA antes de 7ºA)
+    lista_turmas_ordenada = sorted(list(todas_turmas), key=ordenar_turmas)
+    
+    return render_template('render_pdf/render_quadro_professor.jinja', profs=mapa.values(), lista_turmas=lista_turmas_ordenada)
+
 
 
 @app.route('/render_boletim', methods=['GET', 'POST'])

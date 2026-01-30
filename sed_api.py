@@ -584,3 +584,30 @@ def get_matriz_curricular_new(context, ano_letivo, num_classe, codigo_ensino):
 				matriz.append(info)
 
 			return matriz
+
+def forcarCadastroAtribuicao(context, info):
+	response = context.session.post('https://sed.educacao.sp.gov.br/SedAtribuicao/AssociacaoProfessorClasse/Cadastrar',
+	data={'__RequestVerificationToken': context.request_verification_token,
+            'NumeroAnoLetivo':2026,
+            'Professor.NumeroCpf':41817519883,
+            'Professor.NumeroDi':1,
+            'Professor.CodigoCategoria':'O',
+            'Professor.CodigoCargo':5774,
+            'tabelaQuadroAulas_length':10,
+            'SelecaoQuadroAula':'false',
+            'SelecaoQuadroAula':'false',
+            'SelecaoQuadroAula':'false',
+            'SelecaoQuadroAula':'true',
+            'SelecaoQuadroAula':'false',
+            'FlagSuplementarPei':'false',
+            'FlagSubstituicao':'false',
+            'CodigoTipoAtribuicaoProfessor':'Responsavel',
+            'CodigoEtapaFase':6,
+            'DataInicioVigencia':'2026-02-02',
+            'DataFimVigencia':'2027-01-31',
+            'QuadroAulasJson':'[{"CodigoQuadroAula":760685031,"CodigoDiretoria":20202,"CodigoEscola":12361,"CodigoTurma":40967493,"CodigoDisciplina":8465,"QuantidadeAulas":2}]'
+	})
+
+	soup = BeautifulSoup(response.text, 'html.parser')
+
+	return soup

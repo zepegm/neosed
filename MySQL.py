@@ -32,6 +32,17 @@ class db:
         database.close()
         return result
     
+    def executarConsultaBasic(self, sql):
+        database = mysql.connector.connect(
+            host=self.cred['host'], user=self.cred['user'],
+            passwd=self.cred['passwd'], db=self.cred['db']
+        )
+        cur = database.cursor()
+        cur.execute(sql)
+        resultado = cur.fetchall()
+        database.close()
+        return resultado
+    
     def inserirNovaTurma(self, turma):   
         
         sql = "INSERT INTO turma VALUES(" + str(turma.values()).replace("'", '').replace('"', "'")[13:-2] + ")"

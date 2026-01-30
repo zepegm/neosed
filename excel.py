@@ -50,7 +50,7 @@ class xls:
     def getValCell(self, endereco, name=1):
         return self.wb.Worksheets(name).Range(endereco).value
 
-    def getValCellNumbes(self, name, endereco, row, col):
+    def getValCellNumbes(self, endereco, row, col, name=1):
         return self.wb.Worksheets(name).Range(endereco).Cells(row, col).value
 
     def setValCell(self, endereco, val, name=1):
@@ -61,6 +61,9 @@ class xls:
 
     def getActiveRow(self):
         return self.app.ActiveCell.Row
+    
+    def getActiveSheet(self):
+        return self.app.ActiveSheet.Index
 
     def setRowHeight(self, row, height):
         self.wb.Rows(f"{row}:{row}").RowHeight = height
