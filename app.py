@@ -6,7 +6,7 @@ from waitress import serve
 from datetime import datetime, date, timedelta
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
-from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar, extrair_numeros, montar_eventos, hsl_for_key, montar_grade_prof
+from utilitarios import converterLista, getMes, hojePorExtenso, series_fund, getSituacao, converterDataMySQL, encriptar, extrair_numeros, montar_eventos, hsl_for_key, montar_grade_prof, pastel_from_label
 from flask_socketio import SocketIO, emit
 from collections import defaultdict
 import pandas as pd
@@ -2398,6 +2398,99 @@ def render_lista():
 
             #return render_template('render_pdf/render_horario_geral.jinja', turmas=turmas, horario=horario_final, grade=grade_final, dias_semana=dias_semana, rowspan=rowspan, tipo=tipo, legenda=legenda, data=data_horario, profs=profs)
 
+        elif tipo == 'grade_turma':
+            num_classe = request.args.getlist('num_classe')[0]
+            #ano = request.args.getlist('order')[0]
+
+            sql = """/* Quadro semanal da turma: uma linha por período, colunas Seg..Sex
+                        — agora com rótulo especial para ELETIVA: "ELE (Prof1/Prof2)" */
+                        WITH
+                        base AS (
+                        SELECT
+                            g.num_classe,
+                            g.pos,
+                            g.semana,                               -- 2=Seg ... 6=Sex
+                            COALESCE(ht.inicio, ha.inicio) AS inicio,
+                            COALESCE(ht.fim,    ha.fim)    AS fim,
+                            d.abv AS disc_abv,
+
+                            /* pegamos os 2 nomes (preferindo nome_ata) */
+                            COALESCE(NULLIF(p1.nome_ata,''), p1.nome) AS prof1_nome,
+                            COALESCE(NULLIF(p2.nome_ata,''), p2.nome) AS prof2_nome
+
+                        FROM grade g
+                        JOIN disciplinas d
+                            ON d.codigo_disciplina = g.disciplina
+                        JOIN turma t
+                            ON t.num_classe = g.num_classe
+                        LEFT JOIN horario_turma ht
+                            ON ht.num_classe = g.num_classe
+                        AND ht.pos        = g.pos
+                        /* Se sua horario_turma diferencia por dia, ative a linha abaixo:
+                            AND ht.semana     = g.semana
+                        */
+                        LEFT JOIN hora_aulas ha
+                            ON ha.ano         = t.ano
+                        AND ha.tipo_ensino = t.tipo_ensino
+                        AND ha.pos         = g.pos
+                        LEFT JOIN matriz_curricular mc
+                            ON mc.num_classe       = g.num_classe
+                        AND mc.disc_disciplina  = g.disciplina
+                        LEFT JOIN professor_livro_ponto p1 ON p1.cpf = mc.cpf_professor
+                        LEFT JOIN professor_livro_ponto p2 ON p2.cpf = mc.cpf_professor_2
+                        WHERE g.num_classe = %s
+                            AND g.semana BETWEEN 2 AND 6                 -- só Seg..Sex
+                            AND COALESCE(ht.inicio, ha.inicio) IS NOT NULL
+                            AND COALESCE(ht.fim,    ha.fim)    IS NOT NULL
+                        ),
+                        rotulo AS (
+                        SELECT
+                            num_classe, pos, semana, inicio, fim,
+                            /* Se for eletiva (ABV = 'ELE'), juntar 2 profs com "/".
+                            Caso contrário, usar só o principal (prof1 -> prof2). */
+                            CASE
+                            WHEN disc_abv = 'ELE' THEN
+                                CASE
+                                WHEN (prof1_nome IS NULL OR prof1_nome='') AND (prof2_nome IS NULL OR prof2_nome='') THEN 'ELE'
+                                ELSE CONCAT('ELE (', CONCAT_WS(' / ', NULLIF(prof1_nome,''), NULLIF(prof2_nome,'')), ')')
+                                END
+                            ELSE
+                                CASE
+                                WHEN COALESCE(prof1_nome, prof2_nome) IS NULL OR COALESCE(prof1_nome, prof2_nome) = '' THEN disc_abv
+                                ELSE CONCAT(disc_abv, ' (', COALESCE(NULLIF(prof1_nome,''), prof2_nome), ')')
+                                END
+                            END AS label
+                        FROM base
+                        )
+                        SELECT
+                        CONCAT(DATE_FORMAT(inicio, '%H:%i'), ' à ', DATE_FORMAT(fim, '%H:%i')) AS `Horário`,
+                        MAX(CASE WHEN semana = 2 THEN label END) AS `Seg`,
+                        MAX(CASE WHEN semana = 3 THEN label END) AS `Ter`,
+                        MAX(CASE WHEN semana = 4 THEN label END) AS `Qua`,
+                        MAX(CASE WHEN semana = 5 THEN label END) AS `Qui`,
+                        MAX(CASE WHEN semana = 6 THEN label END) AS `Sex`
+                        FROM rotulo
+                        GROUP BY inicio, fim
+                        ORDER BY inicio;"""
+
+            rows = banco.executarConsulta(sql, [num_classe])
+
+            print(rows)
+
+            #cores = ['#becaa8', '#d084c0', '#c8b8ea', '#d9e9ac', '#96d8ad', '#e7a6c3', '#d8d796', '#9df2f3', '#ee9dc1', '#b1aaf7', '#f9cc87', '#afb3de', '#b3e29e', '#fce5bb', '#a5d4fe', '#cedfb5', '#c3b9af', '#d98deb', '#e2d3d2', '#b9e1d8', '#b99dc2', '#b6efeb', '#d3f98f', '#bbfeb9', '#a8e5f0', '#e98dbf', '#edcd93', '#a8bcab', '#96caac', '#97c4ac', '#b7a2fa', '#c582cf', '#cd8eb9', '#8cff84', '#e5d180', '#bd8ff2', '#c98ce9', '#94fcb6', '#bcbaf9', '#b7c8a7', '#dbe7cf', '#e1d2af', '#e4cac3', '#fdb0db', '#dfad80', '#adf6eb', '#a4eebd', '#8f86b4', '#93c3ae', '#a2b5da']
+            disciplinas = banco.executarConsulta("select disciplinas.abv from matriz_curricular inner join disciplinas on disciplinas.codigo_disciplina = matriz_curricular.disc_disciplina where num_classe = %s" % num_classe)
+
+            i = 0
+            for item in disciplinas:
+                item['cor'] = pastel_from_label(item['abv'])
+                i += 1
+
+            head = banco.executarConsulta('select nome_turma, tipo_ensino.descricao from turma inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where num_classe = %s' % num_classe)[0]
+
+            return render_template('render_pdf/render_horario_salas.jinja', dados=rows, cores=disciplinas, head=head)
+
+
+        
         elif tipo == 'individual': # horário individual dos professores
 
             data_horario = request.args.getlist('data')[0]
@@ -3160,6 +3253,9 @@ async def gerar_pdf():
         if ensino == 'individual':
             estilo = 'individual'
 
+        if ensino == 'individual_salas':
+            estilo = 'individual_salas'
+
         browser = await launch(
             handleSIGINT=False,
             handleSIGTERM=False,
@@ -3350,7 +3446,25 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
         await browser.close()
 
-        return jsonify(pdf_path)   
+        return jsonify(pdf_path)
+
+    elif info['destino'] == 22:
+        pdf_path = 'static/docs/horario_turma.pdf'
+
+        num_classe = info['num_classe']
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )        
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_lista?tipo=grade_turma&num_classe=%s&order=0&ano=0' % (num_classe), {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        await browser.close()
+
+        return jsonify(pdf_path)
 
 
 
@@ -5347,5 +5461,5 @@ def historicos():
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
     #app.run(debug=True)
-    app.run(debug=True, use_reloader=True, port=80)
-    #serve(app, host='0.0.0.0', port=80, threads=8)
+    #app.run(debug=True, use_reloader=True, port=80)
+    serve(app, host='0.0.0.0', port=80, threads=8)

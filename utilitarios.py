@@ -1,5 +1,7 @@
 from datetime import datetime, time, timedelta
 from hashlib import sha256, md5
+import hashlib
+import math
 
 meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
 series_fund = {9:'6º ano', 10:'7º ano', 11:'8º ano', 12:'9º ano'}
@@ -163,3 +165,28 @@ def extrair_numeros(string):
         return ''.join([char for char in string if char.isdigit()])
     except Exception as e:
         return ''
+
+def hash_str_u32(s: str) -> int:
+    return int(hashlib.blake2s(s.encode('utf-8'), digest_size=4).hexdigest(), 16)
+
+def hsl_to_hex(h, s, l):
+    s /= 100.0
+    l /= 100.0
+    c = (1 - abs(2*l - 1)) * s
+    x = c * (1 - abs((h / 60.0) % 2 - 1))
+    m = l - c/2
+    if   0 <= h < 60:   r,g,b = c,x,0
+    elif 60 <= h <120:  r,g,b = x,c,0
+    elif 120<= h <180:  r,g,b = 0,c,x
+    elif 180<= h <240:  r,g,b = 0,x,c
+    elif 240<= h <300:  r,g,b = x,0,c
+    else:               r,g,b = c,0,x
+    to_hex = lambda v: f"{round((v+m)*255):02x}"
+    return f"#{to_hex(r)}{to_hex(g)}{to_hex(b)}"
+
+def pastel_from_label(label: str, sat=48, light=78):
+    h = (hash_str_u32(label) * 137.508) % 360  # ângulo dourado
+    # jitter leve de lightness
+    j = (hash_str_u32(label + "_j") % 9) - 4   # -4..+4
+    L = max(70, min(85, light + j))
+    return hsl_to_hex(h, sat, L)
