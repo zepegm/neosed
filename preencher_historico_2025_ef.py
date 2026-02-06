@@ -1,12 +1,14 @@
 
 from excel import xls
 from MySQL import db
-from sed_api import get_escolas, start_context, get_alunos_num_classe, consulta_ficha_aluno, get_info_aluno
+from sed_api import get_escolas, start_context, get_alunos_num_classe, consulta_ficha_aluno, get_info_aluno, get_info_boletim
 import json
 import os
 import sys
 
-linhas_disc = {'ARTE':19, 'BIOLOGIA':23, 'ED. FISICA':20, 'FILOSOFIA':26, 'FISICA':24, 'GEOGRAFIA':27, 'HISTORIA':28, 'L. EST. INGLES':21, 'L.ING':21, 'LING. PORTUGUESA':17, 'MATEMATICA':22, 'ORIE.DE ESTUDOS':42, 'P EXPERIMENTAIS I':34, 'PROJETO DE VIDA':31, 'QUIMICA':25, 'SOCIOLOGIA':29, 'TEC':32, 'PRATICAS EXPERIMENTAIS':35, 'REDAÇÃO E LEITURA':36, 'Redação e Leitura':18, 'ESPORTE-MÚSICA-ARTE':37, 'EDUCAÇÃO FINANCEIRA':38, 'INGLÊS':33, 'Arte e Mídias Digitais':47, 'Filosofia e Sociedade Moderna':51, 'Liderança':48, 'Oratória':50, 'ORIENTAÇÃO DE ESTUDO – LÍNGUA PORTUGUESA':39, 'ORIENTAÇÃO DE ESTUDO – MATEMÁTICA':40, 'ROBOTICA':41, 'Geopolítica':49}
+#linhas_disc = {'ARTE':19, 'BIOLOGIA':23, 'ED. FISICA':20, 'FILOSOFIA':26, 'FISICA':24, 'GEOGRAFIA':27, 'HISTORIA':28, 'L. EST. INGLES':21, 'L.ING':21, 'LING. PORTUGUESA':17, 'MATEMATICA':22, 'ORIE.DE ESTUDOS':42, 'P EXPERIMENTAIS I':34, 'PROJETO DE VIDA':31, 'QUIMICA':25, 'SOCIOLOGIA':29, 'TEC':32, 'PRATICAS EXPERIMENTAIS':35, 'REDAÇÃO E LEITURA':36, 'Redação e Leitura':18, 'ESPORTE-MÚSICA-ARTE':37, 'EDUCAÇÃO FINANCEIRA':38, 'INGLÊS':33, 'Arte e Mídias Digitais':47, 'Filosofia e Sociedade Moderna':51, 'Liderança':48, 'Oratória':50, 'ORIENTAÇÃO DE ESTUDO – LÍNGUA PORTUGUESA':39, 'ORIENTAÇÃO DE ESTUDO – MATEMÁTICA':40, 'ROBOTICA':41, 'Geopolítica':49}
+
+linhas_disc = {'1813':24, '8468':31, '1900':26, '2100':33, '2200':32, '8467':22, '1100':21, '2700':28, '8427':45, '8448':42, '8441':38, '8444':44, '8466':39, '52000':36, '52003':35, '1400':22, '52007':43, '55208':40, '55207':41, '52001':37, '55205':46}
 
 # Lê o arquivo JSON
 with open("config_db.json") as f:
@@ -15,17 +17,19 @@ with open("config_db.json") as f:
 # configuração do server principal
 banco = db(config)
 
-num_classe = 291001485
+num_classe = 291592863
 id_oculto = banco.executarConsultaVetor(f"select id_oculto from turma where num_classe = {num_classe}")[0]
-planilha = xls("C:\\Users\\giuseppe.manzella\\OneDrive - Secretaria da Educação do Estado de São Paulo (1)\\Formandos 2025\\Fundamental\\Histórico Escolar  9º Ano A.xlsx") # formar conexão com a planilha
+planilha = xls("C:\\Users\\giuseppe.manzella\\OneDrive - Secretaria da Educação do Estado de São Paulo (1)\\Formandos 2025\\Fundamental\\Histórico Escolar  9º Ano B.xlsx") # formar conexão com a planilha
 indice_planilha = planilha.getActiveSheet()
 ra_aluno = "000" + planilha.getValCell('M13', indice_planilha)[:-2].replace('.', '')  # obter o RA do aluno
+
+print(ra_aluno)
 
 def mostrar_menu():
     print("\n--- Menu de Escolha ---")
     print("1. Preencher Cabeçalho do Histórico")
     print("2. Preencher info básica da planilha vizinha")
-    print("3. Reiniciar Programa")
+    print("3. Preencher boletim automaticamente")
     print("4. Sair")
     print("-----------------------")
 
@@ -85,7 +89,7 @@ def write_head():
             
 
             planilha.setValCell('I13', aluno_add['rg'], indice_planilha)  # RG do aluno
-            planilha.setValCell('I13', info_aluno['nascimento_uf'], indice_planilha)  # UR do RG do aluno
+            planilha.setValCell('I14', info_aluno['nascimento_uf'], indice_planilha)  # UR do RG do aluno
             planilha.setValCell('E14', info_aluno['nascimento_cidade'], indice_planilha)  # UR do RG do aluno
             planilha.setValCell('M14', 'BRASIL', indice_planilha)  # UR do RG do aluno
 
@@ -140,6 +144,42 @@ def write_info_basic():
         ano = planilha.getValCellNumbes("E61", i, 1, indice_planilha + 1)
         planilha.setValCellNumbers("E59", ano, i, 1, indice_planilha)
 
+
+def preencher_boletim():
+    auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+    context = start_context(auth)    
+    ano = input("Digite o ano almejado:")
+
+    # buscar coluna ano
+    coluna = 1
+    for i in range(1, 5):
+        if int(ano) == int(planilha.getValCellNumbes('L19', 1, i, indice_planilha)):
+            coluna = i
+
+    result_boletim = get_info_boletim(context, ra_aluno, '', ano)
+
+    disciplinas = result_boletim['oBoletim']['TpsEnsino'][0]['Unidades'][0]['Disciplinas']
+
+    for disc in disciplinas:
+        codigo_disc = disc['CdDisciplina']
+        nota_final = disc['Bimestres'][4]['DsNota']
+        try:
+            linha_destino = linhas_disc[str(codigo_disc)]
+
+            if int(ano) < 2024 and linha_destino > 34:
+                planilha.setValCellNumbers("L" + str(linha_destino), 'F', 1, coluna, indice_planilha)
+            elif int(nota_final) == 97:
+                planilha.setValCellNumbers("L" + str(linha_destino), 'ET', 1, coluna, indice_planilha)            
+            elif int(nota_final) == 98:
+                planilha.setValCellNumbers("L" + str(linha_destino), 'ES', 1, coluna, indice_planilha)
+            else:
+                planilha.setValCellNumbers("L" + str(linha_destino), nota_final, 1, coluna, indice_planilha)
+        except:
+            print('------ erro ao tentar localizar a chave %s' % codigo_disc)
+            print('Disciplina: %s' % disc['DsDisciplina'].title())
+            print('Nota Final: %s' % disc['Bimestres'][4]['DsNota'])
+            print('------------------------------------------------')
+
 # Loop principal do programa
 while True:
     mostrar_menu()
@@ -150,7 +190,7 @@ while True:
     elif escolha == '2':
         write_info_basic()
     elif escolha == '3':
-        reiniciar_programa()
+        preencher_boletim()
     elif escolha == '4':
         print("Saindo do programa. Até mais!")
         break  # Interrompe o loop e sai do programa        

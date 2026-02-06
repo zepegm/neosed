@@ -209,7 +209,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-7">
+                            <div class="col-sm-5">
                                 <label class="form-label" for="txt_rg">RG:</label>
                                 <div class="input-group mb-3">
                                     <input type="number" class="form-control" id="txt_rg" name="rg" style="width: 50%" required>
@@ -217,6 +217,13 @@
                                     <input type="text" class="form-control" id="txt_digito_rg" name="digito_rg" maxlength="1">
                                 </div>
                             </div>
+
+                            <div class="col-sm-2">
+                                <label class="form-label" for="txt_rg">DI:</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" class="form-control" id="txt_di" name="di" required>
+                                </div>
+                            </div>                                          
 
                             <div class="col-sm-5">
                                 <div class="mb-3">
@@ -229,27 +236,62 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-12">
+                            <div class="col-sm-3">
+                                <label class="form-label" for="txt_rg">Nascimento:</label>
+                                <div class="input-group mb-3">
+                                    <input type="date" class="form-control" id="txt_nascimento" name="nascimento" required>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4">
+                                <div class="mb-3">
+                                    <label class="form-label" for="cb_categoria">Categoria:</label>
+                                    <select class="form-select" id="cb_categoria" name="categoria">
+                                        {% for categoria in categorias %}
+                                        <option value="{{categoria['id']}}">{{categoria['descricao']}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-5">
+                                <label class="form-label" for="txt_rs">RS:</label>
+                                <div class="input-group mb-3">
+                                    <input type="number" class="form-control" id="txt_rs" name="rs" style="width: 50%" required>
+                                    <span class="input-group-text" id="basic-addon1">PV</span>
+                                    <input type="number" class="form-control" id="txt_pv" name="pv" maxlength="1">
+                                </div>
+                            </div>                            
+
+                            <div class="col-sm-7">
                                 <div class="mb-3">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="1" id="plantao" name="plantao">
                                         <label class="form-check-label" for="plantao">
                                             Regime Plantão
                                         </label>
-                                    </div>                               
-                                </div>
-                            </div>
-
-                            <div class="col-sm-12">
-                                <div class="mb-3">
+                                    </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="1" id="estudante" name="estudante">
                                         <label class="form-check-label" for="estudante">
                                             Horário Estudante
                                         </label>
-                                    </div>                               
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="estudante" name="estudante">
+                                        <label class="form-check-label" for="estudante">
+                                            Horário Estudante
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
+
+                            <div class="col-sm-5">
+                                <label class="form-label" for="txt_rg">FNREF:</label>
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" id="txtfnref" name="fnref" required>
+                                </div>
+                            </div>                            
 
                             <div class="col-sm-8">
                                 <div class="mb-3">
@@ -270,7 +312,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <button type="submit" id="btn-confirmar" class="btn btn-warning">Confirmar Dados</button>
+                    <button type="button" id="btn-sed" class="btn btn-warning"><i class="fa-solid fa-server"></i>&nbsp;Puxar Dados SED (CPF)</button>
+                    <button type="submit" id="btn-confirmar" class="btn btn-success"><i class="fa-solid fa-floppy-disk"></i>&nbsp;Confirmar Dados</button>
                 </div>
             </div>
             </form>
@@ -458,7 +501,52 @@
             $("#ativacao").val(1);
             $("#cpf_ativacao").val($(this).attr('data-id'));
             $("#form_ativacao_prof").submit();
-        });        
+        });   
+
+        $("#btn-sed").on('click', function() {
+            $(this).attr('disabled', '');
+            $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+
+            info = {'destino':2, 'rg':$("#txt_rg").val(), 'cpf':$("#txt_cpf").val()};
+
+            $.ajax({
+                type: "POST",
+                url: "ponto_adm",
+                contentType: "application/json",
+                data: JSON.stringify(info),
+                dataType: "json",
+                success: function(data) {
+                    if (data.result) {
+                        dados = data.dados;
+                        console.log(dados);
+                        $("#txt_nome").val(dados['nome']);
+                        $("#txt_rg").val(dados['rg']);
+                        $("#txt_digito_rg").val(dados['digito-rg']);
+                        $("#txt_nascimento").val(dados['nascimento']);
+                        
+                        for (let i = 0; i < dados['dados_funcionais'].length; i++) {
+                            if (dados['dados_funcionais'][i]['situacao'] == 'ATIVO') {
+                                $("#txt_di").val(dados['dados_funcionais'][i]['di']);
+                                $("#cb_cargo").val(dados['dados_funcionais'][i]['cod_cargo']);
+                            }
+
+                            if (dados['dados_funcionais'][i]['vinculo_cod'] != null) {
+                                $("#cb_categoria").val(dados['dados_funcionais'][i]['vinculo_cod']);
+                            }
+
+                            if (dados['dados_funcionais'][i]['cod_faixa'] != "") {
+                                $("#txtfnref").val(dados['dados_funcionais'][i]['cod_faixa']);
+                            }
+                        }
+
+                        $("#txt_rs").val(dados['fazenda']['rs']);
+                        $("#txt_pv").val(dados['fazenda']['pv']);
+                    }
+                    $("#btn-sed").removeAttr('disabled');
+                    $("#btn-sed").html('<i class="fa-solid fa-server"></i>&nbsp;Puxar Dados SED (CPF)');
+                },
+            });            
+        });
 
         $(".row_professor").on('click', function() {
             cpf = $(this).attr('data-id');
@@ -480,6 +568,12 @@
                     $("#cb_cargo").val(response['cargo']);
                     $("#txt_horario").val(response['horario']);
                     $("#txt_intervalo").val(response['intervalo']);
+                    $("#txt_di").val(response['di']);
+                    $("#txt_nascimento").val(response['nascimento']);
+                    $("#cb_categoria").val(response['categoria']);
+                    $("#txt_rs").val(response['rs']);
+                    $("#txt_pv").val(response['pv']);
+                    $("#txtfnref").val(response['FNREF']);
 
                     if (response['plantao'] == 1) {
                         $("#plantao").attr('checked', '');

@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, time, timedelta
 from hashlib import sha256, md5
 import hashlib
@@ -190,3 +191,17 @@ def pastel_from_label(label: str, sat=48, light=78):
     j = (hash_str_u32(label + "_j") % 9) - 4   # -4..+4
     L = max(70, min(85, light + j))
     return hsl_to_hex(h, sat, L)
+
+def parse_dotnet_date(value):
+    """
+    Converte '/Date(731905200000)/' em datetime
+    """
+    if not value:
+        return None
+
+    m = re.search(r'/Date\((\d+)\)/', value)
+    if not m:
+        return None
+
+    ms = int(m.group(1))
+    return datetime.utcfromtimestamp(ms / 1000)

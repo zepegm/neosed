@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import re
 import json
 from MySQL import db
+from utilitarios import parse_dotnet_date
 
 # Lê o arquivo JSON
 with open("config_db.json") as f:
@@ -19,6 +20,7 @@ class SEDContext:
 	request_verification_token: str = ''
 	authorization: str = ''
 	token_funcional: str = ''
+	token_boletim: str = ''
 
 def start_context(auth):
 	session = requests.Session()
@@ -34,13 +36,25 @@ def start_context(auth):
 	soup = BeautifulSoup(response.text, 'html.parser')
 	token_funcional = soup.find('input', attrs={'name': '__RequestVerificationToken'})['value']
 
+	headers = {
+		'X-Requested-With': 'XMLHttpRequest',
+		'Referer': 'https://sed.educacao.sp.gov.br/Inicio'
+	}
+
+    # --- Boletim (NOVO)
+    # tenta abrir o módulo do boletim; se a sessão tiver acesso, aqui normalmente nasce token/cookies do módulo
+	response = session.get('https://sed.educacao.sp.gov.br/Boletim/BoletimAluno', headers=headers)
+	soup = BeautifulSoup(response.text, 'html.parser')
+	token_boletim = soup.find('input', attrs={'name': '__RequestVerificationToken'})['value']
+
+
 	# authorization
 	response = session.get("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Consulta")
 
 	match = re.search(r'Execute\.Init\("(.*?)"', response.text)
 	authorization = match.group(1)
 
-	return SEDContext(session=session, request_verification_token=request_verification_token, authorization=authorization, token_funcional=token_funcional)
+	return SEDContext(session=session, request_verification_token=request_verification_token, authorization=authorization, token_funcional=token_funcional, token_boletim=token_boletim)
 
 def get_cookies(auth):
 	return {
@@ -65,6 +79,112 @@ def pegar_disciplina(tr, td_index):
 	td = tr.find_all('td')[td_index]
 	div = td.find('div')
 	return div.get('data-cddisciplina') if div else 'null'
+
+
+def get_funcionario_info(context, cpf_professor, rg_professor):
+
+	final_data = {}
+
+	headers = {
+		'X-Requested-With': 'XMLHttpRequest'
+    }
+
+	# pegar dados básicos do professor
+	response = context.session.post(
+		'https://sed.educacao.sp.gov.br/Funcional/Consulta/ListarServidoresPessoal',
+		data={
+			'NrCpf': cpf_professor,
+			'NrRg': rg_professor,
+			'NmServidor': '',
+			'ConsultaTipo': 'false',
+			'__RequestVerificationToken': context.token_funcional  # novo token, da página correta
+		},
+		headers=headers
+	)
+
+	dados = response.json()
+	
+	final_data['nome'] = dados['ListServidores'][0]['DsNome'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+	final_data['cpf'] = dados['ListServidores'][0]['NrCpf']
+	final_data['rg'] = dados['ListServidores'][0]['NrRg']
+	final_data['digito-rg'] = dados['ListServidores'][0]['CdVerifRg']
+	final_data['nascimento'] = parse_dotnet_date(dados['ListServidores'][0]['DtNascimento']).strftime('%Y-%m-%d')
+
+	# pegar dados funcionais do funcionário
+	response = context.session.post('https://sed.educacao.sp.gov.br/Funcional/Consulta/ListarDadosFuncionais',
+		data={
+			'NrCpf': final_data['cpf']
+		},
+		headers=headers
+	)
+
+	soup = BeautifulSoup(response.text, 'html.parser')
+	tabela = soup.find(id='tblFuncional')
+	trs = tabela.tbody.find_all('tr')
+	
+	dados_funcionais = []
+
+	for tr in trs:
+
+		json_td = json.loads(tr.find('i')['onclick'].replace('DetalharDadosFuncionais(', '')[:-1])
+
+		try:
+			info = {
+				'di': tr.find_all('td')[1].get_text(strip=True),
+				'vinculo': tr.find_all('td')[2].get_text(strip=True),
+				'cargo': tr.find_all('td')[3].get_text(strip=True),
+				'ua_classe': tr.find_all('td')[4].get_text(strip=True),
+				'situacao': tr.find_all('td')[5].get_text(strip=True),
+				'cod_faixa':json_td['CodigoIdentidadeReferenciaFaixa'],
+				'cod_cargo': banco.executarConsulta("select id from cargos_livro_ponto where cod_sed = %s " % json_td['CdCargo'])[0]['id'] if json_td['CdCargo'] else None,
+				'vinculo_cod': banco.executarConsulta("select id from categoria_livro_ponto where letra = '%s'" % json_td['CdIdentCatFunc'])[0]['id'] if 'CdIdentCatFunc' in json_td else None,
+				}
+		except:
+			info = {
+				'di': tr.find_all('td')[1].get_text(strip=True),
+				'vinculo': tr.find_all('td')[2].get_text(strip=True),
+				'cargo': tr.find_all('td')[3].get_text(strip=True),
+				'ua_classe': tr.find_all('td')[4].get_text(strip=True),
+				'situacao': tr.find_all('td')[5].get_text(strip=True),
+				'cod_faixa':json_td['CodigoIdentidadeReferenciaFaixa'],
+				'cod_cargo': banco.executarConsulta("select id from cargos_livro_ponto where cod_sed = %s " % json_td['CdCargo'])[0]['id'] if json_td['CdCargo'] else None,
+				'vinculo_cod': None,
+				}			
+		
+		dados_funcionais.append(info)
+
+	final_data['dados_funcionais'] = dados_funcionais
+
+
+	# pegar vínculo com a fazenda
+	response = context.session.post('https://sed.educacao.sp.gov.br/Funcional/Consulta/ListarConvenioFazenda',
+		data={
+			'NrCpf': final_data['cpf']
+		},
+		headers=headers
+	)
+
+	fazenda_html = BeautifulSoup(response.text, 'html.parser')
+
+	rs = fazenda_html.find(id="txtNrRs")['value']
+	pv = '0'
+
+	tabela_fazenda = fazenda_html.find(id="tblConvFaz")
+	trs = tabela_fazenda.tbody.find_all('tr')
+
+	for tr in trs:
+		colunas = tr.find_all('td')
+
+		if colunas[7].get_text(strip=True) in ("Ativo", "Designação"):
+			pv = colunas[2].get_text(strip=True)
+		else:
+			print(colunas[7].get_text(strip=True))
+
+
+	final_data['fazenda'] = {'rs':int(rs), 'pv':int(pv)}
+	
+	return final_data
+
 
 def get_professor_info(context, cpf_professor, rg_professor):
 
@@ -93,6 +213,7 @@ def get_professor_info(context, cpf_professor, rg_professor):
 	final_data['cpf'] = dados['ListServidores'][0]['NrCpf']
 	final_data['rg'] = dados['ListServidores'][0]['NrRg']
 	final_data['digito-rg'] = dados['ListServidores'][0]['CdVerifRg']
+	final_data['nascimento'] = parse_dotnet_date(dados['ListServidores'][0]['DtNascimento']).strftime('%Y-%m-%d')
 
 	# pegar dados funcionais do professor
 	response = context.session.post('https://sed.educacao.sp.gov.br/Funcional/Consulta/ListarDadosFuncionais',
@@ -502,6 +623,37 @@ def get_transporte_indicação(context, aluno_id):
 	json = response.json()
 
 	return json['data'][0]['StatusTransporte'] if len(json['data']) != 0 else None
+
+def get_info_boletim(context, aluno_ra, digito_ra, ano):
+    
+	headers = {
+		'X-Requested-With': 'XMLHttpRequest',
+		'Referer': 'https://sed.educacao.sp.gov.br/Boletim/BoletimAluno'
+	}
+
+	# pegar dados básicos do professor
+	response = context.session.post(
+		'https://sed.educacao.sp.gov.br/Boletim/GerarBoletimUnificado',
+		data={
+			'__RequestVerificationToken': context.token_boletim,
+			'nrRa': str(aluno_ra),
+			'nrDigRa': str(digito_ra),
+			'dsUfRa': 'SP',
+			'nrAnoLetivo': str(ano),
+			'ehCEEJA': 'false',
+		},
+		headers=headers
+	)
+	
+	try:
+		with open('debug.html', 'w') as f: f.write(response.text)
+		return response.json()
+	except:
+		print('erro!')
+		print(response.text)
+		print(response)
+		with open('debug.html', 'w') as f: f.write(response.text)
+		return 'erro!'
 
 def get_all_matriculas(context, ano_letivo, callback=None):
 	result_escolas = get_escolas(context)

@@ -22,7 +22,7 @@ import calendar
 from jinja_try_catch import TryCatchExtension
 from PyPDF2 import PdfMerger
 from decimal import Decimal, ROUND_HALF_UP
-from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno, get_matriz_curricular, get_grade, get_professor_info
+from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno, get_matriz_curricular, get_grade, get_professor_info, get_funcionario_info
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -564,7 +564,12 @@ def relatorios():
             if (opcao == 2):
                 combo_final.append('<option value="2" selected>Lista de Alunos Ativos Faltando CPF</option>')
             else:
-                combo_final.append('<option value="2">Lista de Alunos Ativos Faltando CPF</option>')                
+                combo_final.append('<option value="2">Lista de Alunos Ativos Faltando CPF</option>')
+
+            if (opcao == 3):
+                combo_final.append('<option value="3" selected>Lista Geral de Funcionários</option>')
+            else:
+                combo_final.append('<option value="3">Lista Geral de Funcionários</option>')
 
 
             if (opcao == 0 or opcao == 1 or opcao == 2): # alunos faltando Documentação
@@ -602,10 +607,40 @@ def relatorios():
                     
                     turma['alunos'] = alunos
 
+            
                 return render_template('relatorios.jinja', opcao=opcao, turmas=turmas, soma=soma, text_final=text_final, combo_final=combo_final)
 
+            elif (opcao == 3): #lista geral de funcionários
 
-    combo_final = ['<option value="0">Lista de Alunos Ativos Faltando RG ou CPF</option>', '<option value="1">Lista de Alunos Ativos Faltando RG</option>', '<option value="2">Lista de Alunos Ativos Faltando CPF</option>']
+                titulos = ['Quadro Administrativo', 'Docentes Ativos', 'Docentes Ativos de outra UE', 'Docentes Afastados/Interrupção de Exercício']
+                listas = []
+
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria, cargos_livro_ponto.abv from funcionario_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = funcionario_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where ativo = 1 order by nome"))
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria,       cargos_livro_ponto.abv from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo where ativo = 1 and sede_controle_freq = 41707 and assina_livro = 1 order by nome"))
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria,       cargos_livro_ponto.abv from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo where ativo = 1 and assina_livro = 1 and sede_controle_freq != 41707 order by nome"))
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria,       cargos_livro_ponto.abv from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo where ativo = 1 and assina_livro = 0 order by nome"))
+
+
+                for lista in listas:
+                    for item in lista:
+                        rg = "%08d" % int(item['rg'])
+                        if (int(item['rg']) == int(item['cpf'])):
+                            item['rg'] = "CIN"
+                        elif item['digito'] == None:
+                            item['rg'] = '%s.%s.%s' % (rg[:2], rg[2:5], rg[5:8])
+                        else:
+                            item['rg'] = '%s.%s.%s-%s' % (rg[:2], rg[2:5], rg[5:8], item['digito'])                            
+
+                        cpf = "%011d" % item['cpf']
+                        item['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
+
+                        item['rs'] = "%08d" % item['rs']
+                        item['pv'] = "%02d" % item['pv']
+
+                return render_template('relatorios.jinja', opcao = 3, lista_final=listas, combo_final=combo_final, titulos=titulos)
+
+
+    combo_final = ['<option value="0">Lista de Alunos Ativos Faltando RG ou CPF</option>', '<option value="1">Lista de Alunos Ativos Faltando RG</option>', '<option value="2">Lista de Alunos Ativos Faltando CPF</option>', '<option value="3">Lista Geral de Funcionários</option>']
 
     return render_template('relatorios.jinja', opcao = -1, combo_final=combo_final)
 
@@ -3466,6 +3501,22 @@ async def gerar_pdf():
 
         return jsonify(pdf_path)
 
+    elif info['destino'] == 23:
+        pdf_path = 'static/docs/relatorio.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )        
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_relatorio_funcionarios_geral', {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        await browser.close()
+
+        return jsonify(pdf_path)        
+
 
 
 
@@ -4750,7 +4801,34 @@ def render_quadro_professor():
     
     return render_template('render_pdf/render_quadro_professor.jinja', profs=mapa.values(), lista_turmas=lista_turmas_ordenada)
 
+@app.route('/render_relatorio_funcionarios_geral', methods=['GET', 'POST'])
+def render_relatorio_funcionarios_geral():
+                titulos = ['Quadro Administrativo', 'Docentes Ativos', 'Docentes Ativos de outra UE', 'Docentes Afastados/Interrupção de Exercício']
+                listas = []
 
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria, cargos_livro_ponto.abv from funcionario_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = funcionario_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where ativo = 1 order by nome"))
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria,       cargos_livro_ponto.abv from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo where ativo = 1 and sede_controle_freq = 41707 and assina_livro = 1 order by nome"))
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria,       cargos_livro_ponto.abv from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo where ativo = 1 and assina_livro = 1 and sede_controle_freq != 41707 order by nome"))
+                listas.append(banco.executarConsulta(r"select nome, rg, digito, cpf, di, DATE_FORMAT(nascimento, '%d/%m/%Y') as nascimento, rs, pv, FNREF, categoria_livro_ponto.letra as categoria,       cargos_livro_ponto.abv from professor_livro_ponto inner join categoria_livro_ponto on categoria_livro_ponto.id = professor_livro_ponto.categoria inner join cargos_livro_ponto on cargos_livro_ponto.id = professor_livro_ponto.cargo where ativo = 1 and assina_livro = 0 order by nome"))
+
+
+                for lista in listas:
+                    for item in lista:
+                        rg = "%08d" % int(item['rg'])
+                        if (int(item['rg']) == int(item['cpf'])):
+                            item['rg'] = "CIN"
+                        elif item['digito'] == None:
+                            item['rg'] = '%s.%s.%s' % (rg[:2], rg[2:5], rg[5:8])
+                        else:
+                            item['rg'] = '%s.%s.%s-%s' % (rg[:2], rg[2:5], rg[5:8], item['digito'])                            
+
+                        cpf = "%011d" % item['cpf']
+                        item['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
+
+                        item['rs'] = "%08d" % item['rs']
+                        item['pv'] = "%02d" % item['pv']
+
+                return render_template('render_pdf/render_funcionarios_geral.jinja', opcao = 3, lista_final=listas, titulos=titulos)
 
 @app.route('/render_boletim', methods=['GET', 'POST'])
 def boletim():
@@ -4942,12 +5020,19 @@ def ponto_adm():
             info = request.json
 
             if info['destino'] == 0: # pegar os dados do professor para editar no formulário
-                detalhes = banco.executarConsulta("select cpf, nome, rg, ifnull(digito, '') as digito, cargo, plantao, estudante, horario, intervalo from funcionario_livro_ponto WHERE cpf = %s" % info['cpf'])[0]
+                detalhes = banco.executarConsulta(r"select cpf, nome, rg, ifnull(digito, '') as digito, cargo, plantao, estudante, horario, intervalo, di, categoria, DATE_FORMAT(nascimento, '%Y-%m-%d') as nascimento, rs, pv, FNREF from funcionario_livro_ponto WHERE cpf = " + info['cpf'])[0]
                 return jsonify(detalhes)
             
             elif info['destino'] == 1: # quadro de afastamentos
                 lista = banco.executarConsulta(r"SELECT cpf, DATE_FORMAT(inicio,'%d/%m/%Y') as dt_inicio, DATE_FORMAT(fim,'%d/%m/%Y') as dt_fim, descricao FROM afastamentos_ponto_adm WHERE cpf = " + str(info['cpf']) + ' and year(fim) = year(current_date) order by inicio')
                 return jsonify(lista)
+
+            elif info['destino'] == 2: # puxa os dados da SED
+                auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+                context = start_context(auth)
+
+                return jsonify({'dados':get_funcionario_info(context, info['cpf'], info['rg']), 'result': True})
+              
 
         if 'nome' in request.form: # inserir ou alterar novo funcionário
 
@@ -4961,6 +5046,12 @@ def ponto_adm():
             dados['intervalo'] = "'%s'" % request.form['txt_intervalo']
             dados['estudante'] = 1 if 'estudante' in request.form else 0
             dados['plantao'] = 1 if 'plantao' in request.form else 0
+            dados['di'] = request.form['di']
+            dados['categoria'] = request.form['categoria']
+            dados['nascimento'] = "'%s'" % request.form['nascimento']
+            dados['rs'] = request.form['rs']
+            dados['pv'] = request.form['pv']
+            dados['FNREF'] = "'%s'" % request.form['fnref']
 
             if banco.insertOrUpdate(dados, 'funcionario_livro_ponto'):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -5019,6 +5110,7 @@ def ponto_adm():
 
 
     cargos = banco.executarConsulta('select * from cargos_livro_ponto where tipo = 2')
+    categorias = banco.executarConsulta('select * from categoria_livro_ponto where id < 4')
 
     funcionarios = banco.executarConsulta("select nome, rg, CASE WHEN digito IS NULL THEN '' ELSE CONCAT('-', digito) END AS digito, cpf, cargos_livro_ponto.descricao as cargo from funcionario_livro_ponto inner join cargos_livro_ponto on cargos_livro_ponto.id = funcionario_livro_ponto.cargo where ativo = 1 order by nome")
     for funcionario in funcionarios:
@@ -5048,7 +5140,7 @@ def ponto_adm():
         meses.append({'desc':mes.title(), 'valor':index, 'atual':int(data_atual.strftime("%m")) == index})  
         index += 1  
 
-    return render_template('livro_ponto_admin.jinja', meses=meses, ano=data_atual.strftime("%Y"), cargos=cargos, msg=msg, funcionarios=funcionarios, desativados=desativados)
+    return render_template('livro_ponto_admin.jinja', meses=meses, ano=data_atual.strftime("%Y"), cargos=cargos, msg=msg, funcionarios=funcionarios, desativados=desativados, categorias=categorias)
 
 @app.route('/ponto', methods=['GET', 'POST'])
 def ponto():
@@ -5061,7 +5153,7 @@ def ponto():
             info = request.json
 
             if info['destino'] == 0: # pegar os dados do professor para editar no formulário
-                detalhes = banco.executarConsulta("select instancia_calendario, cpf, nome, nome_ata, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs, ifnull(atpc, '') as atpc, ifnull(atpl, '') as atpl, ifnull(aulas_outra_ue, '') as aulas_outra_ue from professor_livro_ponto WHERE cpf = %s and di = %s" % (info['cpf'], info['di']))[0]
+                detalhes = banco.executarConsulta("select instancia_calendario, cpf, nome, nome_ata, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargo, categoria, jornada, sede_classificacao, sede_controle_freq, ifnull(di, '') as di, ifnull(disciplina, 'null') as disciplina, ifnull(afastamento, 'null') as afastamento, assina_livro, ifnull(FNREF, '') as FNREF, ifnull(obs, '') as obs, ifnull(atpc, '') as atpc, ifnull(atpl, '') as atpl, ifnull(aulas_outra_ue, '') as aulas_outra_ue, " + r"DATE_FORMAT(nascimento, '%Y-%m-%d') as nascimento" + " from professor_livro_ponto WHERE cpf = %s and di = %s" % (info['cpf'], info['di']))[0]
                 return jsonify(detalhes)
             
             elif info['destino'] == 1: # pegar quadro aula
@@ -5080,6 +5172,7 @@ def ponto():
                 print(info)
 
                 sql = "SELECT nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
+                      r"DATE_FORMAT(nascimento, '%Y-%m-%d') as nascimento" + \
                       "jornada_livro_ponto.descricao as jornada, sede_c.descricao as sede_classificacao, sede_f.descricao as sede_controle_freq, ifnull(di, '') as di, " + \
                       "CASE WHEN disciplina IS NULL THEN '-' ELSE disciplinas.descricao END as disciplina, " + \
                       "CASE WHEN afastamento IS NULL THEN '-' ELSE CONCAT(professor_livro_ponto.afastamento, ' - ', afastamento_livro_ponto.descricao) END as afastamento, " + \
@@ -5217,6 +5310,7 @@ def ponto():
             dados['aulas_outra_ue'] = 'null' if request.form['aulas'] == '' else "'%s'" % request.form['aulas']
             dados['instancia_calendario'] = request.form['cb_instancia']
             dados['nome_ata'] = 'null' if request.form['nome_ata'] == '' else "'%s'" % request.form['nome_ata']
+            dados['nascimento'] = "'%s'" % request.form['nascimento']
 
             if banco.insertOrUpdate(dados, 'professor_livro_ponto'):
                 msg = '<div class="alert alert-success alert-dismissible fade show" role="alert">' \
@@ -5310,7 +5404,7 @@ def ponto():
         professor['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
 
         rg = "%08d" % int(professor['rg'])
-        professor['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])    
+        professor['rg'] = '%s.%s.%s%s' % (rg[:2], rg[2:5], rg[5:8], professor['digito'])
 
 
     periodos = banco.executarConsulta('select * from periodo_livro_ponto')
@@ -5461,5 +5555,5 @@ def historicos():
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
     #app.run(debug=True)
-    #app.run(debug=True, use_reloader=True, port=80)
-    serve(app, host='0.0.0.0', port=80, threads=8)
+    app.run(debug=True, use_reloader=True, port=5000)
+    #serve(app, host='0.0.0.0', port=80, threads=8)
