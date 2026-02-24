@@ -2020,7 +2020,7 @@ def render_lista():
             if aux_info['genero'] == 'f':
                 pronome_e = 'a'
 
-            if (aux_info['rg'] == ''):
+            if (aux_info['rg'] in ('', '-', 'None') or aux_info['rg'] is None):
                 texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, RA: ' + aux_info['ra']
             elif (aux_info['rg'] == 'CIN'):
                 texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, CIN: ' + aux_info['cpf']
