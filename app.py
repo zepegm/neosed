@@ -5169,10 +5169,8 @@ def ponto():
             
             elif info['destino'] == 2: # pegar os dado do professor para exibir no formulário
 
-                print(info)
-
                 sql = "SELECT nome, rg, ifnull(digito, '') as digito, ifnull(rs, '') as rs, ifnull(pv, '') as pv, cargos_livro_ponto.descricao as cargo, concat(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) as categoria, " + \
-                      r"DATE_FORMAT(nascimento, '%Y-%m-%d') as nascimento" + \
+                      r"DATE_FORMAT(nascimento, '%Y-%m-%d') as nascimento, " + \
                       "jornada_livro_ponto.descricao as jornada, sede_c.descricao as sede_classificacao, sede_f.descricao as sede_controle_freq, ifnull(di, '') as di, " + \
                       "CASE WHEN disciplina IS NULL THEN '-' ELSE disciplinas.descricao END as disciplina, " + \
                       "CASE WHEN afastamento IS NULL THEN '-' ELSE CONCAT(professor_livro_ponto.afastamento, ' - ', afastamento_livro_ponto.descricao) END as afastamento, " + \
