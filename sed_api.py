@@ -565,6 +565,7 @@ def get_info_aluno(context, aluno_id):
 		'endereço_uf': achar_value("EnderecoUF"),
 		'endereço_latitude': achar_value("Latitude"),
 		'endereço_longitude': achar_value("Longitude"),
+		'cin': achar_checkbox("FlCarteiraIdentidadeNacional")
 	}
 
 	return aluno

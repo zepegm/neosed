@@ -4150,8 +4150,9 @@ def uploadTurma():
                         aluno_add['sexo'] = info_aluno['sexo'][0]
                         aluno_add['cpf'] = info_aluno['cpf']
 
-                        
-                        if info_aluno['rg_uf'] is not None:
+                        if info_aluno['cin']:
+                            aluno_add['rg'] = 'CIN'
+                        elif info_aluno['rg_uf'] is not None:
                             if (info_aluno['rg_uf'] == 'SP'):
                                 aluno_add['rg'] = info_aluno['rg'][6:8] + '.' + info_aluno['rg'][8:11] + '.' + info_aluno['rg'][11:] + '-' + info_aluno['rg_dígito']
                             else:
