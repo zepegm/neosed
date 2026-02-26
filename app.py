@@ -22,7 +22,7 @@ import calendar
 from jinja_try_catch import TryCatchExtension
 from PyPDF2 import PdfMerger
 from decimal import Decimal, ROUND_HALF_UP
-from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, consulta_ficha_aluno, get_matriz_curricular, get_grade, get_professor_info, get_funcionario_info
+from sed_api import start_context, get_escolas, get_unidades, get_classes, get_info_aluno, get_alunos_num_classe, get_alunos_codigo, get_matriz_curricular, get_grade, get_professor_info, get_funcionario_info
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
@@ -4105,6 +4105,8 @@ def uploadTurma():
         if (info == []):
             info = banco.executarConsulta('select num_classe, nome_turma, turma.ano, duracao.descricao as duracao, periodo.descricao as periodo, tipo_ensino.descricao as tipo_ensino from turma_if as turma INNER JOIN duracao ON duracao.id = turma.duracao INNER JOIN periodo ON periodo.id = turma.periodo INNER JOIN tipo_ensino ON tipo_ensino.id = turma.tipo_ensino WHERE num_classe = %s' % request.form.get('classe'))
 
+        print(request.form.get('id_oculto'))
+
         # localizando o ID oculto fará uma pesquisa na API do SED para pegar os alunos direto da SED
         if 'id_oculto' in request.form:
             auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
@@ -4119,7 +4121,7 @@ def uploadTurma():
                 # a partir daqui será dividido as tarefas dependendo do objetivo desejado
                 lista = []
                 alunos = get_alunos_num_classe(context, info[0]['ano'], id_escola, request.form.get('id_oculto'))
-                codigos_alunos = consulta_ficha_aluno(context, info[0]['num_classe'])
+                codigos_alunos = get_alunos_codigo(context, info[0]['ano'], id_escola, request.form.get('id_oculto'))
                 
                 for aluno in alunos:
                         sit = 0

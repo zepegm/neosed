@@ -464,6 +464,29 @@ def consulta_ficha_aluno(context, num_classe):
 
 	return codigos_alunos
 
+def get_alunos_codigo(context, ano_letivo, escola_id, classe_id):
+	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/Matricula/ConsultaMatricula/Visualizar',
+		data={
+			'anoLetivo': ano_letivo,
+			'codigoEscola': escola_id,
+			'codigoTurma': classe_id,
+			'codigoRedeEnsino':'',
+			'matricula': 'true',
+			'visualizar': 'false',
+		})
+	
+	soup = BeautifulSoup(response.text, 'html.parser')
+	trs = soup.tbody.findAll('tr')
+
+	codigos_alunos = {}
+	for tr in trs:
+		ra_aluno = tr.findAll('td')[4].get_text(strip=True)
+		codigo_aluno = tr.findAll('td')[14].find('a')['onclick'].split('(')[1].split(',')[0]
+		codigos_alunos[ra_aluno] = codigo_aluno
+
+	return codigos_alunos
+		
+
 def get_alunos(context, ano_letivo, escola_id, classe_id):
 	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/Matricula/ConsultaMatricula/Visualizar',
 		data={
