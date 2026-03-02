@@ -4111,68 +4111,69 @@ def uploadTurma():
         if 'id_oculto' in request.form:
             auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
 
-            try:
-                context = start_context(auth)
-                result_escolas = get_escolas(context)
+            #try:
+            context = start_context(auth)
+            result_escolas = get_escolas(context)
 
-                id_escola = result_escolas[0]['id']
-                print(id_escola)
+            id_escola = result_escolas[0]['id']
+            print(id_escola)
 
-                # a partir daqui será dividido as tarefas dependendo do objetivo desejado
-                lista = []
-                alunos = get_alunos_num_classe(context, info[0]['ano'], id_escola, request.form.get('id_oculto'))
-                codigos_alunos = get_alunos_codigo(context, info[0]['ano'], id_escola, request.form.get('id_oculto'))
-                
-                for aluno in alunos:
-                        sit = 0
+            # a partir daqui será dividido as tarefas dependendo do objetivo desejado
+            lista = []
+            alunos = get_alunos_num_classe(context, info[0]['ano'], id_escola, request.form.get('id_oculto'))
+            codigos_alunos = get_alunos_codigo(context, info[0]['ano'], id_escola, request.form.get('id_oculto'))
+            print(codigos_alunos)
+            
+            for aluno in alunos:
+                    sit = 0
 
-                        if aluno['situação'] == "ATIVO":
-                            sit = 1
-                        elif aluno['situação'] == 'BXTR' or aluno['situação'] == 'TRAN':
-                            sit = 2
-                        elif aluno['situação'] == "REMA":
-                            sit = 3
-                        elif aluno['situação'] == "NCFP" or aluno['situação'] == "NCOM":
-                            sit = 5
-                        elif aluno['situação'] == "CONCL":
-                            sit = 8
-                        elif aluno['situação'] == "APROVADO":
-                            sit = 6
-                        elif aluno['situação'] == "RETIDO FREQ." or aluno['situação'] == 'RETIDO REND.':
-                            sit = 10
-                        elif aluno['situação'] == 'RECL':
-                            sit = 15
-                        elif aluno['situação'] == 'ENCERRADA':
-                            sit = 16    
+                    if aluno['situação'] == "ATIVO":
+                        sit = 1
+                    elif aluno['situação'] == 'BXTR' or aluno['situação'] == 'TRAN':
+                        sit = 2
+                    elif aluno['situação'] == "REMA":
+                        sit = 3
+                    elif aluno['situação'] == "NCFP" or aluno['situação'] == "NCOM":
+                        sit = 5
+                    elif aluno['situação'] == "CONCL":
+                        sit = 8
+                    elif aluno['situação'] == "APROVADO":
+                        sit = 6
+                    elif aluno['situação'] == "RETIDO FREQ." or aluno['situação'] == 'RETIDO REND.':
+                        sit = 10
+                    elif aluno['situação'] == 'RECL':
+                        sit = 15
+                    elif aluno['situação'] == 'ENCERRADA':
+                        sit = 16    
 
-                        aluno_add = {'id':codigos_alunos[aluno['ra']], 'ra':aluno['ra'], 'digito':aluno['ra_dígito'], 'nome':aluno['nome'], 'nascimento':aluno['nascimento_data'].strftime("%d/%m/%Y"), 'matricula':aluno['inicio_matricula'].strftime("%d/%m/%Y"), 'num_chamada':aluno['numero'], 'serie':aluno['serie'], 'desc_sit':aluno['situação'], 'situacao':sit, 'fim_mat':aluno['fim_matricula'].strftime("%d/%m/%Y"), 'sexo':'M', 'rg':'', 'cpf':'', 'rm':''}
+                    aluno_add = {'id':codigos_alunos[aluno['ra']], 'ra':aluno['ra'], 'digito':aluno['ra_dígito'], 'nome':aluno['nome'], 'nascimento':aluno['nascimento_data'].strftime("%d/%m/%Y"), 'matricula':aluno['inicio_matricula'].strftime("%d/%m/%Y"), 'num_chamada':aluno['numero'], 'serie':aluno['serie'], 'desc_sit':aluno['situação'], 'situacao':sit, 'fim_mat':aluno['fim_matricula'].strftime("%d/%m/%Y"), 'sexo':'M', 'rg':'', 'cpf':'', 'rm':''}
 
-                        # procurar por informações adicionais do aluno na SED e depois o RM no banco
-                        info_aluno = get_info_aluno(context, aluno_add['id'])
-                        aluno_add['sexo'] = info_aluno['sexo'][0]
-                        aluno_add['cpf'] = info_aluno['cpf']
+                    # procurar por informações adicionais do aluno na SED e depois o RM no banco
+                    info_aluno = get_info_aluno(context, aluno_add['id'])
+                    aluno_add['sexo'] = info_aluno['sexo'][0]
+                    aluno_add['cpf'] = info_aluno['cpf']
 
-                        if info_aluno['cin']:
-                            aluno_add['rg'] = 'CIN'
-                        elif info_aluno['rg_uf'] is not None:
-                            if (info_aluno['rg_uf'] == 'SP'):
-                                aluno_add['rg'] = info_aluno['rg'][6:8] + '.' + info_aluno['rg'][8:11] + '.' + info_aluno['rg'][11:] + '-' + info_aluno['rg_dígito']
-                            else:
-                                aluno_add['rg'] = info_aluno['rg'] + '-' + info_aluno['rg_dígito'] + '/' + info_aluno['rg_uf']
+                    if info_aluno['cin']:
+                        aluno_add['rg'] = 'CIN'
+                    elif info_aluno['rg_uf'] is not None:
+                        if (info_aluno['rg_uf'] == 'SP'):
+                            aluno_add['rg'] = info_aluno['rg'][6:8] + '.' + info_aluno['rg'][8:11] + '.' + info_aluno['rg'][11:] + '-' + info_aluno['rg_dígito']
+                        else:
+                            aluno_add['rg'] = info_aluno['rg'] + '-' + info_aluno['rg_dígito'] + '/' + info_aluno['rg_uf']
 
-                            if aluno_add['rg'] == '-/':
-                                aluno_add['rg'] = ''
+                        if aluno_add['rg'] == '-/':
+                            aluno_add['rg'] = ''
 
-                        consulta_rm = banco.executarConsultaVetor("select ifnull(rm, '') as rm from aluno where ra = '%s'" % aluno_add['ra'])
-                        if len(consulta_rm) > 0:
-                            aluno_add['rm'] = consulta_rm[0]
+                    consulta_rm = banco.executarConsultaVetor("select ifnull(rm, '') as rm from aluno where ra = '%s'" % aluno_add['ra'])
+                    if len(consulta_rm) > 0:
+                        aluno_add['rm'] = consulta_rm[0]
 
-                        lista.append(aluno_add)
+                    lista.append(aluno_add)
 
-                return render_template('upload_turma.jinja', lista=lista, info=info)
-            except Exception as e:
-                print(e)
-                return render_template('upload_turma.jinja', lista=[], info=info)
+            return render_template('upload_turma.jinja', lista=lista, info=info)
+            #except Exception as e:
+                #print(e)
+                #return render_template('upload_turma.jinja', lista=[], info=info)
 
 
 

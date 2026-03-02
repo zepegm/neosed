@@ -518,12 +518,27 @@ def get_alunos(context, ano_letivo, escola_id, classe_id):
 	return alunos
 
 def get_info_aluno(context, aluno_id):
+
+	headers = {
+		'X-Requested-With': 'XMLHttpRequest',
+		'Referer': 'https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index'
+	}
+
 	response = context.session.post('https://sed.educacao.sp.gov.br/NCA/FichaAluno/FichaAluno',
 		data={
 			'codigoAluno': aluno_id,
-		})
+			'editar':'false',
+			'ConsultaProgramas':'False',
+			'alunoCeeja':'',
+			'tipoTelaCEEJA':'0'
+		},
+		headers=headers)
 
 	soup = BeautifulSoup(response.text, 'html.parser')
+
+	print('Bugado: -------------------------')
+	print(soup)
+	print('-------------------------')
 
 	#print(soup.prettify())
 

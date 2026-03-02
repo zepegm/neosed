@@ -17,11 +17,8 @@ banco = db(config)
 auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
 context = start_context(auth)
 
-result_escolas = get_escolas(context)
-id_escola = result_escolas[0]['id']
+codigo_aluno = '10064667'
 
+info = get_info_aluno(context, codigo_aluno)
 
-alunos = get_alunos_codigo(context, '2026', id_escola, '40975297')
-
-print(alunos)
-#print(codigos_alunos)
+print(codigo_aluno)
