@@ -14,7 +14,7 @@ from MySQL import db
 
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 num_classe = 286441977

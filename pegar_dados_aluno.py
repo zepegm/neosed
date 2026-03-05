@@ -18,10 +18,10 @@ async def main():
     # efetuar login na SED
     await page.goto('https://sed.educacao.sp.gov.br/')
     await page.waitForSelector('#name', {'visible': True}) 
-    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
+    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rgxxxxx')    
     await page.evaluate('''(selector, value) => {
         document.querySelector(selector).value = value;
-    }''', '#senha', 'BGarden@FF8')  
+    }''', '#senha', 'pssword')  
     await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
     await page.click("#botaoEntrar")
     await page.waitForSelector('#ambientes-aprendizagem', {'visible': True}) 

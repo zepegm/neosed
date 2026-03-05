@@ -111,7 +111,7 @@ app.jinja_env.filters['diferenca_maior_que_40'] = diferenca_maior
 
 #locale.setlocale(locale.LC_ALL, "")
 
-#banco = db({'host':"localhost", 'user':'root', 'passwd':'Yasmin', 'db':'neosed'})
+#banco = db({'host':"localhost", 'user':'root', 'passwd':'admin', 'db':'neosed'})
 
 #banco = db({'host':"neosed.net",    # your host, usually localhost
             #'user':"username",         # your username

@@ -3,7 +3,7 @@ from excel import xls
 
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 plan = xls('2B-IF.xlsx')

@@ -11,7 +11,7 @@ rows_notas = [{'disc':'ARTE', 'linha':18}, {'disc':'BIOLOGIA', 'linha':21}, {'di
 planilha = xls() # formar conexão com a planilha
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 
@@ -24,10 +24,10 @@ async def main():
     # efetuar login na SED
     await page.goto('https://sed.educacao.sp.gov.br/')
     await page.waitForSelector('#name', {'visible': True}) 
-    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
+    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rgxxxxx')
     await page.evaluate('''(selector, value) => {
         document.querySelector(selector).value = value;
-    }''', '#senha', 'BGarden@FF8')  
+    }''', '#senha', 'pssword')  
     await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
     await page.click("#botaoEntrar")
     await page.waitForSelector('#ambientes-aprendizagem', {'visible': True}) 

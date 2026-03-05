@@ -4,7 +4,7 @@ from MySQL import db
 
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 turmas = banco.executarConsulta('select * from turma where ano = 2024')
@@ -25,10 +25,10 @@ async def main():
     # efetuar login na SED
     await page.goto('https://sed.educacao.sp.gov.br/')
     await page.waitForSelector('#name', {'visible': True}) 
-    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
+    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rgxxxxx')    
     await page.evaluate('''(selector, value) => {
         document.querySelector(selector).value = value;
-    }''', '#senha', 'BGarden@FF8')  
+    }''', '#senha', 'pssword')  
     await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
     await page.click("#botaoEntrar")
     await page.waitForSelector('#ambientes-aprendizagem', {'visible': True})

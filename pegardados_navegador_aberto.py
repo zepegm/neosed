@@ -55,8 +55,8 @@ def action0():
             page = context.pages[0]  # usa a aba já aberta
 
             page.goto("https://sed.educacao.sp.gov.br/", wait_until="networkidle")
-            page.fill('#name', 'rg490877795sp')
-            page.fill('#senha', 'BGarden@FF8')
+            page.fill('#name', 'rgxxxxx')
+            page.fill('#senha', 'pssword')
             page.click('#botaoEntrar')
 
             # aguarda algo específico da próxima página, se necessário

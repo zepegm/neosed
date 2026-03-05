@@ -11,7 +11,7 @@ from MySQL import db
 # primeira etapa, pegar RA
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 plan = xls('Documentação 1ª série.xlsx')

@@ -10,7 +10,7 @@ from MySQL import db
 lista = [108573294, 106237811, 109775902, 106495905, 109636701, 108573248, 109636674, 111654371, 105930695, 105930701, 109771877, 109502331, 109599645, 108995744, 108528790, 105440179, 110681287, 109871999, 109079495, 108574566, 49772486, 108573289, 110443243]
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 #run in cmd - "C:\Program Files\Google\Chrome\Application\chrome.exe" -remote-debugging-port=9014 --user-data-dir="C:\ChromeData"

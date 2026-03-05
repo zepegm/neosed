@@ -12,7 +12,7 @@ from selenium.webdriver.support.select import Select
 planilha = xls() # formar conexão com a planilha
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 options = webdriver.ChromeOptions() 

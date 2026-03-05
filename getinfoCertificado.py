@@ -6,7 +6,7 @@ meses = {'01':'janeiro', '02':'fevereiro', '03':'março', '04':'abril', '05':'ma
 
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 

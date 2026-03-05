@@ -8,7 +8,7 @@ carga_if = {50427:80, 50428:80, 50429:80, 50430:80, 50431:80, 50423:160, 50424:8
 planilha = xls() # formar conexão com a planilha
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 ra_aluno = planilha.getValCell("P15").split('-')[0].replace('.','').strip()

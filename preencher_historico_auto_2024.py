@@ -14,7 +14,7 @@ carga_if = {50094:40, 50095:40, 50096:80, 50097:40, 50000:40, 50001:40, 50002:80
 planilha = xls() # formar conexão com a planilha
 banco = db({'host':"localhost",    # your host, usually localhost
             'user':"root",         # your username
-            'passwd':"Yasmin",  # your password
+            'passwd':"admin",  # your password
             'db':"neosed"})
 
 # pegar notas de 2023
@@ -85,10 +85,10 @@ async def main():
     # efetuar login na SED
     await page.goto('https://sed.educacao.sp.gov.br/')
     await page.waitForSelector('#name', {'visible': True}) 
-    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg490877795sp')    
+    await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#name', 'rg4rgxxxxx')
     await page.evaluate('''(selector, value) => {
         document.querySelector(selector).value = value;
-    }''', '#senha', 'BGarden@FF8')  
+    }''', '#senha', 'pssword')  
     await page.evaluate("() => document.querySelector('#botaoEntrar').removeAttribute('disabled')")
     await page.click("#botaoEntrar")
     await page.waitForSelector('#ambientes-aprendizagem', {'visible': True}) 
