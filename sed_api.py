@@ -436,12 +436,13 @@ def get_alunos_num_classe(context, ano_letivo, escola_id, classe_id):
 				'nascimento_data': datetime.strptime(str(tr.findAll('td')[7].get_text(strip=True)), "%d/%m/%Y"),
 				'numero': str(tr.findAll('td')[2].get_text(strip=True)),
 				'serie': str(tr.findAll('td')[1].get_text(strip=True)),
-				'inicio_matricula': datetime.strptime(str(tr.findAll('td')[8].get_text(strip=True)), "%d/%m/%Y"),
-				'fim_matricula': datetime.strptime(str(tr.findAll('td')[9].get_text(strip=True)), "%d/%m/%Y"),
-				'situação': str(tr.findAll('td')[10].get_text(strip=True))
+				'inicio_matricula': datetime.strptime(str(tr.findAll('td')[9].get_text(strip=True)), "%d/%m/%Y"),
+				'fim_matricula': datetime.strptime(str(tr.findAll('td')[10].get_text(strip=True)), "%d/%m/%Y"),
+				'situação': str(tr.findAll('td')[11].get_text(strip=True))
 			})
 		except Exception as e:
 			print(f'Erro ao processar aluno na classe {classe_id}: {e}')
+			print(tr)
 			continue
 
 	return alunos

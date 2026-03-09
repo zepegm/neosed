@@ -253,7 +253,7 @@ def index():
     tipo_ensino = banco.executarConsulta('select * from tipo_ensino where id <> 2 and id <> 5 order by id')
     tipo_ensino_itinerario = banco.executarConsulta('select * from tipo_ensino where id = 2 or id = 5 order by id')
     periodo = banco.executarConsulta('select * from periodo order by id')
-    listaTipos = banco.executarConsulta('select tipo_ensino.id, tipo_ensino.descricao as tipo_ensino, if (count(turma.tipo_ensino) > 0, count(turma.tipo_ensino), count(turma_if.tipo_ensino)) as total from tipo_ensino LEFT JOIN turma ON turma.tipo_ensino = tipo_ensino.id LEFT JOIN turma_if ON turma_if.tipo_ensino = tipo_ensino.id where turma.ano = %s or turma_if.ano = %s GROUP BY id order by id' % (ano, ano))
+    listaTipos = banco.executarConsulta('select tipo_ensino.id, tipo_ensino.descricao as tipo_ensino, if (count(turma.tipo_ensino) > 0, count(turma.tipo_ensino), count(turma_if.tipo_ensino)) as total, (select count(*) from vinculo_alunos_turmas inner join turma on turma.num_classe = vinculo_alunos_turmas.num_classe where situacao = 1 and turma.tipo_ensino in (tipo_ensino.id)) as total_alunos from tipo_ensino LEFT JOIN turma ON turma.tipo_ensino = tipo_ensino.id LEFT JOIN turma_if ON turma_if.tipo_ensino = tipo_ensino.id where turma.ano = %s or turma_if.ano = %s GROUP BY id order by id' % (ano, ano))
     cat_itinerario = banco.executarConsulta('select * from categoria_itinerario')
 
     anos = banco.executarConsulta('select ano from calendario order by ano desc')
@@ -2682,6 +2682,8 @@ async def atualizar_lista_auto():
             for turma in turmas:
                 #socketio.emit('update_info', '<b>Atualizando dados da %s - %s (%s)</b>' % (turma['nome_turma'], turma['desc_duracao'], ano))
                 result = get_alunos_num_classe(context, ano, id_escola, turma['id_oculto'])
+
+                print(result)
 
                 lista = []
 
