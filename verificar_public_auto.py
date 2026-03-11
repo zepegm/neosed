@@ -49,8 +49,8 @@ for ra in lista:
 
 
 # provar a eficácio do meu programa
-driver.execute_script("arguments[0].innerText = 'GIUSEPPE GARCEZ MANZELLA, RG: 49.087.779-5'", label)
-driver.execute_script("arguments[0].value = '49087779'", txtRgFiltro)
-driver.execute_script("arguments[0].value = '5'", txtDigRgFiltro)
+driver.execute_script("arguments[0].innerText = '...'", label)
+driver.execute_script("arguments[0].value = 'rg'", txtRgFiltro)
+driver.execute_script("arguments[0].value = 'digito'", txtDigRgFiltro)
 
 botao.click()
