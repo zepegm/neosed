@@ -459,9 +459,12 @@ def consulta_ficha_aluno(context, num_classe):
 	trs = soup.tbody.findAll('tr')
 	codigos_alunos = {}
 	for tr in trs:
-		codigo_aluno = tr.findAll('a')[1]['id'].split('_')[1]
-		ra_aluno = tr.findAll('td')[2].get_text(strip=True)
-		codigos_alunos[ra_aluno] = codigo_aluno
+		try:
+			codigo_aluno = tr.findAll('a')[1]['id'].split('_')[1]
+			ra_aluno = tr.findAll('td')[2].get_text(strip=True)
+			codigos_alunos[ra_aluno] = codigo_aluno
+		except Exception as e:
+			print(e)
 
 	return codigos_alunos
 
@@ -481,9 +484,12 @@ def get_alunos_codigo(context, ano_letivo, escola_id, classe_id):
 
 	codigos_alunos = {}
 	for tr in trs:
-		ra_aluno = tr.findAll('td')[4].get_text(strip=True)
-		codigo_aluno = tr.findAll('td')[14].find('a')['onclick'].split('(')[1].split(',')[0]
-		codigos_alunos[ra_aluno] = codigo_aluno
+		try:
+			ra_aluno = tr.findAll('td')[4].get_text(strip=True)
+			codigo_aluno = tr.findAll('td')[14].find('a')['onclick'].split('(')[1].split(',')[0]
+			codigos_alunos[ra_aluno] = codigo_aluno
+		except Exception as e:
+			print(e)
 
 	return codigos_alunos
 		

@@ -27,16 +27,25 @@
     {% endblock %}   
 
     <main class="container-xxl">
+
+        <div id="feedback"></div>
+
         <div class="row">
             <div class="col-sm-12">
                 <p class="fs-2">Ficha de Matrícula</p>
-                <p>Digite o RA e os dados necessários abaixo para gerar automaticamente a ficha de matrícula <b>(Atenção para digitar RA correto!)</b></p>
+                <p>Digite o RA para puxar automaticamente os dados da SED ou preencha os formulários manualmente. <b>(Atenção para digitar RA correto!)</b></p>
             </div>
         </div>
-        <div class="row">
+        <hr>
+        <h3>Dados da Escola</h3>
+        <div class="row d-flex">
             <div class="col-sm-3">
-                <label for="txt_ra">RA do aluno (Sem dígito):</label>
-                <input type="number" class="form-control" id="txt_ra" name="ra">    
+                <label for="txt_ra">RA do aluno:</label>
+                <input type="number" class="form-control" id="txt_ra" name="ra">
+            </div>
+            <div class="col-sm-1 align-self-end">
+            <label for="txt_ra_digito">Dígito:</label>
+                <input type="number" class="form-control" id="txt_ra_digito" name="ra_digito">
             </div>
             <div class="col-sm-2">
                 <label for="txt_rm">RM:</label>
@@ -45,22 +54,24 @@
             <div class="col-sm-3">
                 <label for="cb_ensino">Tipo de Ensino</label>
                 <select class="form-select" id="cb_ensino" name="cb_ensino">
-                    <option value="0">Ensino Médio</option>
-                    <option value="1">Ensino Médio EJA</option>
+                    <option value="0">Ensino Fundamental</option>
+                    <option value="1">Ensino Médio</option>
                     <option value="2">Ensino Fundamental EJA</option>
+                    <option value="3">Ensino Médio EJA</option>
                 </select>
             </div>
             <div class="col-sm-2">
-                <label for="cb_serie">Série</label>
+                <label for="cb_serie">Ano/Série/Termo:</label>
                 <select class="form-select" id="cb_serie" name="cb_serie">
-                    <option value="1">1ª série</option>
-                    <option value="2">2ª série</option>
-                    <option value="3">3ª série</option>
+                    <option value="6">6º ano</option>
+                    <option value="7">7º ano</option>
+                    <option value="8">8º ano</option>
+                    <option value="9">9º ano</option>
                 </select>
             </div>             
         </div>
-        <div class="row">
-            <div class="col-sm-3">
+        <div class="row mt-3">
+            <div class="col-sm-4">
                 <label for="txt_email">E-mail:</label>
                 <input type="email" class="form-control" id="txt_email" name="email">    
             </div>
@@ -69,24 +80,65 @@
                 <input type="telefone" class="form-control" id="txt_telefone" name="telefone">    
             </div>
             <div class="col-sm-2">
-                <label for="txt_telefone">Ano de Matrícula:</label>
-                <input type="number" class="form-control" id="txt_ano" name="telefone">    
+                <label for="txt_ano">Ano de Matrícula:</label>
+                <input type="number" class="form-control" id="txt_ano" name="ano_matricula">    
+            </div>
+            <div class="col-sm-3 align-self-end">
+                <button type="button" id="btn-sed" class="btn btn-warning"><i class="fa-solid fa-server"></i>&nbsp;Puxar Dados SED (RA)</button>
             </div>
         </div>
-
+        <hr>
+        <h3>Dados da SED</h3>
         <div class="row">
-            <div class="col-sm-2">
-                <label for="cb_endereco">Endereço:</label>
-                <select class="form-select" id="cb_endereco" name="cb_endereco">
-                    <option value="0">SED</option>
-                    <option value="1">Manual</option>
+            <div class="col-sm-4">
+                <label for="txt_nome">Nome:</label>
+                <input type="text" class="form-control" id="txt_nome" name="nome">  
+            </div>
+            <div class="col-sm-4">
+                <label for="txt_nome">Nome Social:</label>
+                <input type="text" class="form-control" id="txt_nome_social" name="nome_social">  
+            </div>
+            <div class="col-sm-3">
+                <label for="txt_nascimento">Data Nascimento:</label>
+                <input type="date" class="form-control" id="txt_nascimento" name="nascimento">  
+            </div>
+            <div class="col-sm-3 mt-3">
+                <label for="txt_cidade_nascimento">Cidade de Nascimento:</label>
+                <input type="text" class="form-control" id="txt_cidade_nascimento" name="cidade_nascimento">  
+            </div>
+            <div class="col-sm-1 mt-3">
+                <label for="txt_uf_nascimento">UF - Nasc.:</label>
+                <input type="text" class="form-control" id="txt_uf_nascimento" name="cidade_nascimento">  
+            </div>            
+            <div class="col-sm-1 mt-3">
+                <label for="cb_sexo">Sexo:</label>
+                <select class="form-select" id="cb_sexo" name="sexo">
+                    <option value="M">M</option>
+                    <option value="F">F</option>
                 </select>
+            </div>            
+            <div class="col-sm-6 mt-3">
+                <label for="txt_endereco">Endereço:</label>
+                <input type="text" class="form-control" id="txt_endereco" name="endereco">            
             </div>
-            <div class="col-sm-4 d-flex align-items-end">
-                <input type="text" class="form-control" id="txt_endereco" name="endereco" disabled>            
+            <div class="col-sm-3 mt-3">
+                <label for="txt_nome_mae">Nome da Mãe:</label>
+                <input type="text" class="form-control" id="txt_nome_mae" name="nome_mae">  
             </div>
-            <div class="col-sm-3 d-flex align-items-end">
-                <button id="btn_gerar_pdf" class="btn btn-primary">Gerar PDF</button>
+            <div class="col-sm-3 mt-3">
+                <label for="txt_nome_pai">Nome do Pai:</label>
+                <input type="text" class="form-control" id="txt_nome_pai" name="nome_pai">  
+            </div>
+            <div class="col-sm-2 mt-3">
+                <label for="txt_rg">RG:</label>
+                <input type="text" class="form-control" id="txt_rg" name="rg">  
+            </div>
+            <div class="col-sm-2 mt-3">
+                <label for="txt_cpf">CPF:</label>
+                <input type="text" class="form-control" id="txt_cpf" name="cpf">  
+            </div>            
+            <div class="col-sm-2 d-flex align-items-end mt-3">
+                <button id="btn_gerar_pdf" class="btn btn-danger"><i class="fa-solid fa-file-pdf"></i>&nbsp;Gerar PDF</button>
             </div>            
         </div>
 
@@ -99,36 +151,85 @@
 
     <script>   
 
+        $("#btn-sed").on('click', function() {
+
+            $(this).attr('disabled', '');
+            $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+
+            $.ajax({
+                type: "POST",
+                url: "ficha_matricula",
+                contentType: "application/json",
+                data: JSON.stringify($("#txt_ra").val()),
+                dataType: "json",
+                success: function(data) {
+                    $("#btn-sed").html('<i class="fa-solid fa-server"></i>&nbsp;Puxar Dados SED (RA)');
+                    $("#btn-sed").removeAttr('disabled');
+
+                    if (data['status']) {
+                        $("#txt_ra_digito").val(data['lista']['ra_dígito']);
+                        $("#txt_nome").val(data['lista']['nome']);
+                        $("#txt_nome_social").val(data['lista']['nome_social']);
+                        $("#txt_nascimento").val(new Date(data['lista']['nascimento_data']).toISOString().split('T')[0]);
+                        $("#txt_cidade_nascimento").val(data['lista']['nascimento_cidade']);
+                        $("#txt_uf_nascimento").val(data['lista']['nascimento_uf']);
+                        $("#cb_sexo").val(data['lista']['sexo'].slice(0, 1));
+                        $("#txt_endereco").val(data['lista']['endereço']);
+                        $("#txt_nome_mae").val(data['lista']['nome_mãe']);
+                        $("#txt_nome_pai").val(data['lista']['nome_pai']);
+                        $("#txt_rg").val(data['lista']['rg']);
+                        $("#txt_cpf").val(data['lista']['cpf']);
+                    } else {
+                        $("#feedback").html('<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Falha na Operação!</strong> Verifique as credenciais SED ou se o aluno já consta matriculado e presente na turma.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> </div>');
+                    }
+                },
+            });             
+        });
+
         $("#btn_gerar_pdf").on('click', function() {
             $(this).attr('disabled', '');
             $(this).html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
 
             info = {'destino':10};
-            info['ra'] = $("#txt_ra").val();
+            info['ra'] = parseInt($("#txt_ra").val()).toLocaleString('pt-BR') + "-" + $("#txt_ra_digito").val();
+            console.log(info['ra']);
             info['rm'] = $("#txt_rm").val();
             info['email'] = $("#txt_email").val();
             info['telefone'] = $("#txt_telefone").val();
             info['ano'] = $("#txt_ano").val();
+            info['nome'] = $("#txt_nome").val();
+            info['nome_social'] = $("#txt_nome_social").val();
+            info['nascimento'] = $("#txt_nascimento").val();
+            info['cidade_nasc'] = $("#txt_cidade_nascimento").val();
+            info['uf_nascimento'] = $("#txt_uf_nascimento").val();
+            info['sexo'] = $("#cb_sexo").val();
+            info['endereco'] = $("#txt_endereco").val();
+            info['nome_mae'] = $("#txt_nome_mae").val();
+            info['nome_pai'] = $("#txt_nome_pai").val();
+            info['rg'] = $("#txt_rg").val();
+            info['cpf'] = $("#txt_cpf").val();
 
             if ($("#cb_ensino").val() == 0) {
+                info['fund'] = 'X';
+                info['medio'] = ''
+                info['serie_desc'] = 'NO <b>' + $("#cb_serie").val() + 'º ANO</b>'
+                info['serie_simples'] = $("#cb_serie").val() + 'º Ano'
+            } else if ($("#cb_ensino").val() == 1) {
                 info['fund'] = '';
                 info['medio'] = 'X'
                 info['serie_desc'] = 'NA <b>' + $("#cb_serie").val() + 'ª SÉRIE</b>'
                 info['serie_simples'] = $("#cb_serie").val() + 'ª Série'
-            } else if ($("#cb_ensino").val() == 1) {
-                info['fund'] = '';
-                info['medio'] = 'X'
-                info['serie_desc'] = 'NO <b>' + $("#cb_serie").val() + 'º TERMO</b>'
-                info['serie_simples'] = "T" + $("#cb_serie").val() + 'EM'
-            } else {
+            } else if ($("#cb_ensino").val() == 2) {
                 info['fund'] = 'X';
                 info['medio'] = ''
                 info['serie_desc'] = 'NO <b>' + $("#cb_serie").val() + 'º TERMO</b>'
                 info['serie_simples'] = "T" + $("#cb_serie").val() + 'EF'                
+            } else if ($("#cb_ensino").val() == 3) {
+                info['fund'] = '';
+                info['medio'] = 'X'
+                info['serie_desc'] = 'NO <b>' + $("#cb_serie").val() + 'º TERMO</b>'
+                info['serie_simples'] = "T" + $("#cb_serie").val() + 'EM'                
             }
-
-            info['tipo_endereco'] = $("#cb_endereco").val();
-            info['endereco_manual'] = $("#txt_endereco").val();
 
             $.ajax({
                 type: "POST",
@@ -158,14 +259,14 @@
             switch (val) {
                 case '0':
                     $("#cb_serie").empty();
-                    for (var i = 1; i < 4; i++) {
-                        $("#cb_serie").append('<option value="' + i + '">' + i + 'ª série</option>');
+                    for (var i = 6; i < 10; i++) {
+                        $("#cb_serie").append('<option value="' + i + '">' + i + 'º ano</option>');
                     }
                     break;
                 case '1':
                     $("#cb_serie").empty();
                     for (var i = 1; i < 4; i++) {
-                        $("#cb_serie").append('<option value="' + i + '">' + i + 'º Termo</option>');
+                        $("#cb_serie").append('<option value="' + i + '">' + i + 'ª série</option>');
                     }
                     break;
                 case '2':
@@ -173,7 +274,13 @@
                     for (var i = 1; i < 5; i++) {
                         $("#cb_serie").append('<option value="' + i + '">' + i + 'º Termo</option>');
                     }
-                    break;                    
+                    break;
+                case '3':
+                    $("#cb_serie").empty();
+                    for (var i = 1; i < 4; i++) {
+                        $("#cb_serie").append('<option value="' + i + '">' + i + 'º Termo</option>');
+                    }
+                    break;
             }
         });
 

@@ -189,7 +189,7 @@
                         <td class="border-left-2px border-right-2px border-bottom" style="font-size:11px">REGISTRO DO ALUNO (RA)</td>
                     </tr>
                     <tr>
-                        <td id="head_name" colspan="2">ESCOLA PROFª ALICE VILELA GALVÃO</td>
+                        <td id="head_name" colspan="2">ESCOLA ESTADUAL MAJOR HERMÓGENES</td>
                         <td>&nbsp;</td>
                         <td class="border-left-2px border-right-2px border-bottom-2px" id="rm" rowspan="5">{{rm}}</td>
                         <td class="border-right-2px border-bottom-2px" style="font-size:20px;">{{ra}}</td>
@@ -197,16 +197,28 @@
                     <tr>
                         <td colspan="2" rowspan="4"><span id="ficha_text">FICHA CADASTRAL DO ALUNO</span></td>
                         <td rowspan="4">&nbsp;</td>
+                        {% if rg != "CIN" %}
                         <td class="border-right-2px border-bottom" style="font-size:11px">REGISTRO GERAL (RG)</td>
+                        {% endif %}
                     </tr>
+                    {% if rg != "CIN" %}
                     <tr>
                         <td class="border-right-2px border-bottom-2px">{{rg}}</td>
                     </tr>
+                    {% endif %}
                     <tr>
+                        {% if rg != "CIN" %}
                         <td class="border-right-2px border-bottom" style="font-size:11px">CADASTRO DE PESSOA FÍSICA (CPF)</td>
+                        {% else %}
+                        <td class="border-right-2px border-bottom" style="font-size:11px;padding-top:5px; padding-bottom:5px;" >CARTEIRA DE IDENTIDADE NACIONAL (CIN)</td>
+                        {% endif %}
                     </tr>
                     <tr>
+                        {% if rg != "CIN" %}
                         <td class="border-right-2px border-bottom-2px">{{cpf}}</td>
+                        {% else %}
+                        <td class="border-right-2px border-bottom-2px" style="padding-top:5px; padding-bottom:5px;">{{cpf}}</td>
+                        {% endif %}
                     </tr>
                 </tbody>
             </table>
@@ -246,9 +258,9 @@
                     <td class="border-right-2px pl-10">{{cidade}}</td>
                     <td class="border-right-2px text-center">{{estado}}</td>
                     <td class="border-right-2px text-center">BRASIL</td>
-                    <td class="border-right-2px text-center">{{nascimento[:2]}}</td>
-                    <td class="border-right-2px text-center">{{nascimento[3:5]}}</td>
-                    <td class="border-right-2px text-center">{{nascimento[6:10]}}</td>
+                    <td class="border-right-2px text-center">{{nascimento[8:10]}}</td>
+                    <td class="border-right-2px text-center">{{nascimento[5:7]}}</td>
+                    <td class="border-right-2px text-center">{{nascimento[:4]}}</td>
                 </tr>
             </table>
 
@@ -304,7 +316,7 @@
                     <td class="pt-5 pl-10 border-left-2px border-right-2px" style="font-size:13px;" colspan="4">DECLARO ACATAR AS NORMAS REGIMENTAIS DESSE ESTABELECIMENTO DE ENSINO</td>
                 </tr>
                 <tr>
-                    <td class="pt-5 pl-10 border-left-2px border-right-2px" style="font-size:13px;" colspan="4">AUTORIZO O USO DE IMAGEM E VOZ: SIM (&nbsp;&nbsp;) NÃO (&nbsp;&nbsp;)</td>
+                    <td class="pt-5 pl-10 border-left-2px border-right-2px" style="font-size:13px;" colspan="4"><!-- AUTORIZO O USO DE IMAGEM E VOZ: SIM (&nbsp;&nbsp;) NÃO (&nbsp;&nbsp;) --></td>
                 </tr>
                 <tr>
                     <td class="pt-20 pr-10 pb-5 border-left-2px border-right-2px border-bottom-2px" style="font-size:13px; text-align:right;" colspan="4">Canas, {{hoje}}</td>
@@ -326,7 +338,8 @@
                     <td class="text-center border-right-2px border-bottom" style="font-size:13px;">&nbsp;</td>
                 </tr>
 
-                {% for i in range(8) %}
+                {% if rg != "CIN" %}
+                {% for i in range(9) %}
                 <tr>
                     <td class="text-center border-left-2px border-right border-bottom" style="font-size:13px; width:80px">&nbsp;</td>
                     <td class="text-center border-right border-bottom" style="font-size:13px; width:90px">&nbsp;</td>
@@ -334,6 +347,16 @@
                     <td class="text-center border-right-2px border-bottom" style="font-size:13px;">&nbsp;</td>
                 </tr>
                 {% endfor %}
+                {% else %}
+                {% for i in range(10) %}
+                <tr>
+                    <td class="text-center border-left-2px border-right border-bottom" style="font-size:13px; width:80px">&nbsp;</td>
+                    <td class="text-center border-right border-bottom" style="font-size:13px; width:90px">&nbsp;</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px; width:100px">&nbsp;</td>
+                    <td class="text-center border-right-2px border-bottom" style="font-size:13px;">&nbsp;</td>
+                </tr>
+                {% endfor %}                
+                {% endif %}
                 <tr>
                     <td class="text-center border-left-2px border-right border-bottom-2px" style="font-size:13px; width:80px">&nbsp;</td>
                     <td class="text-center border-right border-bottom-2px" style="font-size:13px; width:90px">&nbsp;</td>

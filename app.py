@@ -2210,10 +2210,10 @@ def render_lista():
             ra = request.args.getlist('ra')[0]
             rg = request.args.getlist('rg')[0]
             ano = request.args.getlist('ano')[0]
-            if rg == '-':
+            if rg == '':
                 rg = '&nbsp;'
             cpf = request.args.getlist('cpf')[0]
-            if cpf == '-':
+            if cpf == '':
                 cpf = '&nbsp;'
             sexo = request.args.getlist('sexo')[0]
             nome = request.args.getlist('nome')[0]
@@ -3057,103 +3057,19 @@ async def gerar_pdf():
 
         try:
 
-            chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-            user_data_dir = r"C:\temp\chrome-playwright"
-
-            subprocess.Popen([
-                chrome_path,
-                "--remote-debugging-port=9222",
-                f"--user-data-dir={user_data_dir}"
-            ])
-
-            browser = await connect({
-                'browserURL': 'http://localhost:9222',  # Porta que o Chrome abriu
-                'defaultViewport': None
-            })
-
-            page = await browser.newPage()
-
-            # abrir a ficha do aluno e pegar informações
-            await page.goto("https://sed.educacao.sp.gov.br/NCA/FichaAluno/Index", {'timeout':60000, 'waitUntil':'domcontentloaded'})
-            await page.evaluate('''() => {
-                const element = document.querySelector('.blockOverlay');
-                if (element) {
-                    element.remove();
-                }
-            }''')
-            await page.evaluate('''() => {
-                const element = document.querySelector('.blockPage');
-                if (element) {
-                    element.remove();
-                }
-            }''')
-            await page.waitForSelector('#btnPesquisar', {'visible': True})
-            await page.evaluate("() => document.querySelector('#fieldSetRA').removeAttribute('style')")
-            await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#txtRa', info['ra']) 
-            await page.waitForSelector('.blockUI', {'hidden':True})
-            await page.evaluate('''(selector, value) => { document.querySelector(selector).value = value; }''', '#TipoConsultaFichaAluno', 1) 
-            await page.click("#btnPesquisar")
-            await page.waitForSelector('#tabelaDados', {'visible': True})
-            script = await page.evaluate("document.getElementsByClassName('colVisualizar')[1].getElementsByTagName('a')[0].getAttribute('onclick')")
-            await page.evaluate(script)
-            await page.waitForSelector('#sedUiModalWrapper_1', {'visible': True})
-
-            # pegar dados do aluno para inserir na planilha
-            dados = await page.evaluate("document.getElementById('sedUiModalWrapper_1title').textContent")
-            lista = dados.split('-')
-
-            nome = await page.evaluate("document.getElementById('NomeAluno').value")
-            nome_social = await page.evaluate("document.getElementById('NomeSocial').value")
-            ra = lista[1][7:10] + '.' + lista[1][10:13] + '.' + lista[1][13:16] + '-' + lista[2][0:1]
-            data_nascimento = lista[3][18:]
-            cidade_nascimento = await page.evaluate("document.getElementById('CidadeNascimento').value")
-            uf_nascimento = await page.evaluate("document.getElementById('UFNascimento').value")
-            rg = await page.evaluate("document.getElementById('RgAluno').value") + '-' + await page.evaluate("document.getElementById('DigRgAluno').value")
-            uf_rg = await page.evaluate("document.getElementById('sgUfRg').value")
-            print(uf_rg)
-            if rg != '':
-                if uf_rg == 'RJ':
-                    rg = rg[0:2] + '.' + rg[2:5] + '.' + rg[5:] + '/' + uf_rg
-                else:
-                    rg = rg[6:8] + '.' + rg[8:11] + '.' + rg[11:]
-            else:
-                rg = '-'
-            cpf = await page.evaluate("document.getElementById('CpfAluno').value")
-            if cpf == '':
-                cpf = '-'
-            print(cpf)
-            sexo = await page.evaluate("document.getElementById('Sexo').value")
-            sexo = sexo[0:1]
-            pai = await page.evaluate("document.getElementById('NomePai').value")
-            mae = await page.evaluate("document.getElementById('NomeMae').value")
-
-            if int(info['tipo_endereco']) == 1:
-                endereco = info['endereco_manual']
-            else:
-                endereco = await page.evaluate("document.getElementById('Endereco').value")
-                endereco = endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-                num_casa = await page.evaluate("document.getElementById('EnderecoNR').value")
-                endereco += ', %s' % num_casa
-                comp = await page.evaluate("document.getElementById('EnderecoComplemento').value")
-                if comp != '':
-                    endereco += ', %s' % comp.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-                bairro = await page.evaluate("document.getElementById('EnderecoBairro').value")
-                endereco += ', %s' % bairro.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-                cidade_endereco = await page.evaluate("document.getElementById('EnderecoCidade').value")
-                endereco += ', %s' % cidade_endereco.title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ') 
-                estado_endereco = await page.evaluate("document.getElementById('EnderecoUF').value")
-                endereco += '/%s' % estado_endereco
-
+            browser = await launch(
+                handleSIGINT=False,
+                handleSIGTERM=False,
+                handleSIGHUP=False
+            )            
 
             # montar url para inserir os dados no render
-            url = 'http://localhost/render_lista?tipo=ficha_mat&num_classe=0&order=0'
-            url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], ra, rg, cpf, sexo)
-            url += '&nome=%s&nome_social=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (nome.replace(' ', '+'), nome_social.replace(' ', '+'), pai.replace(' ', '+'), mae.replace(' ', '+'), cidade_nascimento.replace(' ', '+'), uf_nascimento, data_nascimento, endereco, info['telefone'], info['email'])
-            url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s&ano=%s' % (info['serie_desc'], info['serie_simples'], info['fund'], info['medio'], info['ano'])
+            url = '%srender_lista?tipo=ficha_mat&num_classe=0&order=0' % request.host_url
+            url += '&rm=%s&ra=%s&rg=%s&cpf=%s&sexo=%s' % (info['rm'], info['ra'], info['rg'], info['cpf'], info['sexo'])
+            url += '&nome=%s&nome_social=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (info['nome'].replace(' ', '+'), info['nome_social'].replace(' ', '+'), info['nome_pai'].replace(' ', '+'), info['nome_mae'].replace(' ', '+'), info['cidade_nasc'].replace(' ', '+'), info['uf_nascimento'], info['nascimento'], info['endereco'].replace(' ', '+'), info['telefone'], info['email'])
+            url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s&ano=%s' % (info['serie_desc'].replace(' ', '+'), info['serie_simples'].replace(' ', '+'), info['fund'], info['medio'], info['ano'])
 
-            print(url)
-
-            #page = await browser.newPage()
+            page = await browser.newPage()
             await page.goto(url, {'waitUntil':'networkidle2'})
             await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
             await browser.close()
@@ -3655,6 +3571,58 @@ def getPDFConselhoFinal():
 
 @app.route('/ficha_matricula', methods=['GET', 'POST'])
 def ficha_matricula():
+
+    if request.method == 'POST':
+        if request.is_json:
+            info = request.json
+
+            try:
+
+                auth = {'cookie_SED': banco.executarConsultaVetor("select valor from config where id_config = 'credencial'")[0]}
+                context = start_context(auth)
+                result_escolas = get_escolas(context)
+                id_escola = result_escolas[0]['id']
+                #result_unidades = get_unidades(context, id_escola)
+                ra_aluno = info.zfill(12)
+                info_turma = banco.executarConsulta("select ano, id_oculto from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe and vinculo_alunos_turmas.ra_aluno = %s order by ano desc" % ra_aluno)[0]
+                codigos_alunos = get_alunos_codigo(context, info_turma['ano'], id_escola, info_turma['id_oculto'])
+                print(codigos_alunos)
+                codigo = codigos_alunos[ra_aluno]
+                dados_aluno = get_info_aluno(context, codigo)
+
+                endereco_final = dados_aluno['endereço'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+                endereco_final += ", " + str(dados_aluno['endereço_número'])
+                if (dados_aluno['endereço_complemento'] != ''):
+                    endereco_final += ", " + dados_aluno['endereço_complemento']
+                endereco_final += ", " + dados_aluno['endereço_bairro'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+                endereco_final += ", " + dados_aluno['endereço_cidade'].title().replace('Da ', 'da ').replace("De ", "de ").replace("Do ", 'do ').replace("Dos ", 'dos ')
+                endereco_final += " - " + dados_aluno['endereço_uf']
+
+                dados_aluno['endereço'] = endereco_final
+
+                try:
+                    cpf = "%011d" % int(dados_aluno['cpf'])
+                    dados_aluno['cpf'] = '%s.%s.%s-%s' % (cpf[:3], cpf[3:6], cpf[6:9], cpf[9:])
+                except:
+                    dados_aluno['cpf'] = ''
+
+                if dados_aluno['cin']:
+                    dados_aluno['rg'] = 'CIN'
+                elif dados_aluno['rg_uf'] is not None:
+                    if (dados_aluno['rg_uf'] == 'SP'):
+                        dados_aluno['rg'] = dados_aluno['rg'][6:8] + '.' + dados_aluno['rg'][8:11] + '.' + dados_aluno['rg'][11:] + '-' + dados_aluno['rg_dígito']
+                    else:
+                        dados_aluno['rg'] = dados_aluno['rg'] + '-' + dados_aluno['rg_dígito'] + '/' + dados_aluno['rg_uf']
+
+                    if dados_aluno['rg'] == '-/':
+                            dados_aluno['rg'] = ''
+
+                return jsonify({'status':True, 'lista':dados_aluno})
+
+            except Exception as e:
+                print(e)
+                return jsonify({'status':False, 'lista':None})
+
 
     return render_template('ficha_de_matricula.jinja')
 
@@ -5559,5 +5527,5 @@ def historicos():
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
     #app.run(debug=True)
-    app.run(debug=True, use_reloader=True, port=5000)
-    #serve(app, host='0.0.0.0', port=80, threads=8)
+    #app.run(debug=True, use_reloader=True, port=5000)
+    serve(app, host='0.0.0.0', port=80, threads=8)
