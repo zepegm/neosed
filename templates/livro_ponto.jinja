@@ -509,7 +509,11 @@
                         {% for professor in professores %}
                         <tr>
                             <td>{{professor['nome']}}</td>
+                            {% if professor['rg'] == '00.000.000-0' %}
+                            <td>CIN</td>
+                            {% else %}
                             <td>{{professor['rg']}}</td>
+                            {% endif %}
                             <td>{{professor['cpf']}}</td>
                             <td>{{professor['categoria']}}</td>
                             <td class="quadro_aulas text-center" data-id="{{professor['raw_cpf']}}" data-di="{{professor['di']}}"><i class="fa-solid fa-table"></i></td>

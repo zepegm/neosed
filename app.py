@@ -5527,5 +5527,5 @@ def historicos():
 if __name__ == '__main__':
     #app.run('0.0.0.0',port=80)
     #app.run(debug=True)
-    #app.run(debug=True, use_reloader=True, port=5000)
-    serve(app, host='0.0.0.0', port=80, threads=8)
+    app.run(debug=True, use_reloader=True, port=5000)
+    #serve(app, host='0.0.0.0', port=80, threads=8)

@@ -419,9 +419,14 @@
                             <td class="right"><b>Nome:</b></td><td colspan="6"><u><b class="blue">{{professor['nome']}}</b></u></td>
                         </tr>
                         <tr>
+                            {% if professor['rg'] == '00.000.000-0' %}
+                            <td class="right"><b>CIN:</b></td><td><u>{{professor['cpf']}}</u></td>
+                            <td class="right"><b>RS/PV:</b></td><td colspan="2"><u>{{professor['rs']}}</u></td>
+                            {% else %}
                             <td class="right"><b>RG:</b></td><td><u>{{professor['rg']}}</u></td>
                             <td class="right"><b>RS/PV:</b></td><td colspan="2"><u>{{professor['rs']}}</u></td>
                             <td class="right"><b>CPF:</b></td><td colspan="2"><u>{{professor['cpf']}}</u></td>
+                            {% endif %}
                         </tr>
                         <tr>
                             <td class="right"><b>Cargo:</b></td><td colspan="4"><u>{{professor['cargo']}}</u></td>
