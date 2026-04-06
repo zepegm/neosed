@@ -115,6 +115,39 @@
                 </table>
                 {% endfor %}
 
+            {% elif opcao == 4 %}
+
+                <div class="row">
+                    <div class="col-sm-6">
+                        <table class="table mt-3 table-bordered">
+                        {% for item in lista %}
+                            {% if item['lista']|length > 0 %}
+                            <thead>
+                                <tr class="table-warning text-center ">
+                                    <th colspan="2">{{item['mes']}}</th>
+                                </tr>
+                                <tr class="table-secondary">
+                                    <th>Nome</th>
+                                    <th>Nascimento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pessoa in item['lista'] %}
+                                    <tr class="table-light">
+                                        <td>{{pessoa['nome']}}</td>
+                                        <td>{{pessoa['nascimento']}}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr><td colspan="2" style="border-left:none;border-right: none;"></td></tr>
+                            </tbody>
+                            {% endif %}
+                        {% endfor %}
+                        </table>                    
+                    </div>
+                    <div class="col-sm-6 mt-3">
+                        <button id="btn_gerar_pdf_aniversario" class="btn btn-danger"><i class="fa-solid fa-file-pdf"></i>&nbsp;Exportar PDF</button>
+                    </div>
+                </div>
             {% endif %}
 
         </main>
@@ -138,7 +171,28 @@
                     $("#btn_exportar").removeAttr('disabled');
                     },
                 });
-            });        
+            });
+            
+            $("#btn_gerar_pdf_aniversario").on('click', function() {
+                $(this).attr('disabled');
+                $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+
+                info = {'destino':24}
+
+                $.ajax({
+                    type: "POST",
+                    url: "gerar_pdf",
+                    contentType: "application/json",
+                    data: JSON.stringify(info),
+                    dataType: "json",
+                    success: function(data) {
+                    window.open(data);
+                    $("#btn_gerar_pdf_aniversario").html('<i class="fa-solid fa-file-pdf"></i>&nbsp;Exportar PDF');
+                    $("#btn_gerar_pdf_aniversario").removeAttr('disabled');
+                    },
+                });
+            });   
+
         </script>
 
     </body>

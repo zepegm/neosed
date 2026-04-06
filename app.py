@@ -571,6 +571,11 @@ def relatorios():
             else:
                 combo_final.append('<option value="3">Lista Geral de Funcionários</option>')
 
+            if (opcao == 4):
+                combo_final.append('<option value="4" selected>Lista de Aniversariantes</option>')
+            else:
+                combo_final.append('<option value="4">Lista de Aniversariantes</option>')
+
 
             if (opcao == 0 or opcao == 1 or opcao == 2): # alunos faltando Documentação
                 turmas = banco.executarConsulta('select num_classe, nome_turma from turma where ano = year(now()) order by tipo_ensino, nome_turma')
@@ -640,7 +645,20 @@ def relatorios():
                 return render_template('relatorios.jinja', opcao = 3, lista_final=listas, combo_final=combo_final, titulos=titulos)
 
 
-    combo_final = ['<option value="0">Lista de Alunos Ativos Faltando RG ou CPF</option>', '<option value="1">Lista de Alunos Ativos Faltando RG</option>', '<option value="2">Lista de Alunos Ativos Faltando CPF</option>', '<option value="3">Lista Geral de Funcionários</option>']
+            elif (opcao == 4): # lista de aniversariantes
+
+                lista = banco.executarConsulta(r"SELECT nome, nascimento, MONTH(nascimento) as mes,  DATE_FORMAT(nascimento, '%d/%m/%Y') as desc_nascimento FROM professor_livro_ponto WHERE ativo = 1 and assina_livro = 1 UNION SELECT nome, nascimento, MONTH(nascimento) as mes, DATE_FORMAT(nascimento, '%d/%m/%Y') as desc_nascimento FROM funcionario_livro_ponto WHERE ativo = 1 ORDER BY MONTH(nascimento), DAYOFMONTH(nascimento)") 
+
+                meses = [{'mes':'Janeiro', 'lista':[]}, {'mes':'Fevereiro', 'lista':[]}, {'mes':'Março', 'lista':[]}, {'mes':'Abril', 'lista':[]}, {'mes':'Maio', 'lista':[]}, {'mes':'Junho', 'lista':[]}, {'mes':'Julho', 'lista':[]}, {'mes':'Agosto', 'lista':[]}, {'mes':'Setembro', 'lista':[]}, {'mes':'Outubro', 'lista':[]}, {'mes':'Novembro', 'lista':[]}, {'mes':'Dezembro', 'lista':[]}]
+
+                for item in lista:
+                    meses[item['mes'] - 1]['lista'].append({'nome':item['nome'], 'nascimento':item['desc_nascimento']})
+
+                print(meses)
+
+                return render_template('relatorios.jinja', opcao = 4, lista=meses, combo_final=combo_final)
+
+    combo_final = ['<option value="0">Lista de Alunos Ativos Faltando RG ou CPF</option>', '<option value="1">Lista de Alunos Ativos Faltando RG</option>', '<option value="2">Lista de Alunos Ativos Faltando CPF</option>', '<option value="3">Lista Geral de Funcionários</option>', '<option value="4">Lista de Aniversariantes</option>']
 
     return render_template('relatorios.jinja', opcao = -1, combo_final=combo_final)
 
@@ -3433,7 +3451,23 @@ async def gerar_pdf():
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
         await browser.close()
 
-        return jsonify(pdf_path)        
+        return jsonify(pdf_path)
+
+    elif info['destino'] == 24:
+        pdf_path = 'static/docs/relatorio.pdf'
+
+        browser = await launch(
+            handleSIGINT=False,
+            handleSIGTERM=False,
+            handleSIGHUP=False
+        )        
+
+        page = await browser.newPage()
+        await page.goto('http://localhost/render_aniversariantes', {'waitUntil':'networkidle2'})
+        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        await browser.close()
+
+        return jsonify(pdf_path)           
 
 
 
@@ -4803,6 +4837,22 @@ def render_relatorio_funcionarios_geral():
                         item['pv'] = "%02d" % item['pv']
 
                 return render_template('render_pdf/render_funcionarios_geral.jinja', opcao = 3, lista_final=listas, titulos=titulos)
+
+@app.route('/render_aniversariantes', methods=['GET', 'POST'])
+def render_aniversariantes():
+    
+    lista = banco.executarConsulta(r"SELECT nome, nascimento, MONTH(nascimento) as mes,  DATE_FORMAT(nascimento, '%d/%m/%Y') as desc_nascimento FROM professor_livro_ponto WHERE ativo = 1 and assina_livro = 1 UNION SELECT nome, nascimento, MONTH(nascimento) as mes, DATE_FORMAT(nascimento, '%d/%m/%Y') as desc_nascimento FROM funcionario_livro_ponto WHERE ativo = 1 ORDER BY MONTH(nascimento), DAYOFMONTH(nascimento)") 
+
+    meses = [{'mes':'Janeiro', 'lista':[]}, {'mes':'Fevereiro', 'lista':[]}, {'mes':'Março', 'lista':[]}, {'mes':'Abril', 'lista':[]}, {'mes':'Maio', 'lista':[]}, {'mes':'Junho', 'lista':[]}, {'mes':'Julho', 'lista':[]}, {'mes':'Agosto', 'lista':[]}, {'mes':'Setembro', 'lista':[]}, {'mes':'Outubro', 'lista':[]}, {'mes':'Novembro', 'lista':[]}, {'mes':'Dezembro', 'lista':[]}]
+
+    cores = ["#C4BAFF", "#FFC593", "#ECA2FF", "#BCE5FF", "#FFFFCF", "#FFD3CB", '#F0E68C', "#FFC2AA", "#FFFFC5", "#FFBCDE", "#AFEBFF", "#FFB093"]
+
+    for item in lista:
+        meses[item['mes'] - 1]['cor'] = {'class':"mes_" + str(item['mes']), 'cor':cores[item['mes'] - 1]}
+        meses[item['mes'] - 1]['lista'].append({'nome':item['nome'], 'nascimento':item['desc_nascimento']})
+
+    return render_template('render_pdf/render_aniversariantes.jinja', lista=meses, year=datetime.now().year)
+
 
 @app.route('/render_boletim', methods=['GET', 'POST'])
 def boletim():
