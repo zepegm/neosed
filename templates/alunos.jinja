@@ -80,7 +80,40 @@
         .CONCL {
             color:rgb(0, 89, 161);
             font-weight: bold;
-        }              
+        }
+
+        .toast {
+            visibility: hidden; /* Invisível */
+            min-width: 200px;
+            background-color: #333; /* Cor de fundo */
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 15px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px; /* Posição inferior */
+            transform: translateX(-50%); /* Centralizar */
+        }
+
+        /* Classe para mostrar o balão */
+        .toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        /* Animações */
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+
     </style>
 
   </head>
@@ -89,6 +122,8 @@
     {% block menu_superior %}
       {% include 'menu.jinja' %}
     {% endblock %} 
+
+    <div id="toast" class="toast">Texto copiado!</div>
 
     <div class="modal fade" id="modal_five" tabindex="-1" aria-labelledby="modal_painel_headLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -236,7 +271,7 @@
                             <tr>
                                 <td class="text-center">{{item['rm']}}</td>
                                 <td data-order="{{ns.cont}}">{{item['nome']}}</td>
-                                <td>{{item['ra']}}</td>
+                                <td>{{item['ra']}}&nbsp;<a href='javascript:copyTextRA("{{item["ra"]}}")'><i class="fa-regular fa-copy"></i></a></td>
                                 <td class="text-center" data-order="{{item['nascimento_val']}}">{{item['nascimento_show']}}</td>
                                 <td class="text-center">{{item['idade']}}</td>
                                 <td class="text-center">{{item['sexo']}}</td>
@@ -290,6 +325,23 @@
                     }                    
             }); 
         });
+
+        function copyTextRA(texto) {
+            const resultado = texto.replace(/\D/g, "").slice(0, -1);
+            // 2. Copiar usando Clipboard API
+            navigator.clipboard.writeText(resultado).then(function() {
+                // 3. Mostrar o balão
+                let toast = document.getElementById("toast");
+                toast.className = "toast show";
+
+                // 4. Esconder o balão após 3 segundos
+                setTimeout(function(){ 
+                    toast.className = toast.className.replace("show", ""); 
+                }, 3000);
+            }).catch(function(err) {
+                console.error('Erro ao copiar: ', err);
+            });
+        }
 
         function consultarAluno(ra, desc_ra, nome, rg, cpf, nasc, sexo, idade) {
             
