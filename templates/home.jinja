@@ -55,7 +55,39 @@
 
         .hide {
             display: none !important;
-        }     
+        }
+
+        .toast {
+            visibility: hidden; /* Invisível */
+            min-width: 200px;
+            background-color: #333; /* Cor de fundo */
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 15px;
+            position: fixed;
+            z-index: 5000;
+            left: 50%;
+            bottom: 30px; /* Posição inferior */
+            transform: translateX(-50%); /* Centralizar */
+        }
+
+        /* Classe para mostrar o balão */
+        .toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        /* Animações */
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }        
 
     </style>
 
@@ -65,6 +97,8 @@
     {% block menu_superior %}
       {% include 'menu.jinja' %}
     {% endblock %}
+
+    <div id="toast" class="toast">Texto copiado!</div>
 
     <!-- Modal -->
     <div class="modal fade" id="modal_grade_horaria" tabindex="-1" aria-labelledby="modal_grade_horariaLabel" aria-hidden="true">
@@ -903,6 +937,23 @@
             $("#status_auto_update").html(html)
         }); 
 
+        function copyTextRA(texto) {
+            const resultado = texto.split('-')[0].replace(/\D/g, "");
+            // 2. Copiar usando Clipboard API
+            navigator.clipboard.writeText(resultado).then(function() {
+                // 3. Mostrar o balão
+                let toast = document.getElementById("toast");
+                toast.className = "toast show";
+
+                // 4. Esconder o balão após 3 segundos
+                setTimeout(function(){ 
+                    toast.className = toast.className.replace("show", ""); 
+                }, 3000);
+            }).catch(function(err) {
+                console.error('Erro ao copiar: ', err);
+            });
+        }
+
         $(".btn-search-id").on('click', function() {
             const num_classe = $(this).attr('data-num');
             const destino = $(this).attr('data-destino');
@@ -1594,8 +1645,8 @@
                             linha += "<tr>"
                         }
 
-                        linha += '<td class="text-center">' + response['turma'][item]['num_chamada'] + '</td><td class="text-center">' + response['turma'][item]['rm'] + "</td><td>" + response['turma'][item]['ra'] + "</td><td>" + response['turma'][item]['serie'] + "</td><td>" + response['turma'][item]['nome'] + '</td><td class="text-center" data-order="' + response['turma'][item]['nascimento_original']  + '">' + response['turma'][item]['nascimento'] + '</td><td class="text-center">' + response['turma'][item]['idade'] + '</td><td class="text-center">' + response['turma'][item]['sexo'] + "</td><td>" + response['turma'][item]['rg'] + "</td>";
-                        
+                        linha += '<td class="text-center">' + response['turma'][item]['num_chamada'] + '</td><td class="text-center">' + response['turma'][item]['rm'] + "</td><td>" + response['turma'][item]['ra'] + '&nbsp;<a href="javascript:copyTextRA(\'' + response['turma'][item]['ra'] + '\')"><i class="fa-regular fa-copy"></i></a></td><td>' + response['turma'][item]['serie'] + "</td><td>" + response['turma'][item]['nome'] + '</td><td class="text-center" data-order="' + response['turma'][item]['nascimento_original']  + '">' + response['turma'][item]['nascimento'] + '</td><td class="text-center">' + response['turma'][item]['idade'] + '</td><td class="text-center">' + response['turma'][item]['sexo'] + "</td><td>" + response['turma'][item]['rg'] + "</td>";
+
                         if (response['turma'][item]['cpf'] != "-") {
                             linha += "<td>" + response['turma'][item]['cpf'].replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") + "</td>";
                         } else {
@@ -1607,6 +1658,7 @@
                         linha += '<td class="text-center fw-bold">' + response['turma'][item]['sit'] + "</td>";
 
                         linha += "</tr>";
+                        console.log(linha);
                         $("#listaAlunos").append(linha);
                     }
 

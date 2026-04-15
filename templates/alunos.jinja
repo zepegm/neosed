@@ -327,7 +327,7 @@
         });
 
         function copyTextRA(texto) {
-            const resultado = texto.replace(/\D/g, "").slice(0, -1);
+            const resultado = texto.split('-')[0].replace(/\D/g, "");
             // 2. Copiar usando Clipboard API
             navigator.clipboard.writeText(resultado).then(function() {
                 // 3. Mostrar o balão
