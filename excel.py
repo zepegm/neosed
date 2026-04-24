@@ -1,4 +1,4 @@
-import win32com.client
+#import win32com.client
 import openpyxl
 import os
 

@@ -15,9 +15,14 @@ lista_sem_pai = []
 async def main():
 
     browser = await launch(
-        handleSIGINT=False,
-        handleSIGTERM=False,
-        handleSIGHUP=False
+        executablePath="/usr/bin/google-chrome-stable",
+        headless=True,
+        dumpio=True,
+        args=[
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+        ],
     )
 
     page = await browser.newPage()

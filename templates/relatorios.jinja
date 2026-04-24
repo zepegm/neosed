@@ -9,7 +9,7 @@
         <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
 
         <!-- Custom styles for this template -->
-        <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">   
+        <link href="{{ url_for('static', filename='stylesheets/navbar-top-fixed.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='font-awesome/css/fontawesome.min.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='font-awesome/css/brands.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='font-awesome/css/solid.css') }}" rel="stylesheet">
@@ -154,7 +154,11 @@
         <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
         <script>
             $("#btn_exportar").on('click', function() {
-                $(this).attr('disabled');
+
+                const url = `${window.location.origin}/render_relatorio_funcionarios_geral`;
+                window.open(url, '_blank');
+
+                /*$(this).attr('disabled');
                 $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
 
                 info = {'destino':23}
@@ -170,11 +174,15 @@
                     $("#btn_exportar").html('<i class="fa-solid fa-file-pdf"></i>&nbsp;Exportar PDF');
                     $("#btn_exportar").removeAttr('disabled');
                     },
-                });
+                });*/
             });
             
             $("#btn_gerar_pdf_aniversario").on('click', function() {
-                $(this).attr('disabled');
+
+                const url = `${window.location.origin}/render_aniversariantes`;
+                window.open(url, '_blank');
+
+                /*$(this).attr('disabled');
                 $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
 
                 info = {'destino':24}
@@ -190,7 +198,8 @@
                     $("#btn_gerar_pdf_aniversario").html('<i class="fa-solid fa-file-pdf"></i>&nbsp;Exportar PDF');
                     $("#btn_gerar_pdf_aniversario").removeAttr('disabled');
                     },
-                });
+                });*/
+
             });   
 
         </script>

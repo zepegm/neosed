@@ -1,8 +1,10 @@
-#import locale
+import sys
 from MySQL import db
 from getInfoSED import buscarCPF
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, Response
-from waitress import serve
+import eventlet
+import eventlet.wsgi
+from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
 from werkzeug.utils import secure_filename
 from excel import xls, open_xls
@@ -2906,17 +2908,19 @@ async def gerar_pdf():
     info = request.json
     global aux_info
 
+    browser = await launch(
+        handleSIGINT=False,
+        handleSIGTERM=False,
+        handleSIGHUP=False
+    )
+
     if info['destino'] == 1:
         pdf_path = 'static/docs/lista.pdf'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
+        print('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']))
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s' % (info['tipo'], info['turma'], info['order']), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -2926,14 +2930,8 @@ async def gerar_pdf():
         print(info)
         pdf_path = 'static/docs/lista.pdf'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=0' % (info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=0' % (request.host, info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -2957,15 +2955,8 @@ async def gerar_pdf():
         except:
             aux_info = info
 
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -2975,14 +2966,8 @@ async def gerar_pdf():
 
         pdf_path = 'static/docs/declaracao.pdf'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0')
+        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -2991,16 +2976,8 @@ async def gerar_pdf():
     elif info['destino'] == 5: # conselho bimestral
         pdf_path = 'static/docs/conselho.pdf'
 
-        print(info)
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (info['bimestre'], info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (request.host, info['bimestre'], info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3009,14 +2986,8 @@ async def gerar_pdf():
     elif info['destino'] == 6: # conselho bimestral completo
         pdf_path = 'static/docs/conselho.pdf'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (info['bimestre'], info['ano']), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (request.host, info['bimestre'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3025,14 +2996,8 @@ async def gerar_pdf():
     elif info['destino'] == 7: # livro ponto completo
         pdf_path = 'static/docs/livro_ponto.pdf'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&order=0' % (info['mes'], info['ano']), {'waitUntil':'load', 'timeout':60000})
+        await page.goto('http://%s/render_livro_ponto?mes=%s&ano=%s&order=0' % (request.host, info['mes'], info['ano']), {'waitUntil':'load', 'timeout':60000})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3041,30 +3006,18 @@ async def gerar_pdf():
     elif info['destino'] == 8: # certificados
         pdf_path = 'static/docs/certificados.pdf'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_certificados_conclusao?classe=%s&order=0' % info['classe'], {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_certificados_conclusao?classe=%s&order=0' % (request.host, info['classe']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
         await browser.close()
 
         return jsonify(pdf_path)
     
     elif info['destino'] == 9: # livro ponto individual
-        pdf_path = 'static/docs/certificados.pdf'
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
+        pdf_path = 'static/docs/certificados.pdf'   
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (info['mes'], info['ano'], info['professor'], info['number'], info['di']), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (request.host, info['mes'], info['ano'], info['professor'], info['number'], info['di']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3073,13 +3026,7 @@ async def gerar_pdf():
     elif info['destino'] == 10: # ficha de matrícula
         pdf_path = 'static/docs/ficha.pdf'
 
-        try:
-
-            browser = await launch(
-                handleSIGINT=False,
-                handleSIGTERM=False,
-                handleSIGHUP=False
-            )            
+        try:         
 
             # montar url para inserir os dados no render
             url = '%srender_lista?tipo=ficha_mat&num_classe=0&order=0' % request.host_url
@@ -3122,15 +3069,10 @@ async def gerar_pdf():
             bimestre = 0
 
         aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None, 'assinatura':info['assinatura']}
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
+   
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3140,15 +3082,9 @@ async def gerar_pdf():
     elif info['destino'] == 12: # boletins
 
         pdf_path = 'static/docs/boletins.pdf'
-            
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_boletim?num_classe=%s&ano=%s&order=0' % (info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_boletim?num_classe=%s&ano=%s&order=0' % (request.host, info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3178,14 +3114,8 @@ async def gerar_pdf():
 
         aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':info['anos']}
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3198,14 +3128,8 @@ async def gerar_pdf():
         ano = info['ano']
         mes = info['mes']
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (cpf, mes, ano), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (request.host, cpf, mes, ano), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3227,16 +3151,8 @@ async def gerar_pdf():
         if ensino == 'individual_salas':
             estilo = 'individual_salas'
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False,
-        )
-
-        print('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (estilo, ensino, ano, data))
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (estilo, ensino, ano, data), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (request.host, estilo, ensino, ano, data), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '9mm', 'left': '10mm'}})
 
         if (estilo == 'individual'):
@@ -3263,17 +3179,10 @@ async def gerar_pdf():
         mes = info['mes']
         order = info['order']
         num_classe = info['turma']
-        cor = info['cor'].replace("#", '')
-
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )        
+        cor = info['cor'].replace("#", '')     
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (num_classe, order, mes, cor), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (request.host, num_classe, order, mes, cor), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3286,16 +3195,10 @@ async def gerar_pdf():
         tipo = info['tipo']
         order = info['order']
         titulo = info['titulo']
-        colunas = info['colunas']
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )        
+        colunas = info['colunas']   
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (tipo, num_classe, order, titulo, colunas), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (request.host, tipo, num_classe, order, titulo, colunas), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3308,16 +3211,10 @@ async def gerar_pdf():
         
         info_classe = banco.executarConsulta('select turma.num_classe, serie, tipo_ensino, tipo_ensino.descricao as tipo_ensino_desc from turma inner join vinculo_alunos_turmas on vinculo_alunos_turmas.num_classe = turma.num_classe inner join tipo_ensino on tipo_ensino.id = turma.tipo_ensino where ra_aluno = %s and tipo_ensino in (1, 3) order by vinculo_alunos_turmas.fim_mat desc limit 1' % info['ra'].replace('.', '')[:9])[0]
 
-        aux_info = {'tipo':info['tipo'], 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'anos':None, 'assinatura':info['assinatura'], 'info_classe':info_classe, 'nome_resp':info['nome_resp'], 'rg_resp':info['rg_resp']}
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )        
+        aux_info = {'tipo':info['tipo'], 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'anos':None, 'assinatura':info['assinatura'], 'info_classe':info_classe, 'nome_resp':info['nome_resp'], 'rg_resp':info['rg_resp']}      
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3347,14 +3244,8 @@ async def gerar_pdf():
 
         aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':9, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None, 'assinatura':info['assinatura']}
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
-
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3386,16 +3277,10 @@ async def gerar_pdf():
 
         info_classe = banco.executarConsulta(query)[0]
 
-        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':10, 'info_classe':info_classe, 'anos':None, 'assinatura':info['assinatura']}
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )
+        aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':10, 'info_classe':info_classe, 'anos':None, 'assinatura':info['assinatura']}   
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=declaracao&num_classe=white&order=0', {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         await browser.close()
 
@@ -3404,16 +3289,10 @@ async def gerar_pdf():
     elif info['destino'] == 21:
         pdf_path = 'static/docs/etiqueta.pdf'
 
-        num_classe = info['turma']
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )        
+        num_classe = info['turma']       
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_etiquetas_alunos?classe=%s' % (num_classe), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_etiquetas_alunos?classe=%s' % (request.host, num_classe), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
         await browser.close()
 
@@ -3422,52 +3301,34 @@ async def gerar_pdf():
     elif info['destino'] == 22:
         pdf_path = 'static/docs/horario_turma.pdf'
 
-        num_classe = info['num_classe']
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )        
+        num_classe = info['num_classe']       
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_lista?tipo=grade_turma&num_classe=%s&order=0&ano=0' % (num_classe), {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_lista?tipo=grade_turma&num_classe=%s&order=0&ano=0' % (request.host, num_classe), {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
         await browser.close()
 
         return jsonify(pdf_path)
 
     elif info['destino'] == 23:
-        pdf_path = 'static/docs/relatorio.pdf'
-
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )        
+        pdf_path = 'static/docs/relatorio.pdf'     
 
         page = await browser.newPage()
-        await page.goto('http://localhost/render_relatorio_funcionarios_geral', {'waitUntil':'networkidle2'})
+        await page.goto('http://%s/render_relatorio_funcionarios_geral' % request.host, {'waitUntil':'networkidle2'})
         await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
         await browser.close()
 
         return jsonify(pdf_path)
 
-    elif info['destino'] == 24:
-        pdf_path = 'static/docs/relatorio.pdf'
+    #elif info['destino'] == 24:
+        #pdf_path = 'static/docs/relatorio.pdf'    
 
-        browser = await launch(
-            handleSIGINT=False,
-            handleSIGTERM=False,
-            handleSIGHUP=False
-        )        
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_aniversariantes' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        #await browser.close()
 
-        page = await browser.newPage()
-        await page.goto('http://localhost/render_aniversariantes', {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
-        await browser.close()
-
-        return jsonify(pdf_path)           
+        #return jsonify(pdf_path)
 
 
 
@@ -4031,8 +3892,8 @@ async def pesquisarRGCPF():
             ])
 
             browser = await connect({
-                'browserURL': 'http://localhost:9222',  # Porta que o Chrome abriu
-                'defaultViewport': None
+                'browserURL': 'http://%s:9222' % request.host,  # Porta que o Chrome abriu
+                'defaultViewport': None 
             })
 
             page = await browser.newPage()
@@ -5574,8 +5435,18 @@ def historicos():
     else:
         return redirect('/')
 
+load_dotenv()
+
 if __name__ == '__main__':
-    #app.run('0.0.0.0',port=80)
-    #app.run(debug=True)
-    app.run(debug=True, use_reloader=True, port=5000)
-    #serve(app, host='0.0.0.0', port=80, threads=8)
+    # 1. Verifica se passou "debug" no terminal: python3 app.py debug
+    # 2. Se não passou, verifica se no .env está FLASK_ENV=development
+    is_debug_mode = ('debug' in sys.argv) or (os.getenv('FLASK_ENV') == 'development')
+
+    if is_debug_mode:
+        print("🚀 Rodando em modo DEBUG...")
+        app.run(debug=True, use_reloader=True, port=5000)
+    else:
+        #print("🏠 Rodando em modo PRODUÇÃO...")
+        #serve(app, host='0.0.0.0', port=5000, threads=8)
+        print("🚀 Iniciando com Eventlet (WebSockets Reais + Alta Performance)")
+        socketio.run(app, host='0.0.0.0', port=5000)     
