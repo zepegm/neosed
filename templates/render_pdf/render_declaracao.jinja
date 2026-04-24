@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Rendereziação PDF</title>
+        <link href="{{ url_for('static', filename='stylesheets/print-default.css') }}" rel="stylesheet">
         <style>
 
             @font-face {
@@ -11,15 +12,34 @@
                 url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
             }
 
+            @media print {
+
+                @page {
+                    size: A4;
+                    margin: 10mm;
+                }
+
+                #pagina {
+                    /*width: 210mm;
+                    min-height: 297mm;*/
+                    background: white;
+                    box-sizing: border-box;
+                    border: none  !important;
+                    padding:0 !important;
+                }
+
+
+            }             
+
             #pagina {
                 width: 729px;
                 height: 1057px;
                 border-width: 2px;
                 border-style: solid;
                 border-color: {{cor}};
-                position: absolute;
-                top:30px;
-                left: 30px;
+                position: relative;
+                top:0px;
+                left: 0px;
                 background-color: white;
             }          
 
@@ -105,6 +125,17 @@
         </style>
     </head>
     <body>
+
+        <div id="loading">
+            <div class="loader"></div>
+            <p id="progresso-texto">Preparando PDF...</p>
+            <!-- <div id="barra-container">
+            <div id="barra"></div> -->
+            </div>
+        </div>
+
+        <button class="btn no-print" onclick="window.print()">Imprimir</button>
+
         <div id="pagina">
             <img id="logo" src="../static/images/brasao.svg">
             <div id="head">
@@ -140,5 +171,6 @@
             {% endif %}
 
         </div>
+        <script src="{{ url_for('static', filename='js/print-default.js') }}"></script>
     </body>
 </htmL>

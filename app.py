@@ -2042,7 +2042,9 @@ def render_lista():
 
             if (aux_info['rg'] in ('', '-', 'None') or aux_info['rg'] is None):
                 texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, RA: ' + aux_info['ra']
-            elif (aux_info['rg'] == 'CIN'):
+            elif (aux_info['rg'][:3] == 'RNM'):
+                texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, RNM: ' + aux_info['rg'].split(' - ')[1]
+            elif (aux_info['rg'] == 'CIN'):                
                 texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, CIN: ' + aux_info['cpf']
             else:
                 texto = 'Declaro para os devidos fins que <b>' + aux_info['nome'] + '</b>, RG: ' + aux_info['rg']
@@ -2908,11 +2910,11 @@ async def gerar_pdf():
     info = request.json
     global aux_info
 
-    browser = await launch(
-        handleSIGINT=False,
-        handleSIGTERM=False,
-        handleSIGHUP=False
-    )
+    #browser = await launch(
+        #handleSIGINT=False,
+        #handleSIGTERM=False,
+        #handleSIGHUP=False
+    #)
 
     if info['destino'] == 1:
         pdf_path = 'static/docs/lista.pdf'
@@ -3213,12 +3215,12 @@ async def gerar_pdf():
 
         aux_info = {'tipo':info['tipo'], 'ra':info['ra'], 'nome':aluno['nome'], 'rg':aluno['rg'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'anos':None, 'assinatura':info['assinatura'], 'info_classe':info_classe, 'nome_resp':info['nome_resp'], 'rg_resp':info['rg_resp']}      
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
     elif info['destino'] == 19: # declaração de matrícula com horário
         
@@ -3244,12 +3246,12 @@ async def gerar_pdf():
 
         aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':9, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None, 'assinatura':info['assinatura']}
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
     
     elif info['destino'] == 20: # declaração de conclusão
@@ -3279,46 +3281,46 @@ async def gerar_pdf():
 
         aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':10, 'info_classe':info_classe, 'anos':None, 'assinatura':info['assinatura']}   
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=black&order=0' % request.host)
     
-    elif info['destino'] == 21:
-        pdf_path = 'static/docs/etiqueta.pdf'
+    #elif info['destino'] == 21:
+        #pdf_path = 'static/docs/etiqueta.pdf'
 
-        num_classe = info['turma']       
+        #num_classe = info['turma']
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_etiquetas_alunos?classe=%s' % (request.host, num_classe), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_etiquetas_alunos?classe=%s' % (request.host, num_classe), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        #return jsonify(pdf_path)
 
-    elif info['destino'] == 22:
-        pdf_path = 'static/docs/horario_turma.pdf'
+    #elif info['destino'] == 22:
+        #pdf_path = 'static/docs/horario_turma.pdf'
 
-        num_classe = info['num_classe']       
+        #num_classe = info['num_classe']       
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=grade_turma&num_classe=%s&order=0&ano=0' % (request.host, num_classe), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=grade_turma&num_classe=%s&order=0&ano=0' % (request.host, num_classe), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        #return jsonify(pdf_path)
 
-    elif info['destino'] == 23:
-        pdf_path = 'static/docs/relatorio.pdf'     
+    #elif info['destino'] == 23:
+        #pdf_path = 'static/docs/relatorio.pdf'     
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_relatorio_funcionarios_geral' % request.host, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_relatorio_funcionarios_geral' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        #return jsonify(pdf_path)
 
     #elif info['destino'] == 24:
         #pdf_path = 'static/docs/relatorio.pdf'    

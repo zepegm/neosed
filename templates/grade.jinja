@@ -265,11 +265,15 @@
         }
 
         $(document).on('click', "#btn_gerar_horario_individual", function() {
-            $("#btn_gerar_horario_individual").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+            const num_classe = $(".list-group-item.active").data('id');
+            const url = `${window.location.origin}/render_lista?tipo=grade_turma&num_classe=${num_classe}&order=0&ano=0`;
+            window.open(url, '_blank');
+
+            /*$("#btn_gerar_horario_individual").html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
             $("#btn_gerar_horario_individual").attr('disabled', '');
 
             let ano = $("#cb_ano").val();
-            let num_classe = $(".list-group-item.active").data('id');
+            
 
             console.log(num_classe);
 
@@ -286,7 +290,7 @@
                 $("#btn_gerar_horario_individual").html('<i class="fa-solid fa-file-pdf"></i>&nbsp;Gerar Horário da Turma');
                 $("#btn_gerar_horario_individual").removeAttr('disabled');
                 },
-            });            
+            });*/            
         });
 
         $("#btn-gerar-horario").on('click', function() {

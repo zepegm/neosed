@@ -539,7 +539,7 @@
                     data: JSON.stringify({'destino':20, 'ra':$("#txtra").text(), 'assinatura':assinatura}),
                     dataType: "json",
                     success: function(data) {
-                        window.open(data);
+                        window.open(data, '_blank');
                         $("#gerar_pdf").html('Gerar');
                         $("#gerar_pdf").removeAttr('disabled');
                     },

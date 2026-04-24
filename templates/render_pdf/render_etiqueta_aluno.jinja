@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Etiquetas para Impressão</title>
+        <link href="{{ url_for('static', filename='stylesheets/print-default.css') }}" rel="stylesheet">
 
         <style>
 
@@ -17,7 +18,7 @@
                 width: 702px;
                 border-width: 2px;
                 border-style: solid;
-                border-color: white;
+                padding:10mm;
                 margin-top:0px;
                 margin-left:0px;
             }
@@ -55,23 +56,46 @@
     </head>
 
     <body>
+        <div id="loading">
+            <div class="loader"></div>
+            <p id="progresso-texto">Preparando PDF...</p>
+            <!-- <div id="barra-container">
+            <div id="barra"></div> -->
+            </div>
+        </div>
+
+        <button class="btn no-print" onclick="window.print()">Imprimir</button>
+
+        {% set ns = namespace(contagem=1) %}
+
         <div class="pagina">
             {% for i in range(0, alunos|length, 2) %}
                 <div class="container">
                     <div class="quadro">
                         <p class="nome"><b>Nome: </b>{{alunos[i]['nome']}}</p>
-                        <p class="serie"><b>Série: </b>{{turma}}</p>                                       
+                        <p class="serie"><b>Série: </b>{{turma}}</p>
                     </div>
+
+                    {% set ns.contagem = ns.contagem + 2 %}
 
                     {% if i < alunos|length - 1 %}
                     <div class="quadro">
                         <p class="nome"><b>Nome: </b>{{alunos[i + 1]['nome']}}</p>
-                        <p class="serie"><b>Série: </b>{{turma}}</p>                                       
-                    </div>                  
-                    {% endif %}  
+                        <p class="serie"><b>Série: </b>{{turma}}</p>
+                    </div>
+                    {% endif %}
+
+        {% if ns.contagem > 23 %}
+                {% set ns.contagem = 1 %}
+                </div>
+        </div>
+        <div class="pagina">
+                <div class="container">
+        {% endif %}
                 </div>
 
             {% endfor %}
         </div>
+        <script src="{{ url_for('static', filename='js/print-default.js') }}"></script>
     </body>
 </html>

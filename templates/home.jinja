@@ -1399,7 +1399,12 @@
         });
 
         $("#btn_gerar_etiqueta").on('click', function(e) {
-            $(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
+
+            const num_classe = $("#numClasse").text();
+            const url = `${window.location.origin}/render_etiquetas_alunos?classe=${num_classe}`;
+            window.open(url, '_blank');
+
+            /*$(this).html('<div class="spinner-border text-ligth" role="status"><span class="sr-only">Carregando...</span></div>');
             $(this).attr('disabled', '');
 
             info = {'destino':21, 'turma':$("#numClasse").text()}
@@ -1415,7 +1420,7 @@
                 $("#btn_gerar_etiqueta").html('<i class="fa-solid fa-file-pdf"></i>');
                 $("#btn_gerar_etiqueta").removeAttr('disabled');
                 },
-            });            
+            });*/
         });
 
         $("#gerar_pdf_assinatura").on('click', function(e) {
