@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Render Boletim</title>
+        <link href="{{ url_for('static', filename='stylesheets/print-default.css') }}" rel="stylesheet">
 
         <style>
 
@@ -15,13 +16,13 @@
             .tb_boletim,
             .tb_if {
                 font-family: 'Helvetica', 'sans-serif';
-                border: 2px solid;
+                border: 4px solid;
                 border-color: black;
                 border-collapse: collapse;
                 /*table-layout: fixed;*/
                 text-align: center;
                 width: 100%;
-                margin-top: 30px;
+                margin-top: 0;
             }
 
             .titulo {
@@ -51,15 +52,16 @@
 
             .pagina {
                 width: 729px;
-                height: 1057px;
+                height: 1000px;
                 border-width: 2px;
                 border-style: solid;
                 border-color: white;
                 /*position: absolute;
                 top:30px;*/
-                margin-left: 24px;
-                margin-top: -8px;
+                margin-left: 0;
+                margin-top: 0;
                 background-color: white;
+                break-before: always; /* Força quebra antes do elemento */
             }     
 
             .left {
@@ -138,6 +140,17 @@
         </style>
     </head>
     <body>
+
+        <div id="loading">
+            <div class="loader"></div>
+            <p id="progresso-texto">Preparando PDF...</p>
+            <!-- <div id="barra-container">
+            <div id="barra"></div> -->
+            </div>    
+        </div>
+
+        <button class="btn no-print" onclick="window.print()">Imprimir</button>    
+
         {% for aluno in alunos %}
             <div class="pagina">
                 <table class="tb_boletim">
@@ -327,5 +340,6 @@
                 {% endif %}
             </div>
         {% endfor %}
+        <script src="{{ url_for('static', filename='js/print-default.js') }}"></script>
     </body>
 </html>

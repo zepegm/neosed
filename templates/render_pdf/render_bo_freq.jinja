@@ -33,7 +33,7 @@
 
 
             .pag {
-                width: 699px;
+                width: 588px;
                 height: 1057px;
                 border-width: 2px;
                 border-style: solid;
@@ -93,7 +93,7 @@
                 position: absolute;
                 top: -1px;
                 left: -1px;
-                width: 480px;
+                width: 370px;
                 /*line-height: 0.62;*/
             }
 
@@ -111,7 +111,7 @@
 
                 position: relative;
                 left: 0px;
-                width: 481px;
+                width: 370px;
                 /*table-layout: fixed;*/
             }
 
@@ -192,9 +192,16 @@
             }
 
             .lb_secretario {
-                position: absolute;
-                width: 120px;
-                border-top: solid 1px black;
+                position: relative;
+                width: 80px;
+                border-bottom: solid 1px black;
+                line-height: 1.4;
+                left:50px;
+            }
+
+            .lb_recebi {
+                position: relative;
+                width: 80px;
                 line-height: 1.4;
                 left:50px;
             }
@@ -211,7 +218,7 @@
                 position: absolute;
                 border: solid 1px black;
                 top:0px;
-                left: 480px;
+                left: 369px;
                 width: 220px;
                 height: 1058px;
             }
@@ -360,70 +367,12 @@
 
         <button class="btn no-print" onclick="window.print()">Imprimir</button>      
 
-        <!-- Aqui será feita a Capa -->
-        <div class="pag capa">
-            <div class="cap-tit1">LIVRO PONTO</div>
-            <div class="cap-tit2">DOCENTE</div>
-            <img class="logo" src="../static/images/Logo Neo Sed White (HQ).png">
-            <div class="cap-foot red">{{data}}</div>
-        </div>
-
-        <!-- Fazer a Paginação -->
-        <div class="pag sumario">
-            <div class="sum-tit1">ÍNDICE</div>
-            <div class="sum-tit2">ESTE LIVRO ESTÁ EM ORDEM DE RG</div>
-
-            <div class="sum-col1">
-                <table>
-                    <tbody>
-                        {% for n in range(0, 40) %}
-
-                        {% if n < sumario|length %}
-                        <tr style="border-bottom: 1px solid black">
-                            <td class="row-sum">{{sumario[n]['professor']}}</td>
-                            <td class="row-sum"><b>{{ '%02d' % sumario[n]['pag']}}</b></td>
-                        </tr>
-                        {% else %}
-                        <tr style="border-bottom: 1px solid black">
-                            <td class="row-sum">&nbsp;</td>
-                            <td class="row-sum"><b>{{ '%02d' % loop.index }}</b></td>
-                        </tr>
-                        {% endif %}
-
-
-                        {% endfor %}                
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="sum-col2">
-                <table>
-                    <tbody>
-                        {% for n in range(40, 80) %}
-                        {% if n < sumario|length %}
-                        <tr style="border-bottom: 1px solid black">
-                            <td class="row-sum">{{sumario[n]['professor']}}</td>
-                            <td class="row-sum"><b>{{ '%02d' % sumario[n]['pag']}}</b></td>
-                        </tr>
-                        {% else %}
-                        <tr style="border-bottom: 1px solid black">
-                            <td class="row-sum" style="width: 100%;">&nbsp;</td>
-                            <td class="row-sum" width="300px"><b>{{ '%02d' % (n + 1) }}</b></td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}                
-                    </tbody>
-                </table>
-            </div>            
-
-        </div>
-
         <!-- Aqui o Ponto será criado pegando professor por professor -->
         {% for professor in professores %}
         <div class="pag" style="break-before: page !important; margin-top: 5mm;">
             <div class="identificador">1</div>
             <div class="head">
-                <div class="titulo">FREQUÊNCIA DO MÊS DE <span class="red">{{data}}</span></div>
+                <div class="titulo">BOLETIM DE OCORRÊNCIAS - B.O. - <span class="red">{{data}}</span></div>
                 <table class="tb_head">
                     <tbody>
                         <tr class="tb-head-max">
@@ -432,85 +381,54 @@
                         <tr>
                             {% if professor['rg'] == '00.000.000-0' %}
                             <td class="right"><b>CIN:</b></td><td><u>{{professor['cpf']}}</u></td>
-                            <td class="right"><b>RS/PV:</b></td><td colspan="2"><u>{{professor['rs']}}</u></td>
                             {% else %}
                             <td class="right"><b>RG:</b></td><td><u>{{professor['rg']}}</u></td>
-                            <td class="right"><b>RS/PV:</b></td><td colspan="2"><u>{{professor['rs']}}</u></td>
-                            <td class="right"><b>CPF:</b></td><td colspan="2"><u>{{professor['cpf']}}</u></td>
                             {% endif %}
                         </tr>
                         <tr>
                             <td class="right"><b>Cargo:</b></td><td colspan="4"><u>{{professor['cargo']}}</u></td>
+                        </tr>
+                        <tr>
                             <td class="right"><b>Cat:</b></td><td colspan="2"><u>{{professor['categoria']}}</u></td>
                         </tr>
                         <tr>
                             <td class="right"><b>{{professor['txt_sit']}}</b></td><td colspan="6"><u><span class="{{professor['class_afast']}}">{{professor['situacao']}}{{professor['atpc']}}</span></u></td>
                         </tr>
                         <tr>
-                            <td class="right"><b>Jornada:</b></td><td colspan="2"><u>{{professor['jornada']}}</u></td>
-                            <td class="right" colspan="3"><b>{{professor['txt_carga']}}</b></td><td><u>{{professor['carga']}}</u></td>
+                            <td class="right"><b>DI:</b></td><td colspan="2"><u>{{professor['di']}}</u></td>
                         </tr>
                         <tr>
-                            <td class="right"><b>Disciplina:</b></td><td><u>{{professor['disciplina']}}</u></td>
-                            <td class="right"><b>DI: </b></td><td><u>{{professor['di']}}</u></td>
-                            <td class="right" colspan="2"><b>F/N REF: </b></td><td><u>{{professor['FNREF']}}</u></td>
+                            <td class="right"><b>UA Sede:</b></td><td><u>{{professor['sede_c']}}</u></td>
                         </tr>
-                        <tr>
-                            <td class="right" colspan="3"><b>Sede de Classificação: </b></td><td colspan="5"><u>{{professor['sede_c']}}</u></td>
-                        </tr>
-                        <tr>
-                            <td class="right" colspan="3"><b>Sede de Controle de Frequência: </b></td><td colspan="5"><u>{{professor['sede_f']}}</u></td>
-                        </tr>                        
                     </tbody>
                 </table>
 
                 <table class="tb_calendar">
                     <thead>
                         <tr>
-                            <td rowspan="3" class="center" style="width: 84.38px;">
+                            <td colspan="6" class="center right-strong-border" style="width: 84.38px;">
                                 <div class="identificador">2</div>
-                                ASSINATURAS
+                                Jornada Prevista U.E.
                             </td>
-                            <td rowspan="2" colspan="2" class="basic-col">
+                            <td colspan="2" colspan="2" class="basic-col">
                                 <div class="identificador">3</div>
-                                <div class="txt_idf3">Dias</div>
-                            </td>
-                            <td rowspan="2" colspan="4" class="basic-col right-strong-border">
-                                <div class="identificador">4</div>
-                                <div class="txt_idf4">Qtde. aula<br>por dia</div>
-                            </td>
-                            <td colspan="16" class="basic-col">
-                                <div class="identificador">5</div>
-                                <div class="txt_idf5 center">AUSÊNCIAS</div>
+                                <div class="txt_idf3">Ausências</div>
                             </td>
                         </tr>
 
                         <tr>
-                            <td colspan="11" class="center right-strong-border">Nesta Unidade Escolar</td>
-                            <td colspan="3" class="center right-strong-border">Total</td>
-                            <td class="vertical_text center fixed-col" rowspan="2">NATUREZA (TIPO) DA FALTA</td>
-                            <td class="vertical_text center fixed-col" rowspan="2">FALTA MÉDICA PARCIAL</td>
+                            <td colspan="2" class="center">Dias</td>
+                            <td class="vertical_text center fixed-col" rowspan="2">Funções<br>Remuneradas</td>
+                            <td class="vertical_text center fixed-col" rowspan="2">Substituições</td>
+                            <td class="vertical_text center fixed-col" rowspan="2">Recup. / Repos.</td>
+                            <td class="vertical_text center fixed-col right-strong-border" rowspan="2">Total Geral</td>
+                            <td class="vertical_text center fixed-col" rowspan="2">Horas-Aula</td>
+                            <td class="vertical_text center fixed-col" rowspan="2">Natureza</td>
                         </tr>
 
                         <tr>
                             <td class="vertical_text center fixed-col">DIA DO MÊS</td>
                             <td class="vertical_text center fixed-col">DIA DA SEMANA</td>
-                            <td class="vertical_text center fixed-col">AULAS NESTA U.E. (SCF)</td>
-                            <td class="vertical_text center fixed-col">AULAS EM OUTRAS U.E.s</td>
-                            <td class="vertical_text center fixed-col" style="font-size: 7px">SUBSTITUIÇÃO EVENTUAL</td>
-                            <td class="vertical_text center fixed-col right-strong-border">TOTAL GERAL</td>
-
-
-                            {% for i in range(1, 11) %}
-                            <td class="fixed-col">{{i}}ª</td>
-                            {% endfor %}
-
-                            <td class="fixed-col right-strong-border">11ª</td>
-
-                            <td class="vertical_text center fixed-col">U.E. LOCAL</td>
-                            <td class="vertical_text center fixed-col">OUTRAS  U.E.s</td>
-                            <td class="vertical_text center fixed-col right-strong-border">GERAL</td>
-
                         </tr>
 
                     </thead>
@@ -521,37 +439,27 @@
                         {% else %}
                         <tr class="center gray" style="height: 16px;">
                         {% endif %}
-                            {% if professor['assina_livro'] == 1 %}
-                            <td class="red txt-assinatura">{{dia['Assinatura']}}</td>
-                            {% else %}
-                            <td class="red txt-assinatura"></td>
-                            {% endif %}
                             <td class="{{dia['class-txt']}}">{{dia['dia']}}</td>
                             <td class="{{dia['class-txt']}}">{{dia['semana']}}</td>
 
                             {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] == 0 and professor['assina_livro'] == 1 %}
-                            <td class="blue">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
+                            <td class="blue">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td><td></td><td></td>
+                            {% elif dia['evento'] > 0 %}
+                            <td colspan="4" class="right-strong-border">{{dia['Assinatura']}}</td>
+                            {% elif dia['class-bg'] == 'gray' %}
+                            <td colspan="4" class="right-strong-border"></td>
                             {% else %}
-                            <td></td>
+                            <td></td><td></td><td></td>
                             {% endif %}
 
-                            <td></td><td></td>
-
-                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] == 0 and professor['assina_livro'] == 1 %}
+                            {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] == 0 and professor['assina_livro'] == 1 and dia['evento'] == 0 and dia['class-bg'] != 'gray' %}
                             <td class="blue right-strong-border">{{professor['qtd_aulas_semanais'][dia['semana']]}}</td>
-                            {% else %}
+                            {% elif dia['evento'] == 0 and dia['class-bg'] != 'gray' %}
                             <td class = 'right-strong-border'></td>
-                            {% endif %}   
+                            {% endif %}
 
-                            {% for n in range(10) %}
-                            <td></td>
-                            {% endfor %}
-
-                            <td class="right-strong-border"></td>
-
-                            <td></td><td></td><td class="right-strong-border"></td>
-
-                            <td></td><td></td>
+                            <td class="red" contenteditable="true"></td>
+                            <td class="red" contenteditable="true"></td>
 
                         </tr>
                         {% endfor %}
@@ -559,50 +467,32 @@
                     <tfoot>
                         <tr>
                             <td colspan="23" class="center basic-col">
-                                <div class="identificador">6</div>
+                                <div class="identificador">5</div>
                                 OBSERVAÇÕES
                             </td>
                         </tr>
 
                         <!-- Preencher o resto das lacunas do campo observação -->
-                        {% for n in range(linhas) %}
-                        <tr><td style="text-align: left; height: 16px;" colspan="23" class="red basic-col">{{professor['eventos'][n]}}</td></tr>
+                        {% for evento in professor['eventos'] %}
+                        <tr><td style="text-align: left; height: 16px;" colspan="8" class="red basic-col">{{evento}}</td></tr>
                         {% endfor %}
 
-                        {% for n in range(4) %}
-                            {% if professor['quadro']|length > 0 %}
-                            <tr class="center">
-                                <td colspan="11"></td>
-                                <td class="gray" colspan="6" style="height: 16px;">{{professor['quadro'][n]['col1']}}</td>
-                                {% if n == 0 %}
-                                <td class="gray" colspan="3" style="height: 16px;">{{professor['quadro'][n]['col2']}}</td>
-                                <td class="gray" colspan="4" style="height: 16px;">{{professor['quadro'][n]['col3']}}</td>
-                                {% else %}
-                                <td colspan="3" style="height: 16px;">{{professor['quadro'][n]['col2']}}</td>
-                                <td colspan="4" style="height: 16px;">{{professor['quadro'][n]['col3']}}</td>
-                                {% endif %}
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="23" style="height: 16px;">&nbsp;</td></tr>
-                            {% endif %}
+                        {% for n in range(linhas) %}
+                        <tr><td colspan="8">&nbsp;</td></tr>
                         {% endfor %}
 
                         <!-- Campo Assinatura Final -->
                         <tr>
-                            <td colspan="23" class="center basic-col" style="height: 116.1px; border-bottom: none">
-                                <div class="identificador">7</div>
-                                <div class="lb_secretario">
-                                    {{info_assinatura['secretario']}}<br>
-                                    RG: {{info_assinatura['rg_secretario']}}<br>
-                                    {{info_assinatura['cargo_secretario']}}
+                            <td colspan="8" class="center basic-col" style="height: 116.1px; border-bottom: none">
+                                <div class="identificador">6</div>
+                                <div class="lb_secretario" style="font-weight: bold;">
+                                    {{ data_hoje }}
                                 </div>
-                                <div class="lb_diretor">
-                                    {{info_assinatura['diretor']}}<br>
-                                    RG: {{info_assinatura['rg_diretor']}}<br>
-                                    Diretor de Escola
+                                <div class="lb_recebi">
+                                    Recebi em: _____/_____/_____.
                                 </div>                                
                             </td>
-                        </tr>                        
+                        </tr>                       
                     </tfoot>
                 </table>
 
@@ -616,18 +506,13 @@
                 <!-- Basta agora apenas inserir as informações no lado direito da folha onde consta o quadro de aulas -->
                 <div class="side_final">
                     <div class="head_side">
-                        <div class="txt_head_side">ORDEM POR RG</div>
-                        {% if folha_extra > 0 %}
-                        <div class="number_pag">{{ '%02d' % folha_extra}}</div>
-                        {% else %}
-                        <div class="number_pag">{{ '%02d' % loop.index}}</div>
-                        {% endif %}
+                        <div class="txt_head_side">EE MAJOR HERMÓGENES</div>
                     </div>
                     <table class="tb_side">
                         <thead>
                             <tr>
                                 <th style="border-bottom:2px solid black;border-top:2px solid black;" colspan="9" class="center">
-                                    <div class="identificador">8</div>
+                                    <div class="identificador">4</div>
                                     <span>HORÁRIO</span>
                                 </th>
                             </tr>

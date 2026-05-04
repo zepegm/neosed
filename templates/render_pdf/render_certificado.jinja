@@ -1,5 +1,6 @@
 <html lang="pt-BR">
     <title>Render Certificado</title>
+    <link href="{{ url_for('static', filename='stylesheets/print-default.css') }}" rel="stylesheet">
     <style>
         .pagina {
             width: 1106px;
@@ -10,15 +11,17 @@
             background-repeat: no-repeat;
             background-size: cover;
             position: relative;
-            top:12px;
-            margin-bottom: 30px;
+            top:0;
+            margin-bottom: 0;
+            break-before: page; /* Força quebra antes do elemento */
         }
 
-        .pagina:nth-of-type(1)
-        {
-            top:3px;
-        }
-
+        @media print {
+            @page {
+                size: A4 landscape !important;
+            }
+        }        
+        
         .texto {
             position: relative;
             top: 460px;
@@ -49,10 +52,21 @@
 
     </style>
     <body>
+
+        <div id="loading">
+            <div class="loader"></div>
+            <p id="progresso-texto">Preparando PDF...</p>
+            <!-- <div id="barra-container">
+            <div id="barra"></div> -->
+            </div>    
+        </div>
+
+        <button class="btn no-print" onclick="window.print()">Imprimir</button>   
+
         {% for aluno in alunos %}
         <div class="pagina">
             <div class="texto">{{aluno['texto_final']}}</div>
-            <div class="data">Canas, {{aluno['fim']}}</div>
+            <div class="data">Cruzeiro, {{aluno['fim']}}</div>
             <table class="assinatura">
                 <tr>
                     <td>______________________________<br>Concluinte<br>{{aluno['nome_assinatura']}}<br>{{aluno['rg']}}</td>
@@ -62,5 +76,6 @@
             </table>
         </div>
         {% endfor %}
+        <script src="{{ url_for('static', filename='js/print-default.js') }}"></script>
     </body>
 </html>

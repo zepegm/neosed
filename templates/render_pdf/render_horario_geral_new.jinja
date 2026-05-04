@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Rendereziação PDF</title>
+        <link href="{{ url_for('static', filename='stylesheets/print-default.css') }}" rel="stylesheet">
         <style>
 
             @font-face {
@@ -11,12 +12,12 @@
                 url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
             }
 
-            #pagina {
+            .pagina {
                 width: 729px;
                 height: 1062px;
                 color: black;
-                margin-top: -6px;
-                margin-left: -7px;
+                margin-top: 0;
+                margin-left: 0;
                 background-color: white;
             }
 
@@ -45,8 +46,19 @@
         </style>
     </head>
     <body>
+
+        <div id="loading">
+            <div class="loader"></div>
+            <p id="progresso-texto">Preparando PDF...</p>
+            <!-- <div id="barra-container">
+            <div id="barra"></div> -->
+            </div>    
+        </div>
+
+        <button class="btn no-print" onclick="window.print()">Imprimir</button>
+
         {% for dia, turmas_map in timeline.items() %}
-        <div id="pagina">
+        <div class="pagina">
             <p class="title"><span class="red">Horário Geral </span> - {{ dia }} - <span class="blue">{{ tipo_ensino }}</span> - <span class="red">{{data_horario}}</span></p>
             <div class="grid">
                 <div class="col-head">Horário</div>
@@ -87,5 +99,6 @@
 
         </div>
         {% endfor %}
+        <script src="{{ url_for('static', filename='js/print-default.js') }}"></script>
     </body>
 </htmL>

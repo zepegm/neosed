@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Rendereziação PDF</title>
+        <link href="{{ url_for('static', filename='stylesheets/print-default.css') }}" rel="stylesheet">
         <style>
 
             @font-face {
@@ -37,9 +38,9 @@
                 border-width: 2px;
                 border-style: solid;
                 border-color: white;
-                position: absolute;
-                top: 30px;
-                left: 60px;
+                position: relative;
+                top: 0;
+                left: 10mm;
             }
 
             .pag2 {
@@ -48,9 +49,9 @@
                 border-width: 2px;
                 border-style: solid;
                 border-color: white;
-                position: absolute;
-                top: 1160px;
-                left: 30px;                
+                position: relative;
+                top: 0;
+                left: 0;                
             }
           
             .logo {
@@ -206,32 +207,37 @@
             }
 
             .red-line {
-                /*border:1px solid green;*/
-                position:absolute;
-                top: 289px;
+                position: absolute;
                 left: 27px;
-                width:491px;
-                height: 303px;
+                width: 491px;
+                pointer-events: none;
+                overflow: visible;
 
-                background: 
-                    linear-gradient(to top right,
-                        rgba(220,53,69,0) 0%,
-                        rgba(220,53,69,0) calc(50% - 0.8px),
-                        rgba(220,53,69,1) 50%,
-                        rgba(220,53,69,0) calc(50% + 0.8px),
-                        rgba(220,53,69,0) 100%);
-             
-            }            
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }         
 
         </style>
     </head>
     <body>
 
+        <div id="loading">
+            <div class="loader"></div>
+            <p id="progresso-texto">Preparando PDF...</p>
+            <!-- <div id="barra-container">
+            <div id="barra"></div> -->
+            </div>    
+        </div>
+
+        <button class="btn no-print" onclick="window.print()">Imprimir</button>    
+
         <!-- Aqui será feita primeira página -->
         <div class="pag capa">
 
             {% for item in afastamentos %}
-            <div class="red-line" style="top:{{289 + item['inicio'] * 19}}px; height:{{(item['fim'] - 1 - item['inicio']) * 19}}px" data="{{item}}"></div>
+            <svg class="red-line" style=" top: {{289 + item['inicio'] * 19 + 1}}px; height: {{(item['fim'] - 1 - item['inicio']) * 19 + 1}}px; " viewBox="0 0 491 100" preserveAspectRatio="none" data-item="{{ item }}">
+                <line x1="0.5" y1="0.5" x2="490.5" y2="99.5" stroke="rgb(220,53,69)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+            </svg>
             {% endfor %}
 
             <table class="tb_head">
@@ -407,7 +413,5 @@
     </body>
 
     <script src="{{ url_for('static', filename='js/jquery-3.7.0.min.js') }}"></script> 
-    <script>
-
-    </script>
+    <script src="{{ url_for('static', filename='js/print-default.js') }}"></script>
 </html>

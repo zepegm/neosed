@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Rendereziação PDF</title>
+        <link href="{{ url_for('static', filename='stylesheets/print-default.css') }}" rel="stylesheet">
         <style>
 
             @font-face {
@@ -11,14 +12,14 @@
                 url({{ url_for('static', filename='fonts/BebasKai-Regular.woff') }}) format('woff')
             }
 
-            #pagina {
+            .pagina {
                 width: 729px;
                 height: 1057px;
                 border-width: 2px;
                 border-style: solid;
                 border-color: white;
-                position: absolute;
-                top:30px;
+                position: relative;
+                top:0;
                 left: 30px;
                 background-color: white;
             }          
@@ -35,7 +36,7 @@
             #tb_head {
                 font-family: Arial, Helvetica, sans-serif;
                 border-collapse: collapse;
-                width: 100%;
+                width: 99%;
             }
 
             #idf_aluno,
@@ -47,7 +48,7 @@
                 margin-top: 15px;
                 font-family: Arial, Helvetica, sans-serif;
                 border-collapse: collapse;
-                width: 100%;                
+                width: 99%;
             }
 
             #tb_nasc {
@@ -168,7 +169,18 @@
         </style>
     </head> 
     <body>
-        <div id="pagina">
+
+        <div id="loading">
+            <div class="loader"></div>
+            <p id="progresso-texto">Preparando PDF...</p>
+            <!-- <div id="barra-container">
+            <div id="barra"></div> -->
+            </div>    
+        </div>
+
+        <button class="btn no-print" onclick="window.print()">Imprimir</button>   
+
+        <div class="pagina">
             <table id="tb_head">
                 <tbody>
                     <tr>
@@ -366,5 +378,6 @@
             </table>
 
         </div>
+        <script src="{{ url_for('static', filename='js/print-default.js') }}"></script>
     </body>
 </htmL>

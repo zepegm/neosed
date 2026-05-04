@@ -747,6 +747,467 @@ def render_livro_ponto_adm():
 
     return render_template('render_pdf/render_livro_ponto_adm.jinja', mes=getMes(mes), ano=ano, dados=dados, dias=dias_com_fim_de_semana, verso=verso_txt, afastamentos=afastamentos, nome_escola=nome_escola.upper(), banco=banco, cpf=cpf)
 
+@app.route('/render_bo_freq', methods=['GET', 'POST'])
+def render_bo_freq():
+
+    # ---------- parâmetros ----------
+    ano = int(request.args.getlist('ano')[0])
+    mes = int(request.args.getlist('mes')[0])
+    cpf = int(request.args.getlist('cpf')[0])
+    data_aux = date(ano, mes, 2)
+
+    # UA padrão
+    ua_padrao = banco.executarConsulta(
+        "SELECT valor FROM config WHERE id_config = 'ua_sede'"
+    )[0]['valor']
+
+    # período letivo (duracao)
+    duracao_tuple = (1, 3) if mes > 7 else (1, 2)
+
+    # filtro individual
+    professor_individual = request.args.getlist('professor')
+    di_param = request.args.getlist('di')
+    cond_ind = " AND plp.cpf = %s AND plp.di = %s "
+    params_ind = [cpf,
+                    int(di_param[0])]
+
+    folha_extra = int(request.args.get('number', 0))
+
+    # ---------- janelamento do mês ----------
+    primeiro = date(ano, mes, 1)
+    ultimo = date(ano, 12, 31) if mes == 12 else date(ano, mes + 1, 1) - timedelta(days=1)
+
+    # ----------------------------------------------------
+    # 1) Buscar lista de professores (sem subqueries correlacionadas)
+    # ----------------------------------------------------
+    
+    ph_d = ph(duracao_tuple)  # ex.: '(%s,%s)' se tiver 2 itens
+    
+    
+    sql_prof = f"""
+    WITH
+    lp_count AS (
+        SELECT cpf_professor AS cpf, COUNT(*) AS aulas_lp
+        FROM (
+            SELECT cpf_professor, seg AS v, inicio, fim FROM horario_livro_ponto
+            UNION ALL SELECT cpf_professor, ter, inicio, fim FROM horario_livro_ponto
+            UNION ALL SELECT cpf_professor, qua, inicio, fim FROM horario_livro_ponto
+            UNION ALL SELECT cpf_professor, qui, inicio, fim FROM horario_livro_ponto
+            UNION ALL SELECT cpf_professor, sex, inicio, fim FROM horario_livro_ponto
+            UNION ALL SELECT cpf_professor, sab, inicio, fim FROM horario_livro_ponto
+            UNION ALL SELECT cpf_professor, dom, inicio, fim FROM horario_livro_ponto
+        ) u
+        WHERE u.v IS NOT NULL
+            AND UPPER(u.v) NOT IN ('ATPC','SLN','REAN','PATN','INV')
+        GROUP BY cpf
+    ),
+    mat_count AS (
+      SELECT cpf, SUM(qtd) AS aulas_matriz
+      FROM (
+        SELECT m.cpf_professor AS cpf, COALESCE(SUM(m.qtd_aulas),0) AS qtd
+        FROM matriz_curricular m
+        JOIN turma t ON t.num_classe = m.num_classe
+        WHERE t.ano = %s AND t.duracao IN {ph_d}
+        GROUP BY m.cpf_professor
+        UNION ALL
+        SELECT m.cpf_professor_2 AS cpf, COALESCE(SUM(m.qtd_aulas),0) AS qtd
+        FROM matriz_curricular m
+        JOIN turma t ON t.num_classe = m.num_classe
+        WHERE m.cpf_professor_2 IS NOT NULL
+          AND t.ano = %s AND t.duracao IN {ph_d}
+        GROUP BY m.cpf_professor_2
+      ) x
+      GROUP BY cpf
+    )
+    SELECT
+      plp.instancia_calendario, plp.nome, IF(plp.di=0,'-',plp.di) AS di, plp.rg,
+      IFNULL(plp.digito,'') AS digito, IFNULL(plp.rs,'-') AS rs, IFNULL(plp.pv,'') AS pv,
+      plp.cpf, cargos_livro_ponto.descricao AS cargo,
+      CONCAT(categoria_livro_ponto.letra, ' - ', categoria_livro_ponto.descricao) AS categoria,
+
+      CASE WHEN plp.afastamento IS NULL THEN
+         REPLACE(
+           CONCAT('Atribuída(s) ',
+                  IFNULL(lp_count.aulas_lp,0)+IFNULL(mat_count.aulas_matriz,0),
+                  ' aula(s) nesta UE'),
+           'Atribuída(s) 0 aula(s) nesta UE', 'Não Possui Aulas Atribuídas')
+      ELSE CONCAT(afastamento_livro_ponto.prefixo, afastamento_livro_ponto.descricao)
+      END AS situacao,
+
+      IFNULL(plp.FNREF,'') AS FNREF, jornada_livro_ponto.descricao AS jornada,
+      jornada_livro_ponto.qtd AS qtd_jornada,
+      IFNULL(lp_count.aulas_lp,0) + IFNULL(mat_count.aulas_matriz,0) AS total_aulas,
+      IFNULL(plp.afastamento,'') AS afastamento,
+      IFNULL(disciplinas.descricao,'Não Possui') AS disciplina, IFNULL(plp.obs,'') AS obs,
+      IFNULL(plp.aulas_outra_ue,0) AS aulas_outra_ue,
+      CASE WHEN plp.atpc>0 OR plp.atpl>0 THEN CONCAT(' + ',plp.atpc,' ATPC(s) + ',plp.atpl,' ATPL(s)') ELSE '' END AS atpc,
+      IFNULL(plp.atpc + plp.atpl,0) AS soma_atpc,
+      plp.assina_livro,
+      CONCAT(c.id,' - ',c.descricao) AS sede_c, CONCAT(f.id,' - ',f.descricao) AS sede_f
+    FROM professor_livro_ponto plp
+    JOIN sede_livro_ponto c ON c.id = plp.sede_classificacao
+    JOIN sede_livro_ponto f ON f.id = plp.sede_controle_freq
+    LEFT JOIN disciplinas ON disciplinas.codigo_disciplina = plp.disciplina
+    JOIN cargos_livro_ponto ON cargos_livro_ponto.id = plp.cargo
+    JOIN categoria_livro_ponto ON categoria_livro_ponto.id = plp.categoria
+    LEFT JOIN afastamento_livro_ponto ON afastamento_livro_ponto.id = plp.afastamento
+    JOIN jornada_livro_ponto ON jornada_livro_ponto.id = plp.jornada
+    LEFT JOIN lp_count ON lp_count.cpf = plp.cpf
+    LEFT JOIN mat_count ON mat_count.cpf = plp.cpf
+    WHERE plp.ativo = 1
+    {cond_ind}
+    ORDER BY plp.rg
+    """
+
+    params_prof = [ano, *duracao_tuple, ano, *duracao_tuple] + params_ind
+    professores = banco.executarConsulta(sql_prof, params_prof)
+
+
+    # Lista de CPFs e instâncias (para pré-carregar tudo)
+    cpfs = [int(p['cpf']) for p in professores]
+    insts = list({int(p['instancia_calendario']) for p in professores}) or [1]
+
+    # ----------------------------------------------------
+    # 2) Pré-carregar aulas_outra_ue, licenças e eventos (1 consulta de cada)
+    # ----------------------------------------------------
+    if cpfs:
+        ph_cpfs = ph(cpfs)
+        sql_ue = f"""
+            SELECT cpf_professor, semana, qtd
+            FROM aulas_outra_ue_livro_ponto
+            WHERE cpf_professor IN {ph_cpfs}
+            """
+        linhas_ue = banco.executarConsulta(sql_ue, [*cpfs])
+    else:
+        # nada a buscar
+        linhas_ue = []
+
+    mapa_ue = {}
+    for r in linhas_ue:
+        mapa_ue.setdefault(int(r['cpf_professor']), {})[r['semana']] = r['qtd']
+
+    if cpfs:
+        ph_cpfs = ph(cpfs)
+        sql_lic = f"""
+        SELECT l.cpf, l.inicio, l.fim, l.descricao,
+                t.descricao AS desc_tipo, t.redline, t.exibicao
+        FROM licenca_professores l
+        JOIN tipo_licenca_professores t ON t.id = l.id_tipo
+        WHERE l.cpf IN {ph_cpfs}
+            AND NOT (l.fim < %s OR l.inicio > %s)
+        """
+        licencas_mes = banco.executarConsulta(sql_lic, [*cpfs, primeiro, ultimo])
+    else:
+        # sem CPFs, evita IN vazio
+        sql_lic = """
+        SELECT l.cpf, l.inicio, l.fim, l.descricao,
+                t.descricao AS desc_tipo, t.redline, t.exibicao
+        FROM licenca_professores l
+        JOIN tipo_licenca_professores t ON t.id = l.id_tipo
+        WHERE 1=0
+        """
+        licencas_mes = banco.executarConsulta(sql_lic)
+
+
+    lic_map = {}
+    for r in licencas_mes:
+        lic_map.setdefault(int(r['cpf']), []).append(r)
+
+    if insts:
+        ph_insts = ph(insts)
+        sql_evt = f"""
+        SELECT e.instancia_calendario, e.data_inicial, e.data_final,
+                cl.descricao AS cat, cl.qtd_letivo,
+                e.descricao, e.evento
+        FROM eventos_calendario e
+        JOIN cat_letivo cl ON cl.id = e.evento
+        WHERE e.instancia_calendario IN {ph_insts}
+            AND NOT (e.data_final < %s OR e.data_inicial > %s)
+        ORDER BY e.data_inicial
+        """
+        evts_mes = banco.executarConsulta(sql_evt, [*insts, primeiro, ultimo])
+    else:
+        evts_mes = []
+
+    evt_map = {}
+    for r in evts_mes:
+        evt_map.setdefault(int(r['instancia_calendario']), []).append(r)
+
+    # ----------------------------------------------------
+    # 3) Processar cada professor (sem novas idas ao DB além da SP do quadro)
+    # ----------------------------------------------------
+    pos_inicial = 2278
+    sumario = []
+    cont_pag = 1
+
+    for professor in professores:
+        sumario.append({'professor': professor['nome'], 'pag': cont_pag})
+        cont_pag += 1
+
+        professor['pos'] = pos_inicial
+        pos_inicial += 1124
+
+        # Formatações (RG/RS/CPF) — como no seu código
+        aux_rg = '%08d' % int(professor['rg'])
+        professor['rg'] = aux_rg[0:2] + "." + aux_rg[2:5] + "." + aux_rg[5:]
+        if professor['digito'] != '':
+            professor['rg'] += "-" + professor['digito']
+
+        aux_rs = '%08d' % int(professor['rs']) if str(professor['rs']).isdigit() else '00000000'
+        professor['rs'] = aux_rs[0:2] + "." + aux_rs[2:5] + "." + aux_rs[5:]
+        if professor['pv'] != '':
+            professor['rs'] += " / " + '%02d' % int(professor['pv'])
+
+        aux = '%011d' % int(professor['cpf'])
+        professor['cpf'] = aux[:3] + "." + aux[3:6] + "." + aux[6:9] + "-" + aux[9:]
+        cpf_int = int(aux.replace('.', '').replace('-', ''))
+
+        # textos padrão
+        professor['txt_carga'] = 'Carga Horária:'
+        professor['txt_sit'] = 'Afast.:'
+        professor['class_afast'] = ''
+        professor['carga'] = ''
+
+        if professor['afastamento'] == '':
+            professor['txt_sit'] = 'Qtd. Aulas:'
+            if professor['total_aulas'] > 0:
+                professor['carga'] = f"{professor['total_aulas']} aula(s) nesta UE."
+        else:
+            professor['class_afast'] = 'red'
+
+        # Jornada / carga suplementar (mesma regra)
+        if professor['jornada'] != '-':
+            professor['txt_carga'] = "Carga Suplementar:"
+            if professor['afastamento'] == '':
+                total = int(professor['total_aulas']) + int(professor['aulas_outra_ue'])
+                resto = total - professor['qtd_jornada']
+                professor['jornada'] = f"{professor['jornada']} - {professor['qtd_jornada']} aulas"
+                if int(professor['sede_c'][:5]) != int(ua_padrao):
+                    professor['carga'] = "Sede em outra UE"
+                else:
+                    professor['carga'] = f"{resto} aula(s)" if resto > 0 else "Não Possui"
+        else:
+            professor['jornada'] = 'Não Possui'
+
+
+        # -------- quadro de carga -------------
+        quadro = []
+        if int(professor['sede_c'][:5]) == int(ua_padrao):
+            # quadro estará visível somente para professores com sede aqui
+            if professor['afastamento'] == '': # quadro estará visível somente para professores que não estão designados ou afastados
+                if professor['total_aulas'] > 0: # quadro estará visível apenas para quem tiver aula
+                    if professor['jornada'] != 'Não Possui': # para os professores que tem jornada
+                        quadro.append({'col1':'<b>RESUMO (horas)</b>', 'col2':'Semanal', 'col3':'Mensal'})
+                        horas_jornada = int(round((professor['qtd_jornada'] + professor['soma_atpc']) * 50 / 60, 0))
+                        quadro.append({'col1':'JORNADA', 'col2':horas_jornada, 'col3':horas_jornada * 5})
+                        horas_suplementar = int(round((int(professor['total_aulas']) + int(professor['aulas_outra_ue']) - professor['qtd_jornada']) * 50 / 60, 0))
+                        quadro.append({'col1':'CARGA SUPLEMENTAR', 'col2':horas_suplementar, 'col3':horas_suplementar * 5})
+                        quadro.append({'col1':'TOTAL', 'col2':horas_jornada + horas_suplementar, 'col3':horas_jornada * 5 + horas_suplementar * 5})
+                    else: # para quem não tem jornada
+                        quadro.append({'col1':'<b>RESUMO (horas)</b>', 'col2':'Semanal', 'col3':'Mensal'})
+                        quadro.append({'col1':'NÃO POSSUI JORNADA', 'col2':'-', 'col3':'-'})
+                        horas_carga = int(round((professor['total_aulas'] + professor['aulas_outra_ue'] + professor['soma_atpc']) * 50 / 60, 0))
+                        quadro.append({'col1':'CARGA HORÁRIA', 'col2':horas_carga, 'col3':horas_carga * 5})
+                        quadro.append({'col1':'TOTAL', 'col2':horas_carga, 'col3':horas_carga * 5})
+                        
+                        
+        professor['quadro'] = quadro        
+
+        # -------- quadro lateral (horário) via SP unificada --------
+        if professor['assina_livro'] == 1:
+            professor['quadro_aula'] = banco.executarConsulta(
+                "CALL sp_horario_professor_v2(%s, %s, %s, %s)",
+                (cpf_int, data_aux.strftime("%Y-%m-%d"), 'apelido', 1)
+            )
+
+            print("CALL sp_horario_professor_v2(%s, %s, %s, %s)", (cpf_int, data_aux.strftime("%Y-%m-%d"), 'apelido', 1))
+
+        else:
+            professor['quadro_aula'] = []
+
+        # -------- contagem semanal (sem SQL) --------
+        if professor['assina_livro'] == 0:
+            qtd_semanais = {k: 0 for k in SEMANA_SIGLAS}
+        elif professor['afastamento'] in ('292', '411'):
+            qtd_semanais = {'seg':9, 'ter':9, 'qua':9, 'qui':9, 'sex':9, 'sáb':0, 'dom':0}
+        else:
+            qtd_semanais = contar_quadro_semanais(professor['quadro_aula'])
+        professor['qtd_aulas_semanais'] = qtd_semanais
+
+        # -------- aulas em outras UEs (pré-carregado) --------
+        professor['aulas_ue'] = mapa_ue.get(cpf_int, {})
+
+        # -------- total_geral (UE local + outras UEs) --------
+        total_aulas_geral = {}
+        for dia in SEMANA_SIGLAS:
+            outras = int(professor['aulas_ue'].get(dia, 0) or 0)
+            local = int(qtd_semanais.get(dia, 0) or 0)
+            total = outras + local
+            total_aulas_geral[dia] = '' if total < 1 else total
+        professor['total_geral'] = total_aulas_geral
+
+        # -------- dias do mês (sem SQL por dia) --------
+        qtd_dias = calendar.monthrange(ano, mes)[1]
+        professor['extra_red'] = ''
+        cont_deixou = 0
+        top_deixou = 303
+        height_deixou = 0
+        dias = []
+
+        for i in range(1, qtd_dias + 1):
+            d = date(ano, mes, i)
+            idx = d.weekday()  # 0=seg ... 6=dom
+            semana_sigla = SEMANA_SIGLAS[idx]
+
+            lic = licenca_do_dia(lic_map, cpf_int, d)
+            if lic:
+                if lic['redline'] == 1:
+                    if cont_deixou == 0:
+                        top_deixou += ((i - 1) * 16)
+                        cont_deixou = 1
+                    else:
+                        cont_deixou += 1
+                        height_deixou = cont_deixou * 16
+                        professor['extra_red'] = '<div class="red-line-extra-min" style="top: %spx; height: %spx"></div>' % (top_deixou, height_deixou)
+                dias.append({
+                    'dia': f'{i:02d}',
+                    'Assinatura': (lic['desc_tipo'] or '').replace('Sem vínculo', ''),
+                    'semana': semana_sigla,
+                    'class-bg': 'gray',
+                    'class-txt': 'black',
+                    'evento': 11
+                })
+                continue
+
+            ev = evento_do_dia(evt_map, professor['instancia_calendario'], d)
+            if idx < 5:  # seg-sex
+                if ev:
+                    if ev['evento'] == 11:
+                        professor['extra_red'] = f'<div class="red-line-extra" style="height: {i * 16}px"></div>'
+                    elif ev['evento'] == 12:
+                        if cont_deixou == 0:
+                            top_deixou += ((i - 1) * 16)
+                            cont_deixou = 1
+                        else:
+                            cont_deixou += 1
+                            height_deixou = cont_deixou * 16
+                            professor['extra_red'] = '<div class="red-line-extra-min" style="top: %spx; height: %spx"></div>' % (top_deixou, height_deixou)
+
+                    desc = ev['cat'] or ''
+                    if ev['qtd_letivo'] < 1 and (ev['evento'] < 7 or ev['evento'] > 9):
+                        dias.append({'dia': f'{i:02d}', 'Assinatura': desc.replace("Sem vínculo", '').replace('Deixou de ministrar aulas nesta U.E.', ''),
+                                     'semana': semana_sigla, 'class-bg': 'gray', 'class-txt': 'black', 'evento': ev['evento']})
+                    else:
+                        dias.append({'dia': f'{i:02d}', 'Assinatura': '', 'semana': semana_sigla,
+                                     'class-bg': '', 'class-txt': 'black', 'evento': ev['evento']})
+                else:
+                    dias.append({'dia': f'{i:02d}', 'Assinatura': '', 'semana': semana_sigla,
+                                 'class-bg': '', 'class-txt': 'black', 'evento': 0})
+            else:  # sáb/dom
+                if ev:
+                    if ev['evento'] == 11:
+                        professor['extra_red'] = f'<div class="red-line-extra" style="height: {i * 16}px"></div>'
+                    elif ev['evento'] == 12:
+                        if cont_deixou == 0:
+                            top_deixou += ((i - 1) * 16)
+                            cont_deixou = 1
+                        else:
+                            height_deixou = cont_deixou * 16
+                            professor['extra_red'] = '<div class="red-line-extra-min" style="top: %spx; height: %spx"></div>' % (top_deixou, height_deixou)
+                            cont_deixou += 1
+                    desc = ev['descricao'] or ev['cat'] or ''
+                    if ev['qtd_letivo'] > 0:
+                        dias.append({'dia': f'{i:02d}', 'Assinatura': '', 'semana': semana_sigla,
+                                     'class-bg': '', 'class-txt': 'red', 'evento': ev['evento']})
+                    else:
+                        dias.append({'dia': f'{i:02d}', 'Assinatura': desc.replace("Sem vínculo", '').replace('Deixou de ministrar aulas nesta U.E.', ''),
+                                     'semana': semana_sigla, 'class-bg': 'gray', 'class-txt': 'red', 'evento': ev['evento']})
+                else:
+                    dias.append({'dia': f'{i:02d}', 'Assinatura': d.strftime("%A").title(),
+                                 'semana': semana_sigla, 'class-bg': 'gray', 'class-txt': 'red', 'evento': 0})
+
+        professor['dias'] = dias
+        # mantém suas variáveis auxiliares (usadas no template)
+
+
+        # -------- observações (eventos/obs/licenças) --------
+        licencas_txt = []
+        for l in lic_map.get(cpf_int, []):
+            licencas_txt.append( (render_exibicao(l['exibicao'], l['inicio'], l['fim']) + ' ' + (l['descricao'] or '')).strip() )
+
+        # monta lista final como você fazia
+        lst_final_eventos = []
+        if professor['assina_livro'] == 0:
+            lst_final_eventos.append("NÃO ASSINA ESTE LIVRO PONTO")
+
+        if professor['obs']:
+            lst_final_eventos.append(professor['obs'])
+
+        lst_final_eventos.extend(licencas_txt)
+
+        txt_eventos = ''
+        for ev in evt_map.get(int(professor['instancia_calendario']), []):
+
+            print(ev)
+
+            desc = ev['descricao'] or ev['cat'] or ''
+            if ev['evento'] == 12:
+                txt_eventos = f"A partir de {ev['data_inicial'].strftime('%d')}: {desc}"
+                lst_final_eventos.append(txt_eventos)
+                
+            else:
+                if ev['data_inicial'] == ev['data_final']:
+                    txt_eventos = f"Dia {ev['data_inicial'].strftime('%d')}: {desc}"
+                    lst_final_eventos.append(txt_eventos)
+                else:
+                    txt_eventos = f"De {ev['data_inicial'].strftime('%d/%m')} até {ev['data_final'].strftime('%d/%m/%Y')}: {desc}"
+                    lst_final_eventos.append(txt_eventos)
+
+
+        professor['eventos'] = lst_final_eventos
+
+
+        linhas = 5 + (30 - len(dias)) - len(professor['eventos'])
+
+        print('--------------------')
+        print(linhas)
+        print('--------------------')
+
+
+    # ----------------------------------------------------
+    # 4) Assinaturas (ok manter como está)
+    # ----------------------------------------------------
+    info_assinatura = banco.executarConsulta(
+        "SELECT "
+        "(SELECT valor FROM config WHERE id_config = 'diretor_ponto') AS diretor, "
+        "(SELECT valor FROM config WHERE id_config = 'rg_diretor_ponto') AS rg_diretor, "
+        "(SELECT valor FROM config WHERE id_config = 'secretario_ponto') AS secretario, "
+        "(SELECT valor FROM config WHERE id_config = 'rg_secretario_ponto') AS rg_secretario, "
+        "(SELECT valor FROM config WHERE id_config = 'cargo_secretario_ponto') AS cargo_secretario"
+    )[0]
+
+    # sumário
+    sumario.sort(key=lambda t: (locale.strxfrm(t['professor'])))
+
+    # dias_semana para o template
+    dias_semana = SEMANA_SIGLAS
+
+    # Atenção: o template usa 'dias' e 'linhas' "globais"; passamos do último professor,
+    # assim como seu código original fazia.
+    return render_template(
+        'render_pdf/render_bo_freq.jinja',
+        professores=professores,
+        data=f'{getMes(mes)} / {ano}',
+        dias=dias,
+        eventos=lst_final_eventos,
+        linhas=linhas,
+        info_assinatura=info_assinatura,
+        dias_semana=dias_semana,
+        sumario=sumario,
+        folha_extra=folha_extra,
+        data_hoje = datetime.now().strftime('%d/%m/%Y')
+    )                    
+
 
 
 @app.route('/render_livro_ponto', methods=['GET', 'POST'])
@@ -2917,27 +3378,27 @@ async def gerar_pdf():
     #)
 
     if info['destino'] == 1:
-        pdf_path = 'static/docs/lista.pdf'
+        #pdf_path = 'static/docs/lista.pdf'
 
-        print('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']))
+        #print('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']))
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)       
+        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']))       
 
     elif info['destino'] == 2:
-        print(info)
-        pdf_path = 'static/docs/lista.pdf'
+        #print(info)
+        #pdf_path = 'static/docs/lista.pdf'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=0' % (request.host, info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=0' % (request.host, info['tipo'], info['turma']), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)  
+        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=0' % (request.host, info['tipo'], info['turma']))  
 
     elif info['destino'] == 3: # declaração de matrícula normal
 
@@ -2957,73 +3418,73 @@ async def gerar_pdf():
         except:
             aux_info = info
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
     elif info['destino'] == 4:
 
         pdf_path = 'static/docs/declaracao.pdf'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path) 
+        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host) 
     
     elif info['destino'] == 5: # conselho bimestral
         pdf_path = 'static/docs/conselho.pdf'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (request.host, info['bimestre'], info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (request.host, info['bimestre'], info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)  
+        return jsonify('http://%s/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (request.host, info['bimestre'], info['num_classe'], info['ano']))  
 
     elif info['destino'] == 6: # conselho bimestral completo
         pdf_path = 'static/docs/conselho.pdf'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (request.host, info['bimestre'], info['ano']), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (request.host, info['bimestre'], info['ano']), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (request.host, info['bimestre'], info['ano']))
     
     elif info['destino'] == 7: # livro ponto completo
         pdf_path = 'static/docs/livro_ponto.pdf'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_livro_ponto?mes=%s&ano=%s&order=0' % (request.host, info['mes'], info['ano']), {'waitUntil':'load', 'timeout':60000})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_livro_ponto?mes=%s&ano=%s&order=0' % (request.host, info['mes'], info['ano']), {'waitUntil':'load', 'timeout':60000})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_livro_ponto?mes=%s&ano=%s&order=0' % (request.host, info['mes'], info['ano']))
     
     elif info['destino'] == 8: # certificados
         pdf_path = 'static/docs/certificados.pdf'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_certificados_conclusao?classe=%s&order=0' % (request.host, info['classe']), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_certificados_conclusao?classe=%s&order=0' % (request.host, info['classe']), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_certificados_conclusao?classe=%s&order=0' % (request.host, info['classe']))
     
     elif info['destino'] == 9: # livro ponto individual
         pdf_path = 'static/docs/certificados.pdf'   
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (request.host, info['mes'], info['ano'], info['professor'], info['number'], info['di']), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (request.host, info['mes'], info['ano'], info['professor'], info['number'], info['di']), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (request.host, info['mes'], info['ano'], info['professor'], info['number'], info['di']))
     
     elif info['destino'] == 10: # ficha de matrícula
         pdf_path = 'static/docs/ficha.pdf'
@@ -3036,12 +3497,12 @@ async def gerar_pdf():
             url += '&nome=%s&nome_social=%s&pai=%s&mae=%s&cidade=%s&estado=%s&nascimento=%s&endereco=%s&telefone=%s&email=%s' % (info['nome'].replace(' ', '+'), info['nome_social'].replace(' ', '+'), info['nome_pai'].replace(' ', '+'), info['nome_mae'].replace(' ', '+'), info['cidade_nasc'].replace(' ', '+'), info['uf_nascimento'], info['nascimento'], info['endereco'].replace(' ', '+'), info['telefone'], info['email'])
             url += '&serie_desc=%s&serie_simples=%s&fund=%s&medio=%s&ano=%s' % (info['serie_desc'].replace(' ', '+'), info['serie_simples'].replace(' ', '+'), info['fund'], info['medio'], info['ano'])
 
-            page = await browser.newPage()
-            await page.goto(url, {'waitUntil':'networkidle2'})
-            await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-            await browser.close()
+            #page = await browser.newPage()
+            #await page.goto(url, {'waitUntil':'networkidle2'})
+            #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+            #await browser.close()
 
-            return jsonify({'status':True,'path':pdf_path})
+            return jsonify({'status':True,'path':url})
         
         except Exception as error:
             print("An exception occurred:", error)
@@ -3073,24 +3534,24 @@ async def gerar_pdf():
         aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':None, 'assinatura':info['assinatura']}
    
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
 
     elif info['destino'] == 12: # boletins
 
         pdf_path = 'static/docs/boletins.pdf'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_boletim?num_classe=%s&ano=%s&order=0' % (request.host, info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_boletim?num_classe=%s&ano=%s&order=0' % (request.host, info['num_classe'], info['ano']), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_boletim?num_classe=%s&ano=%s&order=0' % (request.host, info['num_classe'], info['ano']))
 
     elif info['destino'] == 13: # declaração completa
 
@@ -3116,12 +3577,12 @@ async def gerar_pdf():
 
         aux_info = {'nome':aluno['nome'], 'rg':aluno['rg'], 'ra':aluno['ra'], 'cpf':aluno['cpf'], 'genero':aluno['sexo'].lower(), 'tipo':4, 'info_classe':info_classe, 'percent':freq_percent, 'bimestre':bimestre, 'anos':info['anos']}
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host, {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
     
     elif info['destino'] == 14: #livro ponto ADM
 
@@ -3130,12 +3591,12 @@ async def gerar_pdf():
         ano = info['ano']
         mes = info['mes']
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (request.host, cpf, mes, ano), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (request.host, cpf, mes, ano), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (request.host, cpf, mes, ano))
 
     elif info['destino'] == 15: #horário geral com legenda ou individual
         pdf_path_1 = 'static/docs/horario_horizontal.pdf'
@@ -3153,18 +3614,16 @@ async def gerar_pdf():
         if ensino == 'individual_salas':
             estilo = 'individual_salas'
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (request.host, estilo, ensino, ano, data), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '9mm', 'left': '10mm'}})
-
-        if (estilo == 'individual'):
-            await browser.close()
-            return jsonify(pdf_path)
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (request.host, estilo, ensino, ano, data), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '9mm', 'left': '10mm'}})
+        
+        #await browser.close()
+        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (request.host, estilo, ensino, ano, data))
 
         #await page.goto('http://localhost/render_lista?tipo=grade_salas&num_classe=%s&order=%s&data=%s' % (ensino, ano, data), {'waitUntil':'networkidle2'})
         #await page.pdf({'path': pdf_path_2, 'format':'A4', 'landscape': True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
 
-        await browser.close()
 
         # Mesclar os PDFs
         #merger = PdfMerger()
@@ -3173,7 +3632,6 @@ async def gerar_pdf():
         #merger.write(pdf_path)
         #merger.close()        
 
-        return jsonify(pdf_path)
 
     elif info['destino'] == 16: # lista de chamada
         pdf_path = 'static/docs/chamada.pdf'
@@ -3183,12 +3641,12 @@ async def gerar_pdf():
         num_classe = info['turma']
         cor = info['cor'].replace("#", '')     
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (request.host, num_classe, order, mes, cor), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (request.host, num_classe, order, mes, cor), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)
+        return jsonify('http://%s/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (request.host, num_classe, order, mes, cor))
 
     elif info['destino'] == 17:
         pdf_path = 'static/docs/assinatura.pdf'
@@ -3199,12 +3657,12 @@ async def gerar_pdf():
         titulo = info['titulo']
         colunas = info['colunas']   
 
-        page = await browser.newPage()
-        await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (request.host, tipo, num_classe, order, titulo, colunas), {'waitUntil':'networkidle2'})
-        await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
-        await browser.close()
+        #page = await browser.newPage()
+        #await page.goto('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (request.host, tipo, num_classe, order, titulo, colunas), {'waitUntil':'networkidle2'})
+        #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
+        #await browser.close()
 
-        return jsonify(pdf_path)    
+        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (request.host, tipo, num_classe, order, titulo, colunas))    
 
     elif info['destino'] == 18: # declaração de transferência
         pdf_path = 'static/docs/declaracao.pdf'
