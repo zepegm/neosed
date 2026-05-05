@@ -33,13 +33,13 @@
 
 
             .pag {
-                width: 588px;
-                height: 1057px;
+                /*width: 588px;
+                height: 1057px;*/
                 border-width: 2px;
                 border-style: solid;
-                border-color: black;
+                border-color: white;
                 position: relative;
-                left: 10mm;
+                margin-left: 125px;
                 padding: 0;
                 break-before: page !important; /* Força quebra antes do elemento */
             }
@@ -89,11 +89,13 @@
             }
 
             .head {
-                border-right: black solid 1px;
+                border-right: black solid 2px;
+                border-top: black solid 2px;
+                border-left: black solid 2px;
                 position: absolute;
                 top: -1px;
                 left: -1px;
-                width: 370px;
+                /*width: 370px;*/
                 /*line-height: 0.62;*/
             }
 
@@ -105,13 +107,12 @@
             }
 
             .tb_calendar {
-                border: 1px solid;
-                border-color: black;
+                border: none !important;
                 border-collapse: collapse;
 
                 position: relative;
                 left: 0px;
-                width: 370px;
+                /*width: 370px;
                 /*table-layout: fixed;*/
             }
 
@@ -159,7 +160,10 @@
             }
 
             .txt_idf3 {
-                margin-top: 15px;
+                margin-top: 7px;
+                margin-bottom: 7px;
+                font-weight: bold;
+                font-size:9px;
             }
 
             .txt_idf4 {
@@ -179,6 +183,11 @@
             }
 
             .fixed-col {
+                width: 25px;
+                text-align: center;
+            }
+
+            .fixed-col-2 {
                 width: 15px;
                 text-align: center;
             }
@@ -204,6 +213,7 @@
                 width: 80px;
                 line-height: 1.4;
                 left:50px;
+                margin-top:35px;
             }
 
             .lb_diretor {
@@ -221,6 +231,7 @@
                 left: 369px;
                 width: 220px;
                 height: 1058px;
+                display:none;
             }
 
             .head_side {
@@ -351,6 +362,10 @@
             .red-line-extra-min {
                 width: 84.38px;
             }
+
+            .blank-line {
+                border-bottom:1px solid #BBB !important;
+            }
           
 
         </style>
@@ -406,40 +421,83 @@
                 <table class="tb_calendar">
                     <thead>
                         <tr>
-                            <td colspan="6" class="center right-strong-border" style="width: 84.38px;">
+                            <td colspan="6" class="center right-strong-border" style="width: 84.38px;border-left:none;">
                                 <div class="identificador">2</div>
-                                Jornada Prevista U.E.
+                                <div class="center txt_idf3">Jornada Prevista U.E.</div>
                             </td>
-                            <td colspan="2" colspan="2" class="basic-col">
+                            <td colspan="2" colspan="2" class="basic-col right-strong-border">
                                 <div class="identificador">3</div>
-                                <div class="txt_idf3">Ausências</div>
+                                <div class="center" style="margin-top:15px; font-weight: bold;">Ausências</div>
+                            </td>
+                            <td colspan="9" class="basic-col" style="border-right: none;">
+                                <div class="identificador">4</div>
+                                <div class="center txt_idf3">Horário</div>
                             </td>
                         </tr>
 
                         <tr>
-                            <td colspan="2" class="center">Dias</td>
-                            <td class="vertical_text center fixed-col" rowspan="2">Funções<br>Remuneradas</td>
-                            <td class="vertical_text center fixed-col" rowspan="2">Substituições</td>
-                            <td class="vertical_text center fixed-col" rowspan="2">Recup. / Repos.</td>
-                            <td class="vertical_text center fixed-col right-strong-border" rowspan="2">Total Geral</td>
-                            <td class="vertical_text center fixed-col" rowspan="2">Horas-Aula</td>
-                            <td class="vertical_text center fixed-col" rowspan="2">Natureza</td>
+                            <td colspan="2" class="center" style="border-left:none;">Dias</td>
+                            <td class="vertical_text center fixed-col" rowspan="7">Funções<br>Remuneradas</td>
+                            <td class="vertical_text center fixed-col" rowspan="7">Substituições</td>
+                            <td class="vertical_text center fixed-col" rowspan="7">Recup. / Repos.</td>
+                            <td class="vertical_text center fixed-col right-strong-border" rowspan="7">Total Geral</td>
+                            <td class="vertical_text center fixed-col" rowspan="7">Horas-Aula</td>
+                            <td class="vertical_text center fixed-col right-strong-border" rowspan="7">Natureza</td>
+                            <td class="center">Períodos<br>e Aulas</td>
+                            <td class="center" style="width:50px;">Início e<br>Término</td>
+                            <td class="center fixed-col-2" style="font-size:7px;">Seg</td>
+                            <td class="center fixed-col-2" style="font-size:7px;">Ter</td>
+                            <td class="center fixed-col-2" style="font-size:7px;">Qua</td>
+                            <td class="center fixed-col-2" style="font-size:7px;">Qui</td>
+                            <td class="center fixed-col-2" style="font-size:7px;">Sex</td>
+                            <td class="center fixed-col-2" style="font-size:7px;">Sáb</td>
+                            <td class="center fixed-col-2" style="border-right: none; font-size:7px;">Dom</td>
                         </tr>
 
                         <tr>
-                            <td class="vertical_text center fixed-col">DIA DO MÊS</td>
-                            <td class="vertical_text center fixed-col">DIA DA SEMANA</td>
+                            <td class="vertical_text center fixed-col" rowspan="6" style="border-left:none;">DIA DO MÊS</td>
+                            <td class="vertical_text center fixed-col" rowspan="6">DIA DA SEMANA</td>
                         </tr>
+
+                        <!-- Desenhar Início do Horário -->
+                        {% for n in range(5) %}
+                        <tr style="font-size:6px;height: 16px;">
+                            {% if n < professor['quadro_aula']|length %}
+                            <td style="font-size:6px;" class="center">{{professor['quadro_aula'][n]['periodo']}}</td>
+                            <td style="font-size:6px;" class="center">{{professor['quadro_aula'][n]['horario']}}</td>
+                            <td style="font-size:6px;" class="center green">{{professor['quadro_aula'][n]['seg'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px;" class="center green">{{professor['quadro_aula'][n]['ter'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px;" class="center green">{{professor['quadro_aula'][n]['qua'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px;" class="center green">{{professor['quadro_aula'][n]['qui'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px;" class="center green">{{professor['quadro_aula'][n]['sex'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px;" class="center green">{{professor['quadro_aula'][n]['sab'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px; border-right: none;" class="center green">{{professor['quadro_aula'][n]['dom'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            {% else %}
+                            <td style="font-size:6px;" class="center">-</td>
+                            <td style="font-size:6px;" class="center">-</td>
+                            <td style="font-size:6px;" class="center green">-</td>
+                            <td style="font-size:6px;" class="center green">-</td>
+                            <td style="font-size:6px;" class="center green">-</td>
+                            <td style="font-size:6px;" class="center green">-</td>
+                            <td style="font-size:6px;" class="center green">-</td>
+                            <td style="font-size:6px;" class="center green">-</td>
+                            <td style="border-right: none;" class="center green">-</td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
 
                     </thead>
                     <tbody>
+
+                        {% set ns = namespace(contador=5, total = 0) %}
+
                         {% for dia in professor['dias'] %}
                         {% if professor['assina_livro'] == 1 %}
                         <tr class="center {{dia['class-bg']}}" style="height: 16px;">
                         {% else %}
                         <tr class="center gray" style="height: 16px;">
                         {% endif %}
-                            <td class="{{dia['class-txt']}}">{{dia['dia']}}</td>
+                            <td class="{{dia['class-txt']}}" style="border-left:none;">{{dia['dia']}}</td>
                             <td class="{{dia['class-txt']}}">{{dia['semana']}}</td>
 
                             {% if professor['qtd_aulas_semanais'][dia['semana']] > 0 and dia['evento'] == 0 and professor['assina_livro'] == 1 %}
@@ -459,31 +517,56 @@
                             {% endif %}
 
                             <td class="red" contenteditable="true"></td>
-                            <td class="red" contenteditable="true"></td>
+                            <td class="red right-strong-border" contenteditable="true"></td>
+
+                            {% if professor['quadro_aula']|length > 5 and ns.contador < professor['quadro_aula']|length %}
+                            <td style="font-size:6px; background-color:white;" class="center">{{professor['quadro_aula'][ns.contador]['periodo']}}</td>
+                            <td style="font-size:6px; background-color:white;" class="center">{{professor['quadro_aula'][ns.contador]['horario']}}</td>
+                            <td style="font-size:6px; background-color:white;" class="center green">{{professor['quadro_aula'][ns.contador]['seg'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px; background-color:white;" class="center green">{{professor['quadro_aula'][ns.contador]['ter'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px; background-color:white;" class="center green">{{professor['quadro_aula'][ns.contador]['qua'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px; background-color:white;" class="center green">{{professor['quadro_aula'][ns.contador]['qui'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px; background-color:white;" class="center green">{{professor['quadro_aula'][ns.contador]['sex'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px; background-color:white;" class="center green">{{professor['quadro_aula'][ns.contador]['sab'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>
+                            <td style="font-size:6px; border-right: none; background-color:white;" class="center green">{{professor['quadro_aula'][ns.contador]['dom'] | replace("SLN","SL") | replace("INV","") | replace("REAN","REA") | replace("PATN","PAT")}}</td>                            
+                            {% set ns.contador = ns.contador + 1 %}
+                            {% elif ns.total == 0 %}
+                            <td colspan="2" style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold;" class="center">Total de Aulas:</td>
+                            <td style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold;" class="center">{{professor['total_geral']['seg']}}</td>
+                            <td style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold;" class="center">{{professor['total_geral']['ter']}}</td>
+                            <td style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold;" class="center">{{professor['total_geral']['qua']}}</td>
+                            <td style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold;" class="center">{{professor['total_geral']['qui']}}</td>
+                            <td style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold;" class="center">{{professor['total_geral']['sex']}}</td>
+                            <td style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold;" class="center">{{professor['total_geral']['sab']}}</td>
+                            <td style="border-top: 2px solid black; border-bottom: 2px solid black; font-size:8px; background-color:rgb(239, 246, 255); font-weight: bold; border-right: none;" class="center">{{professor['total_geral']['dom']}}</td>
+                            {% set ns.total = 1 %}
+                            {% else %}
+                            <td colspan="9" style="background-color:#BBB; !important; border-bottom:solid 1px #BBB;border-right: none;"></td>
+                            {% endif %}
 
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="23" class="center basic-col">
-                                <div class="identificador">5</div>
+                            <td colspan="23" class="center basic-col" style="border-left:none; border-top: 2px solid black; border-right: none;">
+                                <div class="identificador" style="border-bottom:none;">5</div>
                                 OBSERVAÇÕES
                             </td>
                         </tr>
 
                         <!-- Preencher o resto das lacunas do campo observação -->
                         {% for evento in professor['eventos'] %}
-                        <tr><td style="text-align: left; height: 16px;" colspan="8" class="red basic-col">{{evento}}</td></tr>
+                        <tr><td style="text-align: left; height: 16px; border-right: none; border-left:none; font-size:8px;" colspan="17" class="red basic-col">{{evento}}</td></tr>
                         {% endfor %}
 
                         {% for n in range(linhas) %}
-                        <tr><td colspan="8">&nbsp;</td></tr>
+                        <tr><td colspan="17" style="text-align: left; height: 16px; border-right: none; border-left:none; font-size:8px;">&nbsp;</td></tr>
                         {% endfor %}
 
                         <!-- Campo Assinatura Final -->
                         <tr>
-                            <td colspan="8" class="center basic-col" style="height: 116.1px; border-bottom: none">
+                            <td colspan="8" class="center basic-col" style="border-bottom: 2px solid black !important; border-left:none; height: 90px; border-bottom: none; border-right: none;">
                                 <div class="identificador">6</div>
                                 <div class="lb_secretario" style="font-weight: bold;">
                                     {{ data_hoje }}
@@ -492,6 +575,10 @@
                                     Recebi em: _____/_____/_____.
                                 </div>                                
                             </td>
+                            <td colspan="5" class="center" style="border:none; border-bottom: 2px solid black;">
+                                <div style="border-top:1px solid black">Assinatura do responsável</div>
+                            </td>
+                            <td colspan="4" style="border-bottom: 2px solid black; border-right: none; border-left:none;"></td>
                         </tr>                       
                     </tfoot>
                 </table>
@@ -518,7 +605,7 @@
                             </tr>
                             <tr class="center" style="font-size:8px;border-bottom:2px solid black;">
                                 <td>Períodos e Aulas</td>
-                                <td style="width: 47px;min-width:47px;max-width:47px;border-right: 2px solid black;">Início e Término</td>
+                                <td style="width: 100px;min-width:54px;max-width:47px;border-right: 2px solid black;">Início e Término</td>
                                 <td style="width: 16px;min-width:16px;max-width:16px">Seg</td>
                                 <td style="width: 16px;min-width:16px;max-width:16px">Ter</td>
                                 <td style="width: 16px;min-width:16px;max-width:16px">Qua</td>

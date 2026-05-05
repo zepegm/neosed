@@ -891,6 +891,9 @@
                     form_adicional += '<span class="input-group-text">Folha: </span>';
                     form_adicional += '<input id="folha_extra" type="number" class="form-control" value="0">';
                     form_adicional += '<button class="btn_extra btn btn-danger">Gerar Folha Extra</button>';
+                    form_adicional += '<button class="btn_bo btn btn-danger" style="margin-left:10px;">Gerar B.O.</button>';
+
+
                     form_adicional += '<input type="hidden" id="cpf_prof_extra" value="' + response['detalhes']['cpf'] + '">';
                     form_adicional += '<input type="hidden" id="di_prof_extra" value="' + response['detalhes']['di'] + '">';
 
@@ -1121,6 +1124,19 @@
             $("#id_evento_funcional").val($(this).attr('data-id_evento'));
             $("#form_deletar_evento_funcional").submit();
         });               
+
+        $("#modal_visualizar").on('click', '.btn_bo', function() {
+            const cpf = $("#body-detalhes .col-sm-4")[3].innerText.replace(/\D/g, "");
+            const ano = $("#txt_ano_extra").val();
+            const mes = $("#cb_mes_extra").val();
+            const di = $("#body-detalhes .col-sm-4")[5].innerText.replace(/\D/g, "");
+
+
+            console.log(cpf);
+            
+            const url = `${window.location.origin}/render_bo_freq?cpf=${cpf}&ano=${ano}&mes=${mes}&di=${di}`;
+            window.open(url, '_blank');
+        });
 
         $("#modal_visualizar").on('click', '.btn_extra', function() {
             $(this).attr('disabled');
