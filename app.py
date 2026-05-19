@@ -1,9 +1,10 @@
+import eventlet
+eventlet.monkey_patch()
+
 import sys
 from MySQL import db
 from getInfoSED import buscarCPF
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, Response
-import eventlet
-import eventlet.wsgi
 from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
 from werkzeug.utils import secure_filename
@@ -36,7 +37,13 @@ app=Flask(__name__)
 app.secret_key = "abc123"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'justasecretkeythatishouldputhere'
-socketio = SocketIO(app, async_mode='threading')
+socketio = SocketIO(
+    app,
+    async_mode="eventlet",
+    cors_allowed_origins="*"
+)
+
+print("Async mode:", socketio.async_mode)
 
 app.jinja_env.add_extension(TryCatchExtension)
 
@@ -5904,9 +5911,23 @@ if __name__ == '__main__':
 
     if is_debug_mode:
         print("🚀 Rodando em modo DEBUG...")
-        app.run(debug=True, use_reloader=True, port=5000)
+        socketio.run(
+            app,
+            host='0.0.0.0',
+            port=5000,
+            debug=True,
+            certfile='/home/giuseppegm/certificados-neosed/cert.pem',
+            keyfile='/home/giuseppegm/certificados-neosed/key.pem'
+        )
     else:
         #print("🏠 Rodando em modo PRODUÇÃO...")
         #serve(app, host='0.0.0.0', port=5000, threads=8)
         print("🚀 Iniciando com Eventlet (WebSockets Reais + Alta Performance)")
-        socketio.run(app, host='0.0.0.0', port=5000)     
+        socketio.run(
+            app,
+            host='0.0.0.0',
+            port=5000,
+            debug=False,
+            certfile='/home/giuseppeg/certificados-neosed/cert.pem',
+            keyfile='/home/giuseppeg/certificados-neosed/key.pem'
+        )
