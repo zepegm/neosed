@@ -16,8 +16,8 @@ import subprocess
 import os
 import csv
 import json
-from pyppeteer import launch
-from pyppeteer import connect
+#from pyppeteer import launch
+#from pyppeteer import connect
 import locale
 import math
 import calendar
@@ -1167,7 +1167,7 @@ def render_bo_freq():
         professor['eventos'] = lst_final_eventos
 
 
-        linhas = 5 + (30 - len(dias)) - len(professor['eventos'])
+        linhas = 8 + (30 - len(dias)) - len(professor['eventos'])
 
         print('--------------------')
         print(linhas)
