@@ -3394,7 +3394,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']))       
+        return jsonify('https://%s/render_lista?tipo=%s&num_classe=%s&order=%s' % (request.host, info['tipo'], info['turma'], info['order']))       
 
     elif info['destino'] == 2:
         #print(info)
@@ -3405,7 +3405,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=0' % (request.host, info['tipo'], info['turma']))  
+        return jsonify('https://%s/render_lista?tipo=%s&num_classe=%s&order=0' % (request.host, info['tipo'], info['turma']))  
 
     elif info['destino'] == 3: # declaração de matrícula normal
 
@@ -3430,7 +3430,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
+        return jsonify('https://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
     elif info['destino'] == 4:
 
@@ -3441,7 +3441,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host) 
+        return jsonify('https://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host) 
     
     elif info['destino'] == 5: # conselho bimestral
         pdf_path = 'static/docs/conselho.pdf'
@@ -3451,7 +3451,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (request.host, info['bimestre'], info['num_classe'], info['ano']))  
+        return jsonify('https://%s/render_conselho_bimestre_all?bimestre=%s&num_classe=%s&order=0&ano=%s' % (request.host, info['bimestre'], info['num_classe'], info['ano']))  
 
     elif info['destino'] == 6: # conselho bimestral completo
         pdf_path = 'static/docs/conselho.pdf'
@@ -3461,7 +3461,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (request.host, info['bimestre'], info['ano']))
+        return jsonify('https://%s/render_conselho_bimestre_all?bimestre=%s&ano=%s&order=0' % (request.host, info['bimestre'], info['ano']))
     
     elif info['destino'] == 7: # livro ponto completo
         pdf_path = 'static/docs/livro_ponto.pdf'
@@ -3471,7 +3471,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_livro_ponto?mes=%s&ano=%s&order=0' % (request.host, info['mes'], info['ano']))
+        return jsonify('https://%s/render_livro_ponto?mes=%s&ano=%s&order=0' % (request.host, info['mes'], info['ano']))
     
     elif info['destino'] == 8: # certificados
         pdf_path = 'static/docs/certificados.pdf'
@@ -3481,7 +3481,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_certificados_conclusao?classe=%s&order=0' % (request.host, info['classe']))
+        return jsonify('https://%s/render_certificados_conclusao?classe=%s&order=0' % (request.host, info['classe']))
     
     elif info['destino'] == 9: # livro ponto individual
         pdf_path = 'static/docs/certificados.pdf'   
@@ -3491,7 +3491,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (request.host, info['mes'], info['ano'], info['professor'], info['number'], info['di']))
+        return jsonify('https://%s/render_livro_ponto?mes=%s&ano=%s&professor=%s&number=%s&di=%s&order=0' % (request.host, info['mes'], info['ano'], info['professor'], info['number'], info['di']))
     
     elif info['destino'] == 10: # ficha de matrícula
         pdf_path = 'static/docs/ficha.pdf'
@@ -3546,7 +3546,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
+        return jsonify('https://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
 
     elif info['destino'] == 12: # boletins
@@ -3558,7 +3558,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_boletim?num_classe=%s&ano=%s&order=0' % (request.host, info['num_classe'], info['ano']))
+        return jsonify('https://%s/render_boletim?num_classe=%s&ano=%s&order=0' % (request.host, info['num_classe'], info['ano']))
 
     elif info['destino'] == 13: # declaração completa
 
@@ -3589,7 +3589,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
+        return jsonify('https://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
     
     elif info['destino'] == 14: #livro ponto ADM
 
@@ -3603,7 +3603,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (request.host, cpf, mes, ano))
+        return jsonify('https://%s/render_livro_ponto_adm?cpf=%s&mes=%s&ano=%s&order=0' % (request.host, cpf, mes, ano))
 
     elif info['destino'] == 15: #horário geral com legenda ou individual
         pdf_path_1 = 'static/docs/horario_horizontal.pdf'
@@ -3626,7 +3626,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '9mm', 'left': '10mm'}})
         
         #await browser.close()
-        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (request.host, estilo, ensino, ano, data))
+        return jsonify('https://%s/render_lista?tipo=%s&num_classe=%s&order=%s&data=%s' % (request.host, estilo, ensino, ano, data))
 
         #await page.goto('http://localhost/render_lista?tipo=grade_salas&num_classe=%s&order=%s&data=%s' % (ensino, ano, data), {'waitUntil':'networkidle2'})
         #await page.pdf({'path': pdf_path_2, 'format':'A4', 'landscape': True, 'scale':1, 'printBackground':True, 'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}})
@@ -3653,7 +3653,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'landscape':True, 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (request.host, num_classe, order, mes, cor))
+        return jsonify('https://%s/render_lista?tipo=chamada&num_classe=%s&order=%s&mes=%s&cor=%s' % (request.host, num_classe, order, mes, cor))
 
     elif info['destino'] == 17:
         pdf_path = 'static/docs/assinatura.pdf'
@@ -3669,7 +3669,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (request.host, tipo, num_classe, order, titulo, colunas))    
+        return jsonify('https://%s/render_lista?tipo=%s&num_classe=%s&order=%s&titulo=%s&colunas=%s' % (request.host, tipo, num_classe, order, titulo, colunas))    
 
     elif info['destino'] == 18: # declaração de transferência
         pdf_path = 'static/docs/declaracao.pdf'
@@ -3685,7 +3685,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
+        return jsonify('https://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
     elif info['destino'] == 19: # declaração de matrícula com horário
         
@@ -3716,7 +3716,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
+        return jsonify('https://%s/render_lista?tipo=declaracao&num_classe=white&order=0' % request.host)
 
     
     elif info['destino'] == 20: # declaração de conclusão
@@ -3751,7 +3751,7 @@ async def gerar_pdf():
         #await page.pdf({'path': pdf_path, 'format':'A4', 'scale':1, 'printBackground':True})
         #await browser.close()
 
-        return jsonify('http://%s/render_lista?tipo=declaracao&num_classe=black&order=0' % request.host)
+        return jsonify('https://%s/render_lista?tipo=declaracao&num_classe=black&order=0' % request.host)
     
     #elif info['destino'] == 21:
         #pdf_path = 'static/docs/etiqueta.pdf'
