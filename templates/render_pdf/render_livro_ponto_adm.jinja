@@ -260,7 +260,11 @@
                     <td>
                         <p><b>Servidor:</b> {{dados['nome']}}</p>
                         <p><b>Cargo/Função:</b> {{dados['cargo']}}</p>
+                        {% if dados['cargo'] == 'Estagiário'%}
+                        <p><b>Jornada de Trabalho:</b> 30 horas semanais</p>
+                        {% else %}
                         <p><b>Jornada de Trabalho:</b> 40 horas semanais</p>
+                        {% endif %}
                         <p><b>Horário de Trabalho:</b> {{dados['horario']}}</p>
                         <p><b>Almoço e Descanso:</b> {{dados['intervalo']}}</p>
                     </td>
@@ -281,7 +285,11 @@
                         <th colspan="2">Entrada</th>
                         <th colspan="2">Saída</th>
                         <th rowspan="2" colspan="2" style="width: 120px">Observações</th>
+                        {% if dados['cargo'] == 'Estagiário'%}
+                        <th rowspan="2" style="font-size:11px; width: 60px">Visto do Supervisor</th>
+                        {% else %}
                         <th rowspan="2" style="font-size:11px; width: 60px">Visto do Superior Imediato</th>
+                        {% endif %}
                     </tr>
                     <tr>
                         <th style="width: 80px;">Hora</th>
@@ -369,9 +377,15 @@
 
             <table class="tb_assinatura">
                 <tr>
+                    {% if dados['cargo'] == 'Estagiário'%}
+                    <td class="border-top">Assinatura do Estagiário</td>
+                    <td>&nbsp;&nbsp;&nbsp;</td>
+                    <td class="border-top">Assinatura do Supervisor</td>
+                    {% else %}
                     <td class="border-top">Assinatura do Servidor</td>
                     <td>&nbsp;&nbsp;&nbsp;</td>
                     <td class="border-top">Assinatura do Superior Imediato</td>
+                    {% endif %}
                     <td>&nbsp;&nbsp;&nbsp;</td>
                     <td>Data: &nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;</td>
                 </tr>
@@ -405,7 +419,11 @@
                 <tr>
                     <td style="text-align: left; width: 200px;">Data: ___/___/_______ </td>
                     <td>&nbsp;&nbsp;&nbsp;</td>
+                    {% if dados['cargo'] == 'Estagiário'%}
+                    <td style="text-align: center; width: 400px;" class="border-top">Assinatura do Supervisor</td>
+                    {% else %}
                     <td style="text-align: center; width: 400px;" class="border-top">Assinatura do Superior Imediato ou Responsável</td>
+                    {% endif %}
                 </tr>
             </table>
         </div>
